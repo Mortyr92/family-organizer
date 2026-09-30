@@ -17,6 +17,8 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # Remove once the repository topics are configured by the owner.
+          ignore: topics
   frontend-reproducible:
     runs-on: ubuntu-latest
     steps:
