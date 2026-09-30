@@ -10,6 +10,7 @@ from homeassistant.components import panel_custom
 from homeassistant.const import Platform
 from homeassistant.core import ServiceCall
 from homeassistant.exceptions import Unauthorized
+from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN, EVENT_UPDATED, PANEL_ICON, PANEL_TITLE, PANEL_URL
 from .permissions import capabilities_for, check_capability, person_for
@@ -19,6 +20,7 @@ from .caldav_sync import CalendarSyncCoordinator
 from .websocket_api import async_register as async_register_websocket
 
 PLATFORMS = [Platform.CALENDAR, Platform.SENSOR, Platform.TODO]
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass, config):
