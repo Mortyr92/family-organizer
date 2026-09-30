@@ -20,3 +20,20 @@ def test_parses_ics_fixture_and_recurrence():
     assert len(occurrences) == 4
     assert (occurrences[1] - occurrences[0]).days == 7
 
+
+def test_tzid_and_real_monthly_recurrence():
+    events = parse_ics("""BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:tz
+DTSTART;TZID=Europe/Amsterdam:20260131T090000
+DURATION:PT1H
+RRULE:FREQ=MONTHLY;COUNT=3;BYMONTHDAY=-1
+SUMMARY:Month end
+END:VEVENT
+END:VCALENDAR
+""")
+    start = parse_datetime(events[0]["start"])
+    assert start.utcoffset().total_seconds() == 3600
+    occurrences = expand_occurrences(start, events[0]["recurrence"], parse_datetime("2026-04-01T00:00:00+02:00"))
+    assert [value.day for value in occurrences] == [31, 28, 31]

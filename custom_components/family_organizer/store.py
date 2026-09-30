@@ -20,7 +20,13 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
     result = deepcopy(data)
     result.setdefault("items", [])
     if name == "groceries":
+        result.setdefault("lists", [{"id": "default", "name": "Groceries", "store": "", "shared": True}])
+        for item in result["items"]:
+            item.setdefault("list_id", "default")
         result.setdefault("meal_plans", [])
+        result.setdefault("meal_slots", result["meal_plans"])
+    if name == "chores":
+        result.setdefault("completions", [])
     if name == "settings":
         result = {**DEFAULT_SETTINGS, **result}
         result.setdefault("items", [])

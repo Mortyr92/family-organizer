@@ -4,7 +4,9 @@ from custom_components.family_organizer.store import migrate_payload
 def test_migrates_legacy_list_and_defaults():
     assert migrate_payload("people", 1, [{"id": "one"}]) == {"items": [{"id": "one"}]}
     groceries = migrate_payload("groceries", 1, None)
-    assert groceries == {"items": [], "meal_plans": []}
+    assert groceries["items"] == []
+    assert groceries["meal_plans"] == groceries["meal_slots"] == []
+    assert groceries["lists"][0]["id"] == "default"
 
 
 def test_settings_migration_preserves_values():
@@ -12,4 +14,3 @@ def test_settings_migration_preserves_values():
     assert settings["theme"] == "dark"
     assert settings["sync_interval"] == 30
     assert settings["permissions"] == {}
-

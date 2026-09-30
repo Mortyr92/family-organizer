@@ -578,12 +578,9 @@ var be = [
 ], Q = (e = 0) => {
 	let t = /* @__PURE__ */ new Date();
 	return t.setDate(t.getDate() + e), t.toISOString().slice(0, 10);
-}, xe = (e, t) => {
-	let n = /* @__PURE__ */ new Date(`${e}T${t}:00`);
-	return n.setHours(n.getHours() + 1), `${e}T${n.toTimeString().slice(0, 8)}`;
 }, $ = class extends Y {
 	constructor(...e) {
-		super(...e), this.page = "calendar", this.calendarView = "month", this.selectedDay = Q(), this.data = {}, this.error = "", this.recipeServings = {};
+		super(...e), this.page = "calendar", this.data = {}, this.selectedDay = Q(), this.calendarView = "month", this.listId = "default", this.scorePeriod = "week", this.servings = {}, this.selectedIngredients = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "";
 	}
 	set hass(e) {
 		let t = !this._hass;
@@ -592,245 +589,277 @@ var be = [
 	disconnectedCallback() {
 		this.unsubscribe?.(), super.disconnectedCallback();
 	}
+	form(e) {
+		return e.preventDefault(), Object.fromEntries(new FormData(e.currentTarget));
+	}
 	async load() {
-		if (this._hass) try {
+		try {
 			let e = await Promise.all(be.map((e) => this._hass.callWS({
 				type: "family_organizer/list",
 				resource: e
 			})));
-			this.data = Object.fromEntries(be.map((t, n) => [t, e[n]])), this.unsubscribe ||= await this._hass.connection.subscribeMessage(() => void this.load(), { type: "family_organizer/subscribe" });
+			this.data = Object.fromEntries(be.map((t, n) => [t, e[n]])), this.theme = localStorage.getItem("family-organizer-theme") || this.data.settings.theme || "auto", this.unsubscribe ||= await this._hass.connection.subscribeMessage(() => void this.load(), { type: "family_organizer/subscribe" }), this.error = "";
 		} catch (e) {
 			this.error = String(e);
 		}
 	}
-	async create(e, t, n) {
+	async create(e, t, n = "items") {
 		await this._hass.callWS({
 			type: "family_organizer/create",
 			resource: e,
 			collection: n,
-			item: {
-				id: crypto.randomUUID(),
-				...t
-			}
-		}), await this.load();
+			item: t
+		});
 	}
-	async updateItem(e, t, n, r) {
+	async updateItem(e, t, n, r = "items") {
 		await this._hass.callWS({
 			type: "family_organizer/update",
 			resource: e,
 			collection: r,
 			item_id: t.id,
 			item: n
-		}), await this.load();
+		});
 	}
-	async removeItem(e, t, n) {
+	async removeItem(e, t, n = "items") {
 		await this._hass.callWS({
 			type: "family_organizer/delete",
 			resource: e,
 			collection: n,
 			item_id: t.id
-		}), await this.load();
+		});
 	}
-	form(e) {
-		return e.preventDefault(), Object.fromEntries(new FormData(e.currentTarget));
+	person(e) {
+		return (this.data.people?.items || []).find((t) => t.id === e);
+	}
+	avatar(e) {
+		let t = this.person(e);
+		return t?.avatar_url ? R`<img class="avatar" src=${t.avatar_url} alt=${t.name}>` : R`<span class="avatar fallback">${t?.name?.[0] || "?"}</span>`;
 	}
 	render() {
-		return R`
-      <header><h1>Family Organizer</h1><nav>${Object.entries({
+		return R`<div data-theme=${this.theme}><header><h1>Family Organizer</h1>
+      <nav>${Object.entries({
 			calendar: "Calendar",
 			groceries: "Groceries & meals",
 			chores: "Chores",
 			recipes: "Recipes",
 			settings: "Settings"
-		}).map(([e, t]) => R`<button class=${this.page === e ? "active" : ""} @click=${() => this.page = e}>${t}</button>`)}</nav></header>
-      <main>${this.error ? R`<p class="error">${this.error}</p>` : B}
-        ${this.data.people ? this.renderPage() : R`<p>Loading…</p>`}
-      </main>`;
+		}).map(([e, t]) => R`<button class=${this.page === e ? "active" : ""} @click=${() => this.page = e}>${t}</button>`)}</nav>
+      </header><main>${this.error ? R`<p class="error">${this.error}</p>` : B}
+      ${this.data.people ? this.renderPage() : R`Loading…`}</main></div>`;
 	}
 	renderPage() {
-		return this.page === "calendar" ? this.renderCalendar() : this.page === "groceries" ? this.renderGroceries() : this.page === "chores" ? this.renderChores() : this.page === "recipes" ? this.renderRecipes() : this.renderSettings();
+		return this.page === "calendar" ? this.calendar() : this.page === "groceries" ? this.groceries() : this.page === "chores" ? this.chores() : this.page === "recipes" ? this.recipes() : this.settings();
 	}
-	renderCalendar() {
-		let e = this.data.calendar.items ?? [], t = e.filter((e) => String(e.start).slice(0, 10) === this.selectedDay);
-		return R`<section>
-      <div class="toolbar"><h2>Calendar</h2>
-        ${[
+	calendar() {
+		let e = this.data.calendar.items || [], t = this.calendarView === "month" ? 35 : this.calendarView === "week" ? 7 : 1;
+		return R`<section><div class="toolbar"><h2>Calendar</h2>${[
 			"month",
 			"week",
 			"day"
-		].map((e) => R`
-          <button class=${this.calendarView === e ? "active" : ""} @click=${() => this.calendarView = e}>${e}</button>`)}
-        <input type="date" .value=${this.selectedDay} @change=${(e) => this.selectedDay = e.target.value}>
-      </div>
-      <div class="calendar ${this.calendarView}">
-        ${Array.from({ length: this.calendarView === "month" ? 35 : this.calendarView === "week" ? 7 : 1 }, (t, n) => {
+		].map((e) => R`<button class=${e === this.calendarView ? "active" : ""} @click=${() => this.calendarView = e}>${e}</button>`)}
+      <input type="date" .value=${this.selectedDay} @change=${(e) => this.selectedDay = e.target.value}></div>
+      <div class="horizontal calendar">${Array.from({ length: t }, (t, n) => {
 			let r = this.calendarView === "day" ? this.selectedDay : Q(n);
 			return R`<button class="day" @click=${() => this.selectedDay = r}><b>${r}</b>
-            ${e.filter((e) => String(e.start).startsWith(r)).map((e) => R`<span>${e.title}</span>`)}
-          </button>`;
-		})}
-      </div>
-      <aside><h3>${this.selectedDay}</h3>${t.map((e) => R`
-        <article><b>${e.title}</b><small>${e.start} – ${e.end}</small>
-        <button @click=${() => this.removeItem("calendar", e)}>Delete</button></article>`)}
-        <form @submit=${(e) => {
+          ${e.filter((e) => String(e.start).startsWith(r)).map((e) => R`<span>${e.title}</span>`)}</button>`;
+		})}</div><div class="cards">${e.filter((e) => String(e.start).startsWith(this.selectedDay)).map((e) => R`<article><b>${e.title}</b><small>${e.start} – ${e.end}</small>${this.avatar(e.creator_id)}
+        <button @click=${() => this.removeItem("calendar", e)}>Delete</button></article>`)}</div>
+      <form @submit=${(e) => {
 			let t = this.form(e);
 			this.create("calendar", {
 				title: t.title,
 				start: `${this.selectedDay}T${t.time}:00`,
-				end: xe(this.selectedDay, t.time),
-				all_day: !1,
-				person_ids: [],
-				recurrence: t.recurrence || null
-			}), e.target.reset();
-		}}><input name="title" placeholder="New event" required><input name="time" type="time" value="18:00">
-          <select name="recurrence"><option value="">Once</option><option value="FREQ=DAILY">Daily</option><option value="FREQ=WEEKLY">Weekly</option></select>
-          <button>Add</button></form>
-      </aside>
-    </section>`;
+				end: `${this.selectedDay}T23:59:00`,
+				recurrence: t.recurrence || null,
+				shared: t.shared === "on"
+			});
+		}}><input name="title" placeholder="Event" required><input name="time" type="time" value="18:00">
+      <select name="recurrence"><option value="">Once</option><option value="FREQ=DAILY">Daily</option><option value="FREQ=WEEKLY">Weekly</option><option value="FREQ=MONTHLY">Monthly</option></select>
+      <label><input name="shared" type="checkbox" checked> Shared</label><button>Add</button></form></section>`;
 	}
-	renderGroceries() {
-		let e = this.data.groceries.items ?? [], t = this.data.groceries.meal_plans ?? [];
-		return R`<section><h2>Groceries</h2>
+	groceries() {
+		let e = this.data.groceries, t = e.lists || [], n = (e.items || []).filter((e) => e.list_id === this.listId), r = e.meal_slots || e.meal_plans || [];
+		return R`<section><div class="toolbar"><h2>Groceries</h2>
+      <select .value=${this.listId} @change=${(e) => this.listId = e.target.value}>
+        ${t.map((e) => R`<option value=${e.id}>${e.name}${e.store ? ` · ${e.store}` : ""}</option>`)}</select>
+      <form @submit=${(e) => {
+			let t = this.form(e);
+			this.create("groceries", {
+				name: t.name,
+				store: t.store,
+				shared: !0
+			}, "lists");
+		}}>
+        <input name="name" placeholder="New list" required><input name="store" placeholder="Store"><button>Create list</button></form></div>
       <form @submit=${(e) => {
 			let t = this.form(e);
 			this.create("groceries", {
 				name: t.name,
 				quantity: Number(t.quantity),
+				unit: t.unit,
+				category: t.category,
+				list_id: this.listId,
+				store: t.store,
+				assignee_id: t.assignee_id || null,
 				checked: !1,
-				category: t.category
-			}), e.target.reset();
-		}}><input name="name" placeholder="Item" required><input name="quantity" type="number" value="1" min="0"><input name="category" placeholder="Category"><button>Add</button></form>
-      <div class="cards">${e.map((e) => R`<article>
-        <label><input type="checkbox" .checked=${!!e.checked} @change=${() => this.updateItem("groceries", e, { checked: !e.checked })}>
-          ${e.quantity} ${e.name}</label><small>${e.category}</small><button @click=${() => this.removeItem("groceries", e)}>×</button>
-      </article>`)}</div>
-      <h2>7-day meal plan</h2><div class="week">${Array.from({ length: 7 }, (e, n) => {
-			let r = Q(n), i = t.find((e) => e.day === r);
-			return R`<article><b>${r}</b>${i ? R`<span>${i.title}</span><button @click=${() => this.removeItem("groceries", i, "meal_plans")}>Clear</button>` : R`<form @submit=${(e) => {
-				let t = this.form(e);
-				this.create("groceries", {
-					day: r,
-					meal: "dinner",
-					title: t.title
-				}, "meal_plans");
-			}}>
-            <input name="title" placeholder="Dinner"><button>Plan</button></form>`}</article>`;
-		})}</div>
-    </section>`;
+				shared: !0
+			});
+		}}><input name="name" placeholder="Item" required><input name="quantity" type="number" value="1" step="any">
+      <input name="unit" placeholder="Unit"><input name="category" placeholder="Category"><input name="store" placeholder="Store">
+      <select name="assignee_id"><option value="">Anyone</option>${this.peopleOptions()}</select><button>Add / merge</button></form>
+      <div class="cards">${n.map((e) => R`<article><input type="checkbox" .checked=${!!e.checked}
+        @change=${() => this.updateItem("groceries", e, { checked: !e.checked })}><b>${e.quantity} ${e.unit} ${e.name}</b>
+        <small>${e.category}${e.store ? ` · ${e.store}` : ""}</small>${this.avatar(e.assignee_id || e.creator_id)}
+        <button @click=${() => this.removeItem("groceries", e)}>×</button></article>`)}</div>
+      <h2>7-day meal plan</h2><div class="horizontal meals">${Array.from({ length: 7 }, (e, t) => {
+			let n = Q(t);
+			return R`<article><b>${n}</b>${[
+				"breakfast",
+				"lunch",
+				"dinner"
+			].map((e) => {
+				let t = r.find((t) => t.day === n && (t.slot || t.meal) === e);
+				return t ? R`<div><small>${e}</small> ${t.title}<button @click=${() => this.removeItem("groceries", t, "meal_slots")}>×</button></div>` : R`<form @submit=${(t) => {
+					let r = this.form(t);
+					this.create("groceries", {
+						day: n,
+						slot: e,
+						meal: e,
+						title: r.title
+					}, "meal_slots");
+				}}>
+              <input name="title" placeholder=${e}><button>+</button></form>`;
+			})}</article>`;
+		})}</div></section>`;
 	}
-	renderChores() {
-		let e = this.data.chores.items ?? [], t = this.data.people.items ?? [];
-		return R`<section><h2>Chores competition</h2><div class="leaderboard">${t.map((t) => ({
-			name: t.name,
-			points: e.reduce((e, n) => e + (n.assignee_id === t.id ? (n.completed?.length ?? 0) * Number(n.points) : 0), 0)
-		})).sort((e, t) => t.points - e.points).map((e, t) => R`<article><strong>#${t + 1} ${e.name}</strong><b>${e.points} pts</b></article>`)}</div>
+	peopleOptions() {
+		return (this.data.people.items || []).map((e) => R`<option value=${e.id}>${e.name}</option>`);
+	}
+	chores() {
+		let e = this.data.chores.items || [], t = /* @__PURE__ */ new Date(), n = this.scorePeriod === "week" ? new Date(t.getFullYear(), t.getMonth(), t.getDate() - (t.getDay() + 6) % 7) : new Date(t.getFullYear(), t.getMonth(), 1), r = (this.data.people.items || []).map((t) => ({
+			person: t,
+			points: e.reduce((e, r) => e + (r.assignee_id === t.id ? (r.completed || []).filter((e) => new Date(e) >= n).length * Number(r.points) : 0), 0)
+		})).sort((e, t) => t.points - e.points);
+		return R`<section><div class="toolbar"><h2>Chores competition</h2><select .value=${this.scorePeriod}
+      @change=${(e) => this.scorePeriod = e.target.value}><option value="week">This week</option><option value="month">This month</option></select></div>
+      <div class="leaderboard">${r.map((e, t) => R`<article>${this.avatar(e.person.id)}<b>#${t + 1} ${e.person.name}</b><strong>${e.points} pts</strong></article>`)}</div>
       <form @submit=${(e) => {
 			let t = this.form(e);
 			this.create("chores", {
 				title: t.title,
-				assignee_id: t.person,
+				assignee_id: t.assignee_id,
 				points: Number(t.points),
-				schedule: t.schedule,
-				completed: []
+				schedule: t.schedule === "weekly" ? `weekly:${t.weekday}` : t.schedule === "interval" ? `interval:${t.interval}` : t.schedule,
+				completed: [],
+				created: Q(),
+				shared: !0
 			});
-		}}><input name="title" placeholder="Chore" required><select name="person">${t.map((e) => R`<option value=${e.id}>${e.name}</option>`)}</select>
-        <input name="points" type="number" value="5"><select name="schedule"><option>daily</option><option value="weekly:monday">Weekly</option></select><button>Add</button></form>
-      <div class="cards">${e.map((e) => R`<article><b>${e.title}</b><span>${e.points} pts · ${e.schedule}</span>
-        <button @click=${() => this.updateItem("chores", e, { completed: [...e.completed ?? [], (/* @__PURE__ */ new Date()).toISOString()] })}>Complete</button>
-        <button @click=${() => this.removeItem("chores", e)}>×</button></article>`)}</div>
-    </section>`;
+		}}><input name="title" placeholder="Chore" required><select name="assignee_id">${this.peopleOptions()}</select>
+      <input name="points" type="number" value="5"><select name="schedule"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="interval">Every N days</option></select>
+      <select name="weekday">${[
+			"monday",
+			"tuesday",
+			"wednesday",
+			"thursday",
+			"friday",
+			"saturday",
+			"sunday"
+		].map((e) => R`<option>${e}</option>`)}</select>
+      <input name="interval" type="number" min="1" value="2"><button>Schedule</button></form>
+      <div class="cards">${e.map((e) => R`<article>${this.avatar(e.assignee_id)}<b>${e.title}</b><small>${e.schedule} · ${e.points} pts</small>
+      <button @click=${() => this.updateItem("chores", e, { completed: [...e.completed || [], (/* @__PURE__ */ new Date()).toISOString()] })}>Complete</button>
+      <button @click=${() => this.removeItem("chores", e)}>×</button></article>`)}</div></section>`;
 	}
-	renderRecipes() {
-		let e = this.data.recipes.items ?? [];
-		return R`<section><h2>Recipes</h2>
-      <form @submit=${(e) => {
+	recipes() {
+		let e = this.data.recipes.items || [], t = this.data.groceries.lists || [];
+		return R`<section><h2>Recipes</h2><form @submit=${(e) => {
 			let t = this.form(e);
 			this.create("recipes", {
 				title: t.title,
-				category: t.category,
+				category: t.category || "Other",
 				servings: Number(t.servings),
 				ingredients: String(t.ingredients).split(",").filter(Boolean).map((e) => ({
 					name: e.trim(),
 					amount: 1,
-					unit: "x"
+					unit: "x",
+					category: "Other"
 				})),
-				instructions: []
+				instructions: [],
+				shared: !0
 			});
-		}}><input name="title" placeholder="Recipe" required><input name="category" placeholder="Category"><input name="servings" type="number" value="4">
-        <input name="ingredients" placeholder="Ingredients, comma separated"><button>Add</button></form>
-      ${[...new Set(e.map((e) => e.category))].map((t) => R`<h3>${t}</h3><div class="cards">${e.filter((e) => e.category === t).map((e) => {
-			let t = this.recipeServings[e.id] ?? e.servings;
-			return R`<article><b>${e.title}</b><label>Servings <input type="number" min="1" .value=${String(t)}
-          @input=${(t) => {
-				this.recipeServings = {
-					...this.recipeServings,
-					[e.id]: Number(t.target.value)
-				};
+		}}>
+      <input name="title" placeholder="Recipe" required><input name="category" placeholder="Category"><input name="servings" type="number" value="4">
+      <input name="ingredients" placeholder="Ingredients, comma separated"><button>Add</button></form>
+      <div class="cards">${e.map((e) => {
+			let n = this.servings[e.id] || e.servings, r = this.selectedIngredients[e.id] || new Set(e.ingredients.map((e, t) => t));
+			return R`<article class="recipe">${this.avatar(e.creator_id)}<h3>${e.title}</h3><label>Servings <input type="number" min="1" .value=${String(n)}
+          @input=${(t) => this.servings = {
+				...this.servings,
+				[e.id]: Number(t.target.value)
 			}}></label>
-          <ul>${e.ingredients.map((n) => R`<li>${Math.round(n.amount * t / e.servings * 100) / 100} ${n.unit} ${n.name}</li>`)}</ul>
+          ${e.ingredients.map((t, i) => R`<label><input type="checkbox" .checked=${r.has(i)}
+            @change=${() => {
+				let t = new Set(r);
+				t.has(i) ? t.delete(i) : t.add(i), this.selectedIngredients = {
+					...this.selectedIngredients,
+					[e.id]: t
+				};
+			}}>
+            ${Math.round(t.amount * n / e.servings * 100) / 100} ${t.unit} ${t.name}</label>`)}
+          <select id=${`list-${e.id}`}>${t.map((e) => R`<option value=${e.id}>${e.name}</option>`)}</select>
+          <button @click=${() => {
+				let t = this.renderRoot.querySelector(`#list-${e.id}`);
+				this._hass.callWS({
+					type: "family_organizer/recipe_to_groceries",
+					recipe_id: e.id,
+					servings: n,
+					list_id: t.value,
+					selected: [...r]
+				});
+			}}>Add selected to list</button>
           <button @click=${() => this.removeItem("recipes", e)}>Delete</button></article>`;
-		})}</div>`)}</section>`;
+		})}</div></section>`;
 	}
-	renderSettings() {
-		let e = this.data.people.items ?? [], t = this.data.settings;
-		return R`<section><h2>Settings</h2>
-      <h3>People</h3><form @submit=${(e) => {
+	settings() {
+		return R`<section><h2>Settings</h2><h3>People</h3><form @submit=${(e) => {
 			let t = this.form(e);
 			this.create("people", {
 				name: t.name,
 				color: t.color,
-				ha_user_id: t.ha_user_id
+				ha_user_id: t.ha_user_id,
+				avatar_url: t.avatar_url,
+				role: t.role,
+				shared: !0
 			});
 		}}>
-        <input name="name" placeholder="Name" required><input name="color" type="color" value="#3b82f6"><input name="ha_user_id" placeholder="Home Assistant user ID"><button>Add</button></form>
-      <div class="cards">${e.map((e) => R`<article style="border-left-color:${e.color}"><b>${e.name}</b><small>${e.ha_user_id || "Not linked"}</small>
-        <select @change=${(n) => {
-			let r = {
-				...t.permissions ?? {},
-				[e.ha_user_id]: { "*": n.target.value }
-			};
-			this.saveSettings({ permissions: r });
-		}}><option>view</option><option>edit</option><option>admin</option></select><button @click=${() => this.removeItem("people", e)}>×</button></article>`)}</div>
-      <h3>Sync & appearance</h3><form @submit=${(e) => {
-			let t = this.form(e);
-			this.saveSettings({
-				theme: t.theme,
-				sync_interval: Number(t.sync_interval)
-			});
+      <input name="name" placeholder="Name" required><input name="color" type="color" value="#3b82f6"><input name="ha_user_id" placeholder="HA user ID">
+      <input name="avatar_url" placeholder="Avatar URL"><select name="role"><option>member</option><option>child</option><option>parent</option></select><button>Add</button></form>
+      <div class="cards">${(this.data.people.items || []).map((e) => R`<article>${this.avatar(e.id)}<b>${e.name}</b><small>${e.role || "member"}</small><button @click=${() => this.removeItem("people", e)}>×</button></article>`)}</div>
+      <h3>Appearance</h3><select .value=${this.theme} @change=${(e) => {
+			this.theme = e.target.value, localStorage.setItem("family-organizer-theme", this.theme), this._hass.callWS({
+				type: "family_organizer/settings",
+				settings: { theme: this.theme }
+			}).catch(() => void 0);
 		}}>
-        <select name="theme"><option ?selected=${t.theme === "auto"}>auto</option><option ?selected=${t.theme === "light"}>light</option><option ?selected=${t.theme === "dark"}>dark</option></select>
-        <label>Sync interval <input name="sync_interval" type="number" min="5" .value=${String(t.sync_interval ?? 30)}> minutes</label><button>Save</button>
-      </form>
-    </section>`;
-	}
-	async saveSettings(e) {
-		await this._hass.callWS({
-			type: "family_organizer/settings",
-			settings: e
-		}), await this.load();
+        <option value="auto">Follow Home Assistant</option><option value="light">Light</option><option value="dark">Dark</option></select></section>`;
 	}
 	static {
 		this.styles = o`
-    :host { display:block; min-height:100vh; color:var(--primary-text-color); background:var(--primary-background-color); font:14px system-ui; }
-    header { position:sticky; top:0; z-index:2; padding:12px 24px; background:var(--card-background-color,#fff); box-shadow:0 1px 5px #0002; }
-    h1 { margin:0 0 10px; } nav,.toolbar,form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    button,input,select { border:1px solid var(--divider-color,#ccc); border-radius:8px; padding:8px; background:var(--card-background-color,#fff); color:inherit; }
-    button { cursor:pointer; } button.active { background:var(--primary-color,#03a9f4); color:#fff; }
-    main { max-width:1200px; margin:auto; padding:20px; } section { position:relative; }
-    .calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin:15px 320px 15px 0; }
-    .calendar.day { grid-template-columns:1fr; } .day { min-height:85px; text-align:left; display:flex; flex-direction:column; gap:3px; }
-    .day span { background:color-mix(in srgb,var(--primary-color,#03a9f4) 20%,transparent); border-radius:4px; padding:3px; }
-    aside { position:absolute; top:55px; right:0; width:290px; } article { background:var(--card-background-color,#fff); border-radius:10px; padding:12px; display:flex; gap:10px; align-items:center; }
-    aside article,.cards article { margin:8px 0; } article small,article span { flex:1; display:block; }
-    .week,.leaderboard { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; } .week article { flex-direction:column; align-items:stretch; }
-    .leaderboard { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin-bottom:18px; } .cards article { border-left:4px solid var(--primary-color,#03a9f4); }
-    .error { color:var(--error-color,#d32f2f); } ul { flex:1; } @media(max-width:800px) { .calendar { margin-right:0; } aside { position:static; width:auto; } .week { grid-template-columns:1fr; } }
+    :host{display:block;min-height:100vh;color:var(--primary-text-color);background:var(--primary-background-color);font:14px system-ui}
+    [data-theme="dark"]{color:#eee;background:#111;--card-background-color:#242424}[data-theme="light"]{color:#222;background:#f5f5f5;--card-background-color:#fff}
+    header{position:sticky;top:0;z-index:2;padding:12px 24px;background:var(--card-background-color,#fff);box-shadow:0 1px 5px #0002}
+    h1{margin:0 0 10px}nav,.toolbar,form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}nav{overflow-x:auto;flex-wrap:nowrap;scroll-snap-type:x mandatory}
+    button,input,select{border:1px solid var(--divider-color,#bbb);border-radius:8px;padding:8px;background:var(--card-background-color,#fff);color:inherit}
+    button{cursor:pointer;scroll-snap-align:start}button.active{background:var(--primary-color,#03a9f4);color:#fff}main{max-width:1200px;margin:auto;padding:20px}
+    .horizontal{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:8px 0;touch-action:pan-x}.horizontal>article,.horizontal>.day{min-width:180px;scroll-snap-align:start}
+    .calendar .day{min-height:100px;text-align:left;display:flex;flex-direction:column}.day span{background:#03a9f433;margin:2px;padding:3px}
+    article{background:var(--card-background-color,#fff);border-radius:10px;padding:12px;display:flex;gap:10px;align-items:center}.cards article{margin:8px 0}.recipe{align-items:flex-start;flex-wrap:wrap}
+    article small{flex:1}.leaderboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:12px 0}.avatar{width:32px;height:32px;border-radius:50%;object-fit:cover}
+    .avatar.fallback{display:grid;place-items:center;background:var(--primary-color,#03a9f4);color:#fff}.meals article{display:block}.meals form{flex-wrap:nowrap}.meals input{min-width:0}.error{color:var(--error-color,#d32f2f)}
+    @media(max-width:600px){main{padding:10px}header{padding:10px}.cards article{overflow-x:auto}input{max-width:150px}}
   `;
 	}
 };
-Z([X()], $.prototype, "page", void 0), Z([X()], $.prototype, "calendarView", void 0), Z([X()], $.prototype, "selectedDay", void 0), Z([X()], $.prototype, "data", void 0), Z([X()], $.prototype, "error", void 0), Z([X()], $.prototype, "recipeServings", void 0), $ = Z([ge("family-organizer-panel")], $);
+Z([X()], $.prototype, "page", void 0), Z([X()], $.prototype, "data", void 0), Z([X()], $.prototype, "selectedDay", void 0), Z([X()], $.prototype, "calendarView", void 0), Z([X()], $.prototype, "listId", void 0), Z([X()], $.prototype, "scorePeriod", void 0), Z([X()], $.prototype, "servings", void 0), Z([X()], $.prototype, "selectedIngredients", void 0), Z([X()], $.prototype, "theme", void 0), Z([X()], $.prototype, "error", void 0), $ = Z([ge("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };
-
-//# sourceMappingURL=family-organizer.js.map

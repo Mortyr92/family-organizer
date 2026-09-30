@@ -1,58 +1,94 @@
 # Family Organizer
 
-A local-first Home Assistant integration and responsive dashboard for a family's
-calendar, groceries, seven-day meal plan, chores competition, and recipes.
+A local-first Home Assistant integration and touch-friendly family dashboard.
+It provides five complete pages: calendar, groceries and meal planning, chores,
+recipes, and administration.
 
-## Features
+## Highlights
 
-- Month, week, and day calendar with recurring events, ICS/CalDAV import, and a day sidebar
-- Grocery todo entity and seven-day dinner planner
-- Scheduled chores, completion history, points, and leaderboard sensor
-- Categorized recipes with serving scaling
-- People linked to Home Assistant users and per-area `view`, `edit`, or `admin` permissions
-- Home Assistant calendar, sensor, and todo entities; websocket live updates; automation services
-- Versioned, migrated Home Assistant stores; English and Dutch setup translations
+- Month/week/day calendar, RFC 5545 recurrence, and timezone-aware ICS/CalDAV sync
+- Multiple grocery lists with store and assignee routing, merging, and todo entities
+- Breakfast/lunch/dinner planning across a horizontally swipeable seven-day view
+- Recipe serving scaling and selectable ingredients routed to any grocery list
+- Scheduled chores and week/month competitions with per-person avatars
+- Home Assistant users mapped to guest, child, member, parent, or admin capabilities
+- Per-area permissions plus private/shared and creator/assignee ownership checks
+- Live websocket updates after UI, service, todo-entity, and calendar-sync changes
+- Home Assistant theme following or a persistent local light/dark preference
 
-## Installation
+## Screens
+
+![Family Organizer calendar dashboard](docs/family-organizer-calendar.png)
+
+The responsive panel uses the Home Assistant theme and card variables. Desktop
+views show dense calendars and leaderboards; narrow screens turn navigation,
+calendar days, and meal slots into native horizontal scroll/swipe tracks.
+
+| Calendar | Groceries and meals | Chores |
+| --- | --- | --- |
+| Month/week/day switcher, recurrence, day details | List/store routing and three daily meal slots | Scheduling and week/month ranking |
+
+| Recipes | Settings |
+| --- | --- |
+| Ingredient selection, scaling, and list routing | People, avatars, roles, and theme |
+
+## Install
 
 ### HACS
 
-1. Add this repository as a HACS **Integration** custom repository.
-2. Install **Family Organizer** and restart Home Assistant.
-3. Go to **Settings → Devices & services → Add integration → Family Organizer**.
+Add `https://github.com/Mortyr92/family-organizer` as a custom **Integration**
+repository, install **Family Organizer**, restart Home Assistant, then use
+**Settings → Devices & services → Add integration**.
 
 ### Manual
 
-Copy `custom_components/family_organizer` into Home Assistant's
-`config/custom_components` directory, restart, and add the integration.
+Copy `custom_components/family_organizer` into the matching directory under the
+Home Assistant configuration directory, restart, and add the integration.
 
-The **Family Organizer** item then appears in the sidebar. An ICS URL can be
-public, or use the username/password fields for HTTP Basic authentication.
-Credentials are stored in config-entry data and never exposed through the
-websocket API. The calendar sync interval is configurable from integration
-options (minimum five minutes).
+## Configuration and calendar providers
+
+Calendar connection data is optional. Choose ICS for a subscription URL or
+CalDAV for a calendar collection URL. The polling interval is configurable
+(minimum five minutes). Usernames and app-specific passwords are retained only
+in Home Assistant config-entry data and are never returned by
+the websocket API.
+
+### Apple iCloud
+
+1. Create an app-specific password at `account.apple.com`.
+2. Use the Apple ID as username and that app-specific password as password.
+3. Supply the calendar's CalDAV collection URL. Do not use the normal Apple ID password.
+
+### Proton Calendar
+
+Proton does not expose a general remote CalDAV endpoint. Export or publish a
+calendar in Proton Calendar and configure its read-only ICS subscription URL.
+Treat a published URL as a secret because anyone holding it can read the calendar.
+
+## Roles and privacy
+
+Guests can see shared data. Children can create and modify their own calendar
+and grocery records and complete assigned chores. Members additionally manage
+their own recipes and shared completions. Parents can schedule and administer
+family content. Home Assistant administrators can change roles and permissions.
+Private records are returned only to their creator, assignee, or an administrator.
 
 ## Services
 
-- `family_organizer.add_grocery` (`name`, optional `quantity`)
-- `family_organizer.complete_chore` (`chore_id`)
-- `family_organizer.sync_calendar`
+- `family_organizer.add_grocery`: name, quantity, list, store, and assignee
+- `family_organizer.complete_chore`: chore ID
+- `family_organizer.sync_calendar`: request an immediate sync
+
+Service calls enforce the same user permissions as panel mutations.
 
 ## Development
 
-Python business logic is tested with `pytest -q`. Build and type-check the
-frontend with:
-
 ```bash
+python -m pip install caldav==3.3.1 icalendar==7.3.0 pytest==9.1.1
+pytest -q
 ./scripts/build_frontend.sh
 ```
 
-The generated `custom_components/family_organizer/frontend/family-organizer.js`
-is intentionally committed so installations do not need Node.js.
-
-## Notes
-
-The built-in recurrence expander supports daily, weekly, and approximate
-monthly intervals plus `COUNT`. Imported events remain read-only in practice
-and are replaced on every sync. Back up Home Assistant's `.storage` directory
-as part of your normal backup routine.
+The generated
+`custom_components/family_organizer/panel/family-organizer-panel.js` is committed,
+so production installations do not require Node.js.

@@ -6,7 +6,7 @@ from datetime import date
 from homeassistant.components.sensor import SensorEntity
 
 from .const import DOMAIN
-from .logic import points_by_person
+from .logic import leaderboard
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -37,9 +37,13 @@ class ChorePointsSensor(SensorEntity):
 
     @property
     def native_value(self):
-        return sum(points_by_person(self.stores["chores"].data["items"], date.today()).values())
+        return sum(leaderboard(self.stores["chores"].data["items"], "week", date.today()).values())
 
     @property
     def extra_state_attributes(self):
-        return {"people": points_by_person(self.stores["chores"].data["items"], date.today())}
-
+        chores = self.stores["chores"].data["items"]
+        return {
+            "period": "week",
+            "people": leaderboard(chores, "week", date.today()),
+            "month": leaderboard(chores, "month", date.today()),
+        }

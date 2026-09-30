@@ -3,9 +3,10 @@
   "name": "Family Organizer",
   "codeowners": ["@Mortyr92"],
   "config_flow": true,
-  "documentation": "https://github.com/family-organizer/family-organizer",
+  "documentation": "https://github.com/Mortyr92/family-organizer",
   "integration_type": "service",
-  "iot_class": "cloud_polling",
-  "requirements": [],
+  "iot_class": "local_polling",
+  "dependencies": ["http", "panel_custom"],
+  "requirements": ["caldav==3.3.1", "icalendar==7.3.0"],
   "version": "0.1.0"
 }

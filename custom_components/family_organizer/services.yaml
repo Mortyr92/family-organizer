@@ -8,6 +8,16 @@ add_grocery:
       default: 1
       selector:
         number:
+    list_id:
+      default: default
+      selector:
+        text:
+    store:
+      selector:
+        text:
+    assignee_id:
+      selector:
+        text:
 complete_chore:
   fields:
     chore_id:
@@ -15,4 +25,3 @@ complete_chore:
       selector:
         text:
 sync_calendar:
-

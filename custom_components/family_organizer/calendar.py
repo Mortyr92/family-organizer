@@ -34,7 +34,9 @@ class FamilyCalendar(CalendarEntity):
                 start = parse_datetime(item["start"])
                 end = parse_datetime(item["end"])
                 duration = end - start
-                for occurrence in expand_occurrences(start, item.get("recurrence"), end_date):
+                for occurrence in expand_occurrences(
+                    start, item.get("recurrence"), end_date, item.get("exdates")
+                ):
                     if occurrence + duration >= start_date:
                         output.append(CalendarEvent(
                             start=occurrence.date() if item.get("all_day") else occurrence,

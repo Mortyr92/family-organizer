@@ -1,22 +1,27 @@
-"""Small iCalendar recurrence expander for common family schedules."""
+"""RFC 5545 recurrence expansion."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
+
+from dateutil.rrule import rrulestr
 
 
-def expand_occurrences(start: datetime, rule: str | None, until: datetime) -> list[datetime]:
+def expand_occurrences(
+    start: datetime,
+    rule: str | None,
+    until: datetime,
+    exdates: list[str] | None = None,
+) -> list[datetime]:
+    """Expand an RRULE, including BYDAY/month boundaries and exclusions."""
     if not rule:
         return [start] if start <= until else []
-    parts = dict(part.split("=", 1) for part in rule.upper().split(";") if "=" in part)
-    frequency = parts.get("FREQ", "DAILY")
-    interval = max(1, int(parts.get("INTERVAL", "1")))
-    count = int(parts.get("COUNT", "1000"))
-    delta = timedelta(days=interval * (7 if frequency == "WEEKLY" else 1))
-    if frequency == "MONTHLY":
-        delta = timedelta(days=30 * interval)
-    values, current = [], start
-    while current <= until and len(values) < count:
-        values.append(current)
-        current += delta
-    return values
-
+    if until.tzinfo is None and start.tzinfo is not None:
+        until = until.replace(tzinfo=start.tzinfo)
+    elif until.tzinfo is not None and start.tzinfo is None:
+        start = start.replace(tzinfo=until.tzinfo)
+    excluded = {
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        for value in (exdates or [])
+    }
+    values = rrulestr(rule, dtstart=start).between(start, until, inc=True)
+    return [value for value in values if value not in excluded]
