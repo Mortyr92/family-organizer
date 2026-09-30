@@ -94,7 +94,7 @@ Service calls enforce the same user permissions as panel mutations.
 ## Development
 
 ```bash
-python -m pip install caldav==3.3.1 icalendar==7.3.0 pytest==9.1.1
+python -m pip install caldav==3.3.0a1 icalendar==6.3.1 pytest==9.1.1
 pytest -q
 cd frontend
 npm install && npm run build
