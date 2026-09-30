@@ -1,0 +1,26 @@
+{
+  "title": "Gezinsplanner",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Gezinsplanner instellen",
+        "description": "Koppel optioneel een ICS- of CalDAV-agenda-URL.",
+        "data": {
+          "calendar_type": "Agendatype",
+          "calendar_url": "Agenda-URL",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "abort": { "already_configured": "Gezinsplanner is al ingesteld." }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opties voor Gezinsplanner",
+        "data": { "sync_interval": "Synchronisatie-interval (minuten)" }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+add_grocery:
+  fields:
+    name:
+      required: true
+      selector:
+        text:
+    quantity:
+      default: 1
+      selector:
+        number:
+complete_chore:
+  fields:
+    chore_id:
+      required: true
+      selector:
+        text:
+sync_calendar:
+
