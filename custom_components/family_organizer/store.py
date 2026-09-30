@@ -19,6 +19,21 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
         data = {}
     result = deepcopy(data)
     result.setdefault("items", [])
+    if name == "people":
+        for person in result["items"]:
+            person.setdefault("user_id", person.pop("ha_user_id", None))
+            person.setdefault("profile_picture", person.pop("avatar_url", None))
+            person.setdefault("permissions", {})
+            role = person.get("role")
+            person["role"] = {
+                "admin": "parent_admin", "member": "parent", "guest": "child"
+            }.get(role, role if role in ("parent_admin", "parent", "child") else "child")
+            if not person.get("initials"):
+                person["initials"] = "".join(
+                    part[0] for part in person.get("name", "").split() if part
+                )[:2].upper()
+    if name == "calendar":
+        result.setdefault("sources", [])
     if name == "groceries":
         result.setdefault("lists", [{"id": "default", "name": "Groceries", "store": "", "shared": True}])
         for item in result["items"]:
@@ -27,6 +42,16 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
         result.setdefault("meal_slots", result["meal_plans"])
     if name == "chores":
         result.setdefault("completions", [])
+        result.setdefault("point_adjustments", [])
+        for chore in result["items"]:
+            if "assignee_ids" not in chore:
+                chore["assignee_ids"] = [chore["assignee_id"]] if chore.get("assignee_id") else []
+    if name == "recipes":
+        result.setdefault("categories", [])
+        for recipe in result["items"]:
+            recipe.setdefault("category_ids", [recipe["category"]] if recipe.get("category") else [])
+            recipe.setdefault("tags", [])
+            recipe.setdefault("steps", recipe.get("instructions", []))
     if name == "settings":
         result = {**DEFAULT_SETTINGS, **result}
         result.setdefault("items", [])

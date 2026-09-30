@@ -1,4 +1,5 @@
-add_grocery:
+add_grocery_item:
+  name: Add grocery item
   fields:
     name:
       required: true
@@ -8,6 +9,15 @@ add_grocery:
       default: 1
       selector:
         number:
+    unit:
+      selector:
+        text:
+    category:
+      selector:
+        text:
+    notes:
+      selector:
+        text:
     list_id:
       default: default
       selector:
@@ -16,6 +26,40 @@ add_grocery:
       selector:
         text:
     assignee_id:
+      selector:
+        text:
+add_grocery:
+  name: Add grocery item (legacy alias)
+  fields:
+    name:
+      required: true
+      selector:
+        text:
+add_event:
+  name: Add calendar event
+  fields:
+    title:
+      required: true
+      selector:
+        text:
+    start:
+      required: true
+      selector:
+        datetime:
+    end:
+      required: true
+      selector:
+        datetime:
+    all_day:
+      selector:
+        boolean:
+    person_ids:
+      selector:
+        object:
+    description:
+      selector:
+        text:
+    location:
       selector:
         text:
 complete_chore:

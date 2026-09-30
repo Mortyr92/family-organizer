@@ -44,18 +44,21 @@ class CalendarSyncCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(minutes=max(5, int(interval))),
         )
 
+    def _config(self, key: str, default=""):
+        return self.entry.options.get(key, self.entry.data.get(key, default))
+
     async def _payloads(self, url: str, use_caldav: bool) -> list[str]:
         if use_caldav:
             return await self.hass.async_add_executor_job(
                 _load_caldav,
                 url,
-                self.entry.data.get("username", ""),
-                self.entry.data.get("password", ""),
+                self._config("username"),
+                self._config("password"),
             )
         auth = None
-        if self.entry.data.get("username"):
+        if self._config("username"):
             auth = BasicAuth(
-                self.entry.data["username"], self.entry.data.get("password", "")
+                self._config("username"), self._config("password")
             )
         async with asyncio.timeout(30):
             async with async_get_clientsession(self.hass).get(url, auth=auth) as response:
@@ -63,10 +66,10 @@ class CalendarSyncCoordinator(DataUpdateCoordinator):
                 return [await response.text()]
 
     async def _async_update_data(self):
-        url = self.entry.data.get("calendar_url")
+        url = self._config("calendar_url")
         if not url:
             return []
-        calendar_type = self.entry.data.get("calendar_type", "ics")
+        calendar_type = self._config("calendar_type", "ics")
         use_caldav = calendar_type == "caldav" or (
             calendar_type == "auto" and not url.lower().split("?")[0].endswith(".ics")
         )

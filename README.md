@@ -11,14 +11,17 @@ recipes, and administration.
 - Breakfast/lunch/dinner planning across a horizontally swipeable seven-day view
 - Recipe serving scaling and selectable ingredients routed to any grocery list
 - Scheduled chores and week/month competitions with per-person avatars
-- Home Assistant users mapped to guest, child, member, parent, or admin capabilities
-- Per-area permissions plus private/shared and creator/assignee ownership checks
+- Home Assistant users mapped to `parent_admin`, `parent`, or `child`
+- Per-person capability overrides plus creator/assignee ownership checks
 - Live websocket updates after UI, service, todo-entity, and calendar-sync changes
 - Home Assistant theme following or a persistent local light/dark preference
 
 ## Screens
 
 ![Family Organizer calendar dashboard](docs/family-organizer-calendar.png)
+
+> Screenshot placeholders: groceries/meal planning, chores leaderboard, recipes,
+> and permission settings will be added as those screens are finalized.
 
 The responsive panel uses the Home Assistant theme and card variables. Desktop
 views show dense calendars and leaderboards; narrow screens turn navigation,
@@ -47,11 +50,15 @@ Home Assistant configuration directory, restart, and add the integration.
 
 ## Configuration and calendar providers
 
-Calendar connection data is optional. Choose ICS for a subscription URL or
-CalDAV for a calendar collection URL. The polling interval is configurable
-(minimum five minutes). Usernames and app-specific passwords are retained only
-in Home Assistant config-entry data and are never returned by
-the websocket API.
+Calendar connection data is optional. In **Settings → Devices & services →
+Family Organizer → Configure**, choose ICS or CalDAV and set the URL, optional
+username/password, and polling interval (5–1440 minutes). Credentials stay in
+the Home Assistant config entry and are never returned over websocket.
+
+Dashboard settings cover day-overview side/collapse, week start, 12/24-hour
+time, default calendar view and grocery list, meal-slot names, managed stores,
+week/month competition default, language, people, exact roles, and all granular
+capability overrides.
 
 ### Apple iCloud
 
@@ -61,21 +68,24 @@ the websocket API.
 
 ### Proton Calendar
 
-Proton does not expose a general remote CalDAV endpoint. Export or publish a
-calendar in Proton Calendar and configure its read-only ICS subscription URL.
-Treat a published URL as a secret because anyone holding it can read the calendar.
+Proton does not provide a public CalDAV endpoint. Use Proton Calendar through
+the locally running Proton Mail Bridge when that Bridge/version exposes a
+compatible local endpoint, or export/publish the calendar and configure its
+read-only ICS URL. Treat a published URL as a secret.
 
 ## Roles and privacy
 
-Guests can see shared data. Children can create and modify their own calendar
-and grocery records and complete assigned chores. Members additionally manage
-their own recipes and shared completions. Parents can schedule and administer
-family content. Home Assistant administrators can change roles and permissions.
-Private records are returned only to their creator, assignee, or an administrator.
+Users must be linked through `Person.user_id`; legacy `ha_user_id` records are
+migrated. Unlinked non-admin users are denied. Home Assistant admins always act
+as `parent_admin`. Role presets initialize the exact capability matrix, while
+explicit per-person checkbox overrides are authoritative. Own-calendar and
+assigned-chore operations enforce the linked person ID.
 
 ## Services
 
-- `family_organizer.add_grocery`: name, quantity, list, store, and assignee
+- `family_organizer.add_grocery_item`: name, quantity/unit, notes, list, store, and assignee
+- `family_organizer.add_grocery`: legacy alias
+- `family_organizer.add_event`: title, start/end, all-day flag, people, and details
 - `family_organizer.complete_chore`: chore ID
 - `family_organizer.sync_calendar`: request an immediate sync
 
@@ -86,7 +96,9 @@ Service calls enforce the same user permissions as panel mutations.
 ```bash
 python -m pip install caldav==3.3.1 icalendar==7.3.0 pytest==9.1.1
 pytest -q
-./scripts/build_frontend.sh
+cd frontend
+npm install && npm run build
+npm run typecheck
 ```
 
 The generated

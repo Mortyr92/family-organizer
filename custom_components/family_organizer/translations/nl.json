@@ -19,7 +19,13 @@
     "step": {
       "init": {
         "title": "Opties voor Gezinsplanner",
-        "data": { "sync_interval": "Synchronisatie-interval (minuten)" }
+        "data": {
+          "calendar_type": "Agendatype",
+          "calendar_url": "Agenda-URL",
+          "username": "Gebruikersnaam",
+          "password": "Wachtwoord",
+          "sync_interval": "Synchronisatie-interval (minuten)"
+        }
       }
     }
   }

@@ -1,4 +1,4 @@
-"""Serializable domain models."""
+"""Serializable Family Organizer domain models."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -18,26 +18,44 @@ class Model:
 
     @classmethod
     def from_dict(cls: type[T], data: dict[str, Any]) -> T:
-        allowed = cls.__dataclass_fields__
-        return cls(**{key: value for key, value in data.items() if key in allowed})
+        return cls(**{key: value for key, value in data.items() if key in cls.__dataclass_fields__})
 
 
 @dataclass
 class Person(Model):
     name: str = ""
+    initials: str = ""
+    profile_picture: str | None = None
     color: str = "#3b82f6"
-    ha_user_id: str | None = None
-    avatar_url: str | None = None
-    role: str = "member"
+    role: str = "child"
+    user_id: str | None = None
+    permissions: dict[str, bool] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.initials:
+            self.initials = "".join(part[0] for part in self.name.split() if part)[:2].upper()
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Person":
+        migrated = dict(data)
+        migrated.setdefault("user_id", migrated.get("ha_user_id"))
+        migrated.setdefault("profile_picture", migrated.get("avatar_url"))
+        return super().from_dict(migrated)
+
+    @property
+    def ha_user_id(self) -> str | None:
+        return self.user_id
+
+    @property
+    def avatar_url(self) -> str | None:
+        return self.profile_picture
+
+
+FamilyMember = Person
 
 
 @dataclass
-class FamilyMember(Person):
-    """Explicit family-member model name used by storage consumers."""
-
-
-@dataclass
-class CalendarItem(Model):
+class CalendarEvent(Model):
     title: str = ""
     start: str = ""
     end: str = ""
@@ -46,14 +64,23 @@ class CalendarItem(Model):
     description: str = ""
     location: str = ""
     recurrence: str | None = None
+    exdates: list[str] = field(default_factory=list)
+    source_id: str | None = None
     external_id: str | None = None
     creator_id: str | None = None
     shared: bool = True
 
 
+CalendarItem = CalendarEvent
+FamilyCalendarEvent = CalendarEvent
+
+
 @dataclass
-class FamilyCalendarEvent(CalendarItem):
-    """A locally managed or synchronized family event."""
+class CalendarSource(Model):
+    name: str = ""
+    source_type: str = "ics"
+    enabled: bool = True
+    color: str = "#64748b"
 
 
 @dataclass
@@ -71,6 +98,7 @@ class GroceryItem(Model):
     unit: str = ""
     checked: bool = False
     category: str = "Other"
+    notes: str = ""
     list_id: str = "default"
     store: str = ""
     assignee_id: str | None = None
@@ -79,30 +107,43 @@ class GroceryItem(Model):
 
 
 @dataclass
-class MealPlanSlot(Model):
+class MealPlanEntry(Model):
     day: str = field(default_factory=lambda: date.today().isoformat())
-    meal: str = "dinner"
+    slot: str = "dinner"
     recipe_id: str | None = None
     title: str = ""
     servings: float = 1
-    slot: str = "dinner"
     creator_id: str | None = None
 
 
-# Backwards-compatible name used by existing automations.
-MealPlan = MealPlanSlot
+MealPlanSlot = MealPlanEntry
+MealPlan = MealPlanEntry
 
 
 @dataclass
 class Chore(Model):
     title: str = ""
-    assignee_id: str | None = None
+    description: str = ""
+    assignee_ids: list[str] = field(default_factory=list)
+    rotation_index: int = 0
+    rotate: bool = False
     points: int = 1
-    schedule: str = ""
-    completed: list[str] = field(default_factory=list)
+    schedule: str = "once"
+    weekdays: list[int] = field(default_factory=list)
+    month_day: int | None = None
+    interval_days: int | None = None
+    due_date: str | None = None
+    due_time: str | None = None
+    icon: str = "mdi:check-circle-outline"
     created: str = field(default_factory=lambda: date.today().isoformat())
     creator_id: str | None = None
     shared: bool = True
+
+    @property
+    def assignee_id(self) -> str | None:
+        if not self.assignee_ids:
+            return None
+        return self.assignee_ids[self.rotation_index % len(self.assignee_ids)]
 
 
 @dataclass
@@ -110,26 +151,58 @@ class ChoreCompletion(Model):
     chore_id: str = ""
     person_id: str | None = None
     completed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    points: int = 0
+    note: str = ""
+    adjustment: bool = False
 
 
 @dataclass
-class RecipeIngredient(Model):
+class RecipeCategory(Model):
+    name: str = ""
+    parent_id: str | None = None
+    color: str = "#64748b"
+    icon: str = "mdi:folder"
+
+
+@dataclass
+class Ingredient(Model):
     name: str = ""
     amount: float = 1
     unit: str = ""
     category: str = "Other"
+    store: str = ""
+    notes: str = ""
     selected: bool = True
+
+
+RecipeIngredient = Ingredient
 
 
 @dataclass
 class Recipe(Model):
     title: str = ""
-    category: str = "Other"
+    category_ids: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    image: str | None = None
+    prep_time: int = 0
+    cook_time: int = 0
     servings: float = 4
     ingredients: list[dict[str, Any]] = field(default_factory=list)
-    instructions: list[str] = field(default_factory=list)
+    steps: list[str] = field(default_factory=list)
     creator_id: str | None = None
     shared: bool = True
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Recipe":
+        migrated = dict(data)
+        if not migrated.get("category_ids") and migrated.get("category"):
+            migrated["category_ids"] = [migrated["category"]]
+        migrated.setdefault("steps", migrated.get("instructions", []))
+        return super().from_dict(migrated)
+
+    @property
+    def instructions(self) -> list[str]:
+        return self.steps
 
     def scaled_ingredients(self, servings: float) -> list[dict[str, Any]]:
         factor = servings / self.servings if self.servings else 1
@@ -140,11 +213,22 @@ class Recipe(Model):
 
 
 @dataclass
-class OrganizerSettings(Model):
+class Settings(Model):
     theme: str = "auto"
+    overview_position: str = "left"
+    overview_collapsed: bool = False
+    week_start: str = "monday"
+    time_format: str = "24"
+    default_calendar_view: str = "month"
+    default_grocery_list_id: str = "default"
+    meal_slots: list[str] = field(default_factory=lambda: ["breakfast", "lunch", "dinner"])
+    competition_default: str = "week"
+    language: str = "en"
+    stores: list[str] = field(default_factory=list)
     sync_interval: int = 30
-    permissions: dict[str, Any] = field(default_factory=dict)
-    roles: dict[str, str] = field(default_factory=dict)
+
+
+OrganizerSettings = Settings
 
 
 def parse_datetime(value: str) -> datetime:

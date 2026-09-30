@@ -19,7 +19,13 @@
     "step": {
       "init": {
         "title": "Family Organizer options",
-        "data": { "sync_interval": "Calendar sync interval (minutes)" }
+        "data": {
+          "calendar_type": "Calendar type",
+          "calendar_url": "Calendar URL",
+          "username": "Username",
+          "password": "Password",
+          "sync_interval": "Calendar sync interval (minutes)"
+        }
       }
     }
   }

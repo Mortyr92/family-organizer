@@ -33,12 +33,19 @@ class FamilyOrganizerOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
+        current = {**self.config_entry.data, **self.config_entry.options}
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
                 vol.Optional(
+                    "calendar_type", default=current.get("calendar_type", "ics")
+                ): vol.In(["ics", "caldav"]),
+                vol.Optional("calendar_url", default=current.get("calendar_url", "")): str,
+                vol.Optional("username", default=current.get("username", "")): str,
+                vol.Optional("password", default=current.get("password", "")): str,
+                vol.Optional(
                     "sync_interval",
-                    default=self.config_entry.options.get("sync_interval", 30),
+                    default=current.get("sync_interval", 30),
                 ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440))
             }),
         )
