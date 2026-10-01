@@ -59,15 +59,21 @@ async def async_unload_entry(hass, entry):
 
 async def _async_register_panel(hass):
     bundle = Path(__file__).parent / "panel" / "family-organizer-panel.js"
-    # Home Assistant 2024.6 uses the synchronous registration API.
-    hass.http.register_static_path(
-        "/family_organizer/family-organizer-panel.js", str(bundle), True
-    )
+    url = "/family_organizer/family-organizer-panel.js"
+    try:
+        from homeassistant.components.http import StaticPathConfig
+
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(url, str(bundle), True)]
+        )
+    except ImportError:
+        # Fallback for Home Assistant < 2024.7
+        hass.http.register_static_path(url, str(bundle), True)
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="family-organizer-panel",
         frontend_url_path=PANEL_URL.strip("/"),
-        module_url="/family_organizer/family-organizer-panel.js",
+        module_url=url,
         sidebar_title=PANEL_TITLE,
         sidebar_icon=PANEL_ICON,
         require_admin=False,
