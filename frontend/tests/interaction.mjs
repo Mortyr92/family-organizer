@@ -154,6 +154,8 @@ window.runInteractionTests = async () => {
       await click(button("Edit series", query("dialog")));
       fill({ title: "Updated picnic" }); await submit();
       assert(data.calendar.items.some(e => e.title === "Updated picnic"), "Edit must update series");
+      const editRequest = requests.findLast(r => r.type === "family_organizer/update" && r.resource === "calendar");
+      assert(!["occurrence_start", "occurrence_end", "unsupported_recurrence", "recurrence_id"].some(key => key in editRequest.item), "Calendar edits must not persist occurrence presentation or detached import fields");
       await click([...root().querySelectorAll(".event-chip")].find(b => b.textContent.includes("Updated picnic")));
       await click(button("Duplicate", query("dialog"))); await submit();
       assert(data.calendar.items.some(e => e.title === "Updated picnic (copy)"), "Duplicate must create new record");
@@ -198,6 +200,11 @@ window.runInteractionTests = async () => {
     await check("Recipe detail, decimal scaling, per-ingredient routing and recipe parsing", async () => {
       await go("recipes"); await click(query(".recipe-card"));
       assert(query(".method-panel").textContent.includes("Bring a pot"), "Recipe detail needs instructions");
+      data.recipes.items[0].ingredients.push({ amount: 2, unit: "", name: "ripe tomatoes", category: "Produce", store: "Market", notes: "Juicy", selected: false, id: "tomato-ingredient" });
+      const originalIngredients = structuredClone(data.recipes.items[0].ingredients);
+      await panel.load(); await settled();
+      await click(button("Edit recipe")); await submit();
+      assert(JSON.stringify(data.recipes.items[0].ingredients) === JSON.stringify(originalIngredients), "No-op recipe edit must preserve blank units and every ingredient metadata field");
       const servings = query('.serving-control input'); servings.value = "2"; servings.dispatchEvent(new Event("change")); await settled();
       const select = query(".ingredient-row select"); select.value = "pantry"; select.dispatchEvent(new Event("change")); await settled();
       await click(button("+ Add selected to groceries"));
@@ -209,7 +216,15 @@ window.runInteractionTests = async () => {
       assert(recipe.ingredients.length === 2 && recipe.steps.length === 2, "Recipe lines must parse as real lines");
     });
     await check("Chore completion, leaderboard and point adjustments", async () => {
-      await go("chores"); await click(button("Complete"));
+      data.chores.items[0].icon = "mdi:watering-can";
+      await panel.load(); await settled(); await go("chores");
+      assert(query(".chore-card ha-icon").icon === "mdi:watering-can", "Configured MDI icon must reach the HA icon property");
+      if (!customElements.get("ha-icon")) {
+        assert(getComputedStyle(query(".chore-icon-fallback")).display !== "none", "Unregistered fixture icon must have a visible fallback");
+        customElements.define("ha-icon", class extends HTMLElement { connectedCallback() { this.textContent = "✓"; } });
+      }
+      assert(getComputedStyle(query(".chore-icon-fallback")).display === "none", "Registered HA icon must replace the fixture fallback");
+      await click(button("Complete"));
       assert(data.chores.completions.some(c => c.chore_id === "plants"), "Chore must record completion");
       assert(query(".leaderboard").textContent.includes("5"), "Leaderboard must update");
       await click(button("+ Adjust points"));

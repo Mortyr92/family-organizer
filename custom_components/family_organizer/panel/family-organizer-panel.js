@@ -610,21 +610,34 @@ function J(e) {
 }
 function je(e) {
 	return e.split(/\r?\n/).map((e) => e.trim()).filter(Boolean).map((e) => {
-		let t = e.match(/^(\d+(?:\.\d+)?(?:\/\d+)?)(?:\s+)(\S+)(?:\s+)(.+)$/);
-		if (!t) return {
+		let t = e.match(/^(\d+(?:\.\d+)?(?:\/\d+)?)\s{2,}(.+)$/), n = e.match(/^(\d+(?:\.\d+)?(?:\/\d+)?)(?:\s+)(\S+)(?:\s+)(.+)$/), r = t || n || e.match(/^(\d+(?:\.\d+)?(?:\/\d+)?)\s+(.+)$/);
+		if (!r) return {
 			amount: 1,
 			unit: "",
 			name: e
 		};
-		let [n, r] = t[1].split("/").map(Number);
+		let [i, a] = r[1].split("/").map(Number);
 		return {
-			amount: r ? n / r : n,
-			unit: t[2],
-			name: t[3]
+			amount: a ? i / a : i,
+			unit: t || !n ? "" : n[2],
+			name: t ? t[2] : n ? n[3] : r[2]
 		};
 	});
 }
-function Me(e, t) {
+function Me(e) {
+	return e.map((e) => `${e.amount ?? 1} ${e.unit || ""} ${e.name || ""}`).join("\n");
+}
+function Ne(e, t = []) {
+	let n = je(e), r = /* @__PURE__ */ new Set();
+	return n.map((e, i) => {
+		let a = t.findIndex((t, n) => !r.has(n) && t.name === e.name && (t.unit || "") === e.unit && Number(t.amount) === e.amount);
+		return a < 0 && (a = t.findIndex((t, n) => !r.has(n) && t.name === e.name && (t.unit || "") === e.unit)), a < 0 && (a = t.findIndex((t, n) => !r.has(n) && t.name === e.name)), a < 0 && n.length === t.length && !r.has(i) && (a = i), a >= 0 && r.add(a), {
+			...a >= 0 ? t[a] : {},
+			...e
+		};
+	});
+}
+function Pe(e, t) {
 	return e === "parent_admin" || e === "parent" && ![
 		"manage_people",
 		"manage_settings",
@@ -637,7 +650,7 @@ function Me(e, t) {
 		"manage_recipes"
 	].includes(t);
 }
-function Ne(e) {
+function Fe(e) {
 	return Object.fromEntries([
 		"title",
 		"start",
@@ -653,7 +666,7 @@ function Ne(e) {
 		"shared"
 	].filter((t) => e[t] !== void 0).map((t) => [t, e[t]]));
 }
-function Pe(e) {
+function Ie(e) {
 	return {
 		...Object.fromEntries([
 			"all_day",
@@ -668,11 +681,11 @@ function Pe(e) {
 		end: e.occurrence_end || e.end
 	};
 }
-function Fe(e, t, n, r = !1) {
+function Le(e, t, n, r = !1) {
 	let i = r && n ? n : t;
 	return e.find((e) => e.id === i)?.id || e.find((e) => e.id === n)?.id || e[0]?.id || "default";
 }
-function Ie(e) {
+function Re(e) {
 	let t = e.match(/^#fo\/(calendar|groceries|chores|recipes|settings)(?:\/(.+))?$/);
 	if (t) try {
 		return {
@@ -688,7 +701,7 @@ function Ie(e) {
 		};
 	}
 }
-function Le(e, t) {
+function ze(e, t) {
 	let n = String(e.created || e.due_date || t).slice(0, 10);
 	if (t < n) return !1;
 	let r = W(t);
@@ -709,7 +722,7 @@ var Y = [
 	"FR",
 	"SA"
 ];
-function Re(e) {
+function Be(e) {
 	if (!e) return !1;
 	let t = e.replace(/^RRULE:/, "").split(";").filter(Boolean);
 	if (t.some((e) => !/^[A-Z]+=[^=]+$/.test(e))) return !0;
@@ -730,12 +743,12 @@ function Re(e) {
 		"YEARLY"
 	].includes(n.FREQ) || ["INTERVAL", "COUNT"].some((e) => n[e] && !/^[1-9]\d*$/.test(n[e])) || n.UNTIL && !/^\d{8}(T\d{6}Z?)?$/.test(n.UNTIL) || n.WKST && !Y.includes(n.WKST) || n.BYMONTH && n.BYMONTH.split(",").some((e) => !/^\d+$/.test(e) || Number(e) < 1 || Number(e) > 12) || n.BYMONTHDAY && n.BYMONTHDAY.split(",").some((e) => !/^-?\d+$/.test(e) || Number(e) === 0 || Math.abs(Number(e)) > 31) || n.BYDAY && n.BYDAY.split(",").some((e) => !/^(-?[1-5])?(SU|MO|TU|WE|TH|FR|SA)$/.test(e) || /\d/.test(e) && !["MONTHLY", "YEARLY"].includes(n.FREQ)) ? !0 : n.FREQ === "YEARLY" && !!(n.BYDAY || n.BYMONTHDAY) && !n.BYMONTH;
 }
-function ze(e, t, n) {
+function Ve(e, t, n) {
 	let r = /* @__PURE__ */ new Date(`${t}T00:00:00`), i = /* @__PURE__ */ new Date(`${G(n, 1)}T00:00:00`), a = [];
 	for (let t of e) {
 		let e = new Date(t.start?.length === 10 ? `${t.start}T00:00:00` : t.start), n = new Date(t.end?.length === 10 ? `${t.end}T00:00:00` : t.end || t.start);
 		if (!Number.isFinite(e.getTime())) continue;
-		let o = Math.max(0, n.getTime() - e.getTime()) || (t.all_day ? 864e5 : 0), s = Object.fromEntries(String(t.recurrence || "").replace(/^RRULE:/, "").split(";").filter(Boolean).map((e) => e.split("="))), c = !Re(t.recurrence), l = (s) => {
+		let o = Math.max(0, n.getTime() - e.getTime()) || (t.all_day ? 864e5 : 0), s = Object.fromEntries(String(t.recurrence || "").replace(/^RRULE:/, "").split(";").filter(Boolean).map((e) => e.split("="))), c = !Be(t.recurrence), l = (s) => {
 			let l = new Date(s.getTime() + o);
 			if (t.all_day) {
 				let t = Math.max(1, Math.round((Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) - Date.UTC(e.getFullYear(), e.getMonth(), e.getDate())) / 864e5));
@@ -775,7 +788,7 @@ function X(e, t) {
 		return t < r && (i > n || t >= n && t === i);
 	});
 }
-function Be(e) {
+function He(e) {
 	let t = [...e].sort((e, t) => e.occurrence_start.localeCompare(t.occurrence_start)), n = [], r = [], i = [], a = 0, o = () => {
 		r.forEach((e) => e.columns = i.length), n.push(...r), r = [], i = [], a = 0;
 	};
@@ -793,7 +806,7 @@ function Be(e) {
 }
 //#endregion
 //#region src/styles.ts
-var Ve = o`
+var Ue = o`
   :host { display:block; min-height:100vh; font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif; color:var(--primary-text-color,#30352e); }
   * { box-sizing:border-box; }
   .app { --bg:var(--primary-background-color,#f5f6f2); --surface:var(--card-background-color,#fff); --text:var(--primary-text-color,#30352e); --muted:var(--secondary-text-color,#6b7368); --line:var(--divider-color,#e4e7df); --soft:var(--secondary-background-color,#f2f4ee); --orange:#c45013; --orange-soft:color-mix(in srgb,var(--orange) 10%,var(--surface)); --green:#357451; --shadow:0 6px 28px #14261108; display:flex; position:relative; min-height:100vh; background:var(--bg); color:var(--text); }
@@ -996,6 +1009,9 @@ var Ve = o`
   .chore-card { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:17px 0; border-bottom:1px solid var(--line); }
   .chore-card>.row-copy { min-width:150px; }
   .chore-symbol { width:40px; height:40px; border-radius:12px; background:var(--orange-soft); color:var(--orange); display:grid; place-items:center; font-size:22px; }
+  .chore-symbol ha-icon { --mdc-icon-size:22px; width:22px; height:22px; }
+  .chore-symbol ha-icon:not(:defined) { display:none; }
+  .chore-symbol ha-icon:defined+.chore-icon-fallback { display:none; }
   .chore-card.done .chore-symbol { background:color-mix(in srgb,var(--green) 15%,var(--surface)); color:var(--green); }
   .chore-card.overdue .chore-symbol { color:var(--error-color,#b33930); }
   .assignee { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:11px; margin-top:4px; }
@@ -1158,14 +1174,14 @@ function Z(e, t, n, r) {
 }
 //#endregion
 //#region src/family-organizer-panel.ts
-var He = [
+var We = [
 	"people",
 	"calendar",
 	"groceries",
 	"chores",
 	"recipes",
 	"settings"
-], Ue = [
+], Ge = [
 	"manage_people",
 	"manage_calendar_all",
 	"manage_calendar_own",
@@ -1211,7 +1227,7 @@ var He = [
 ], $ = class extends V {
 	constructor(...e) {
 		super(...e), this.page = "calendar", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "month", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.notice = "", this.loading = !0, this.saving = !1, this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
-			let e = Ie(location.hash);
+			let e = Re(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.malformed && (this.notice = "This recipe link is malformed. Showing your cookbook instead."));
 		};
 	}
@@ -1250,7 +1266,7 @@ var He = [
 		if (typeof t == "boolean") return t;
 		if (this._hass?.user?.is_admin) return !0;
 		let n = this.me;
-		return n ? n.permissions?.[e] ?? Me(n.role, e) : !1;
+		return n ? n.permissions?.[e] ?? Pe(n.role, e) : !1;
 	}
 	canEvent(e) {
 		return this.can("manage_calendar_all") || this.can("manage_calendar_own") && (!e || (e.person_ids || []).includes(this.me?.id) || [this.me?.id, this._hass?.user?.id].includes(e.creator_id));
@@ -1286,14 +1302,14 @@ var He = [
 		if (!this._hass) return;
 		let e = ++this.loadSequence;
 		try {
-			let t = await Promise.all(He.map((e) => this._hass.callWS({
+			let t = await Promise.all(We.map((e) => this._hass.callWS({
 				type: "family_organizer/list",
 				resource: e
 			})));
 			if (e !== this.loadSequence) return;
-			this.data = Object.fromEntries(He.map((e, n) => [e, t[n]]));
+			this.data = Object.fromEntries(We.map((e, n) => [e, t[n]]));
 			let n = this.settingsData;
-			if (this.listId = Fe(this.data.groceries.lists || [], this.listId, n.default_grocery_list_id, !this.initialized), this.initialized ||= (this.calendarView = n.default_calendar_view || "month", this.scorePeriod = n.competition_default || "week", this.theme = localStorage.getItem("family-organizer-theme") || n.theme || "auto", !0), this.error = "", !this.unsubscribe && !this.subscribing && this.isConnected) {
+			if (this.listId = Le(this.data.groceries.lists || [], this.listId, n.default_grocery_list_id, !this.initialized), this.initialized ||= (this.calendarView = n.default_calendar_view || "month", this.scorePeriod = n.competition_default || "week", this.theme = localStorage.getItem("family-organizer-theme") || n.theme || "auto", !0), this.error = "", !this.unsubscribe && !this.subscribing && this.isConnected) {
 				this.subscribing = !0;
 				try {
 					let e = await this._hass.connection.subscribeMessage(() => void this.load(), { type: "family_organizer/subscribe" });
@@ -1323,7 +1339,7 @@ var He = [
 		}
 	}
 	mutate(e, t, n = "items") {
-		let r = e === "calendar" && n === "items" ? Ne(t) : t;
+		let r = e === "calendar" && n === "items" ? Fe(t) : t;
 		return this._hass.callWS({
 			type: `family_organizer/${t.id ? "update" : "create"}`,
 			resource: e,
@@ -1448,10 +1464,7 @@ var He = [
 			return;
 		} else if (i === "recipe") {
 			o = "recipes";
-			let e = je(u("ingredients")).map((e, t) => ({
-				...a.ingredients?.[t] || {},
-				...e
-			}));
+			let e = Ne(u("ingredients"), a.ingredients || []);
 			c = {
 				...c,
 				title: u("title"),
@@ -1473,7 +1486,7 @@ var He = [
 		else if (i === "person") {
 			o = "people";
 			let e = {};
-			Ue.forEach((t) => {
+			Ge.forEach((t) => {
 				let n = u(t);
 				n !== "default" && (e[t] = n === "allow");
 			}), c = {
@@ -1577,7 +1590,7 @@ var He = [
 		}}>${this.avatar(e.id)}${e.name}</button>`)}</div>`;
 	}
 	calendar() {
-		let e = Ae(this.selectedDay, this.calendarView, this.firstDay), t = ze(this.data.calendar.items || [], e[0], e.at(-1)).filter((e) => !this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e))), n = X(t, this.selectedDay), r = (this.data.calendar.items || []).filter((e) => Re(e.recurrence) && (!this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e)))), i = this.localOverview ?? this.settingsData.overview_collapsed;
+		let e = Ae(this.selectedDay, this.calendarView, this.firstDay), t = Ve(this.data.calendar.items || [], e[0], e.at(-1)).filter((e) => !this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e))), n = X(t, this.selectedDay), r = (this.data.calendar.items || []).filter((e) => Be(e.recurrence) && (!this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e)))), i = this.localOverview ?? this.settingsData.overview_collapsed;
 		return M`<section aria-label="Family calendar"><div class="section-toolbar"><div class="date-navigation"><button class="icon-button" aria-label="Previous period" @click=${() => this.selectedDay = K(this.selectedDay, this.calendarView, -1)}>‹</button><button @click=${() => this.selectedDay = U(/* @__PURE__ */ new Date())}>Today</button><button class="icon-button" aria-label="Next period" @click=${() => this.selectedDay = K(this.selectedDay, this.calendarView, 1)}>›</button><h2>${this.calendarView === "month" ? this.date(this.selectedDay, {
 			month: "long",
 			year: "numeric"
@@ -1639,7 +1652,7 @@ var He = [
 			day: e,
 			start_time: `${String(t).padStart(2, "0")}:00`,
 			end_time: `${String(Math.min(t + 1, 23)).padStart(2, "0")}:${t === 23 ? "59" : "00"}`
-		})}></button>`)}<div class="positioned-events">${Be(X(t, e).filter((e) => !e.all_day)).map(({ event: t, lane: n, columns: r }, i) => {
+		})}></button>`)}<div class="positioned-events">${He(X(t, e).filter((e) => !e.all_day)).map(({ event: t, lane: n, columns: r }, i) => {
 			let a = new Date(t.occurrence_start), o = new Date(t.occurrence_end), s = U(a) < e ? 0 : a.getHours() * 60 + a.getMinutes(), c = U(o) > e ? 1440 : o.getHours() * 60 + o.getMinutes();
 			return this.eventChip(t, `top:${s / 60 * 52}px;height:${Math.max(26, (c - s) / 60 * 52)}px;left:${n / r * 100}%;width:${100 / r}%;z-index:${i + 1}`);
 		})}</div>${e === U(r) ? M`<div class="now-line" style=${`top:${(r.getHours() + r.getMinutes() / 60) * 52}px`} aria-label="Current time"></div>` : P}</div>`)}</div></div></div>`;
@@ -1688,8 +1701,11 @@ var He = [
 			})}</article>`;
 		})}</div></section>`;
 	}
+	choreIcon(e) {
+		return M`<ha-icon .icon=${e.icon || "mdi:check-circle-outline"} aria-hidden="true"></ha-icon><span class="chore-icon-fallback" aria-hidden="true">✓</span>`;
+	}
 	chores() {
-		let e = this.data.chores.items || [], t = this.data.chores.completions || [], n = e.filter((e) => Le(e, this.selectedDay)), r = U(/* @__PURE__ */ new Date()), i = this.scorePeriod === "week" ? q(r, this.firstDay) : `${r.slice(0, 7)}-01`, a = this.scorePeriod === "week" ? G(i, 7) : K(i, "month", 1), o = this.scorePeriod === "week" ? G(i, -7) : K(i, "month", -1), s = (e, n) => this.people.map((r) => ({
+		let e = this.data.chores.items || [], t = this.data.chores.completions || [], n = e.filter((e) => ze(e, this.selectedDay)), r = U(/* @__PURE__ */ new Date()), i = this.scorePeriod === "week" ? q(r, this.firstDay) : `${r.slice(0, 7)}-01`, a = this.scorePeriod === "week" ? G(i, 7) : K(i, "month", 1), o = this.scorePeriod === "week" ? G(i, -7) : K(i, "month", -1), s = (e, n) => this.people.map((r) => ({
 			person: r,
 			points: t.filter((t) => t.person_id === r.id && U(new Date(t.completed_at)) >= e && U(new Date(t.completed_at)) < n).reduce((e, t) => e + Number(t.points || 0), 0)
 		})).sort((e, t) => t.points - e.points), c = s(i, a), l = s(o, i), u = Math.max(1, ...c.map((e) => e.points));
@@ -1699,7 +1715,7 @@ var He = [
 		}}></label><span class="muted">${n.length} scheduled · ${n.filter((e) => t.some((t) => t.chore_id === e.id && U(new Date(t.completed_at)) === this.selectedDay)).length} completed</span></div>
       <div class="chore-list">${n.length ? n.map((e) => {
 			let n = e.assignee_ids || (e.assignee_id ? [e.assignee_id] : []), i = n[(Number(e.rotation_index) || 0) % Math.max(1, n.length)], a = t.some((t) => t.chore_id === e.id && U(new Date(t.completed_at)) === this.selectedDay), o = !a && (this.selectedDay < r || this.selectedDay === r && e.due_time && e.due_time < (/* @__PURE__ */ new Date()).toTimeString().slice(0, 5)), s = this.me && (n.includes(this.me.id) || [this.me.id, this._hass?.user?.id].includes(e.creator_id)), c = this.can("complete_any_chore") || this.can("complete_own_chores") && s;
-			return M`<article class=${`chore-card ${a ? "done" : o ? "overdue" : ""}`}><div class="chore-symbol" aria-hidden="true">${a ? "✓" : "⌂"}</div><div class="row-copy"><strong>${e.title}</strong><span class="muted">${e.description || (a ? "Nice work!" : o ? "Overdue" : `Due ${e.due_time || "today"}`)}</span><span class="assignee">${this.avatar(i)}${this.person(i)?.name || "Anyone"}${e.rotate ? " · rotating" : ""}</span></div><span class="points-badge">${e.points} pts</span><button class=${a ? "" : "primary"} ?disabled=${a || !c || this.saving || this.selectedDay !== r} title=${this.selectedDay === r ? "" : "Completions are recorded for today"} @click=${() => void this.action(() => this._hass.callWS({
+			return M`<article class=${`chore-card ${a ? "done" : o ? "overdue" : ""}`}><div class="chore-symbol" aria-hidden="true">${this.choreIcon(e)}</div><div class="row-copy"><strong>${e.title}</strong><span class="muted">${e.description || (a ? "Nice work!" : o ? "Overdue" : `Due ${e.due_time || "today"}`)}</span><span class="assignee">${this.avatar(i)}${this.person(i)?.name || "Anyone"}${e.rotate ? " · rotating" : ""}</span></div><span class="points-badge">${e.points} pts</span><button class=${a ? "" : "primary"} ?disabled=${a || !c || this.saving || this.selectedDay !== r} title=${this.selectedDay === r ? "" : "Completions are recorded for today"} @click=${() => void this.action(() => this._hass.callWS({
 				type: "family_organizer/complete_chore",
 				chore_id: e.id,
 				...this.can("complete_any_chore") ? i ? { person_id: i } : {} : { person_id: this.me.id }
@@ -1902,7 +1918,7 @@ var He = [
 	}
 	eventDetail(e) {
 		return M`<div class="event-detail"><div class="detail-date" style=${`--event-color:${this.eventColor(e)}`}><span>${this.date(U(new Date(e.occurrence_start)), { month: "short" })}</span><strong>${new Date(e.occurrence_start).getDate()}</strong></div><div><h3>${this.date(U(new Date(e.occurrence_start)))}</h3><p>${e.all_day ? "All day" : `${this.time(e.occurrence_start)} – ${this.time(e.occurrence_end)}`}</p>${U(new Date(e.occurrence_start)) === U(new Date(e.occurrence_end)) ? P : M`<p class="muted">Ends ${this.date(U(new Date(e.all_day ? new Date(e.occurrence_end).getTime() - 1 : e.occurrence_end)))}</p>`}</div></div><dl class="event-metadata"><div><dt>Where</dt><dd>${e.location || "No location"}</dd></div><div><dt>Who</dt><dd class="event-people">${(e.person_ids || []).map((e) => M`<span class="check">${this.avatar(e)}${this.person(e)?.name || "Family member"}</span>`)}</dd></div><div><dt>Repeats</dt><dd>${e.recurrence || "Does not repeat"}</dd></div><div><dt>Visibility</dt><dd>${e.shared === !1 ? "Private" : "Shared with family"}</dd></div></dl>${e.description ? M`<p class="event-description">${e.description}</p>` : P}${e.source_id ? M`<p class="muted">Imported calendar event. Local edits may be replaced on the next source sync.</p>` : P}<div class="detail-actions">${this.canEvent(e) ? M`<button class="primary" @click=${() => this.openEditor("event", e)}>Edit ${e.recurrence ? "series" : "event"}</button>` : P}${this.canEvent() ? M`<button @click=${() => {
-			let t = Pe(e);
+			let t = Ie(e);
 			this.can("manage_calendar_all") || (t.person_ids = [this.me?.id].filter(Boolean)), this.openEditor("event", t);
 		}}>Duplicate</button>` : P}${this.canEvent(e) ? M`<button class="danger" @click=${() => this.confirmDelete("calendar", e)}>Delete ${e.recurrence ? "series" : "event"}</button>` : P}</div>`;
 	}
@@ -1965,7 +1981,7 @@ var He = [
 		})}${this.field("Cook time (minutes)", "cook_time", t.cook_time || 0, "number", !0, {
 			min: 0,
 			step: 1
-		})}<fieldset class="full"><legend>Categories</legend><div class="checkbox-group">${(this.data.recipes.categories || []).map((e) => M`<label class="check"><input name="category_ids" type="checkbox" value=${e.id} ?checked=${(t.category_ids || []).includes(e.id)}>${this.categoryPath(e)}</label>`)}</div></fieldset>${this.textarea("Ingredients (one per line: quantity unit name)", "ingredients", (t.ingredients || []).map((e) => `${e.amount} ${e.unit || "x"} ${e.name}`).join("\n"), "1 cup flour\n2 x eggs\n1/2 tsp salt")}${this.textarea("Method (one step per line)", "steps", (t.steps || t.instructions || []).join("\n"))}${this.shared(t)}`;
+		})}<fieldset class="full"><legend>Categories</legend><div class="checkbox-group">${(this.data.recipes.categories || []).map((e) => M`<label class="check"><input name="category_ids" type="checkbox" value=${e.id} ?checked=${(t.category_ids || []).includes(e.id)}>${this.categoryPath(e)}</label>`)}</div></fieldset>${this.textarea("Ingredients (one per line: quantity, optional unit, name)", "ingredients", Me(t.ingredients || []), "1 cup flour\n2  eggs\n1/2 tsp salt")}${this.textarea("Method (one step per line)", "steps", (t.steps || t.instructions || []).join("\n"))}${this.shared(t)}`;
 		if (e === "category") {
 			let e = (e) => {
 				let n = /* @__PURE__ */ new Set(), r = e;
@@ -1981,7 +1997,7 @@ var He = [
 			["parent_admin", "Family administrator"],
 			["parent", "Parent"],
 			["child", "Child"]
-		])}<p class="muted full">The user ID links this person’s Home Assistant account. Permission overrides take priority over their role preset.</p><fieldset class="full permissions"><legend>Permission overrides</legend>${Ue.map((e) => this.select(e.replaceAll("_", " "), e, typeof t.permissions?.[e] == "boolean" ? t.permissions[e] ? "allow" : "deny" : "default", [
+		])}<p class="muted full">The user ID links this person’s Home Assistant account. Permission overrides take priority over their role preset.</p><fieldset class="full permissions"><legend>Permission overrides</legend>${Ge.map((e) => this.select(e.replaceAll("_", " "), e, typeof t.permissions?.[e] == "boolean" ? t.permissions[e] ? "allow" : "deny" : "default", [
 			["default", "Use role preset"],
 			["allow", "Allow"],
 			["deny", "Deny"]
@@ -2004,7 +2020,7 @@ var He = [
 		})}` : P;
 	}
 	static {
-		this.styles = Ve;
+		this.styles = Ue;
 	}
 };
 Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), $ = Z([we("family-organizer-panel")], $);

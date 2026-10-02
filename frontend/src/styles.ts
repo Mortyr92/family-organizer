@@ -203,6 +203,9 @@ export const panelStyles = css`
   .chore-card { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:17px 0; border-bottom:1px solid var(--line); }
   .chore-card>.row-copy { min-width:150px; }
   .chore-symbol { width:40px; height:40px; border-radius:12px; background:var(--orange-soft); color:var(--orange); display:grid; place-items:center; font-size:22px; }
+  .chore-symbol ha-icon { --mdc-icon-size:22px; width:22px; height:22px; }
+  .chore-symbol ha-icon:not(:defined) { display:none; }
+  .chore-symbol ha-icon:defined+.chore-icon-fallback { display:none; }
   .chore-card.done .chore-symbol { background:color-mix(in srgb,var(--green) 15%,var(--surface)); color:var(--green); }
   .chore-card.overdue .chore-symbol { color:var(--error-color,#b33930); }
   .assignee { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:11px; margin-top:4px; }

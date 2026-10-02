@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarDates, calendarPayload, choreDue, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, moveDate, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
+import { calendarDates, calendarPayload, choreDue, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
 
 test("month navigation clamps at month end and handles leap years", () => {
   assert.equal(moveDate("2024-01-31", "month", 1), "2024-02-29");
@@ -115,13 +115,24 @@ test("date shifts and recurrence stay on local dates through DST", () => {
   assert.deepEqual(events.map(e => [iso(new Date(e.occurrence_start)), iso(new Date(e.occurrence_end))]), [["2026-03-07", "2026-03-08"], ["2026-03-08", "2026-03-09"], ["2026-03-09", "2026-03-10"]]);
 });
 test("duplicate events copy editable fields only, never IDs or external metadata", () => {
-  const source = { id: "original", creator_id: "alex", source_id: "remote", external_id: "ical-123", etag: "sync-etag", exdates: ["2026-06-02"], title: "Appointment", start: "2026-06-01T12:00:00", end: "2026-06-01T13:00:00", occurrence_start: "2026-06-08T12:00:00", occurrence_end: "2026-06-08T13:00:00", person_ids: ["alex"], all_day: false, description: "Notes", location: "Clinic", recurrence: "FREQ=WEEKLY", shared: true };
+  const source = { id: "original", creator_id: "alex", source_id: "remote", external_id: "ical-123", recurrence_id: "20260608T120000Z", etag: "sync-etag", exdates: ["2026-06-02"], title: "Appointment", start: "2026-06-01T12:00:00", end: "2026-06-01T13:00:00", occurrence_start: "2026-06-08T12:00:00", occurrence_end: "2026-06-08T13:00:00", person_ids: ["alex"], all_day: false, description: "Notes", location: "Clinic", recurrence: "FREQ=WEEKLY", shared: true };
   const duplicate = duplicateEvent(source);
   assert.deepEqual(Object.keys(duplicate).sort(), ["all_day", "description", "end", "location", "person_ids", "recurrence", "shared", "start", "title"].sort());
   assert.equal(duplicate.start, source.occurrence_start);
   assert.equal(duplicate.title, "Appointment (copy)");
   assert.equal(source.id, "original");
-  assert.deepEqual(calendarPayload({ ...duplicate, day: "2026-06-08", unknown: "ignore", id: "ignore" }), duplicate);
+  assert.deepEqual(calendarPayload({ ...duplicate, day: "2026-06-08", unknown: "ignore", id: "ignore", occurrence_start: source.occurrence_start, occurrence_end: source.occurrence_end, unsupported_recurrence: true, recurrence_id: source.recurrence_id }), duplicate);
+});
+test("ingredient edit round trips preserve blank units and metadata, including reordered lines", () => {
+  const ingredients = [
+    { amount: 2, unit: "", name: "ripe apples", category: "Produce", store: "Farm stand", notes: "Organic", selected: false, id: "fruit" },
+    { amount: .5, unit: "tsp", name: "salt", category: "Pantry", notes: "Fine", selected: true },
+  ];
+  const serialized = serializeIngredients(ingredients);
+  assert.equal(serialized, "2  ripe apples\n0.5 tsp salt");
+  assert.deepEqual(mergeIngredients(serialized, ingredients), ingredients);
+  assert.deepEqual(mergeIngredients(serialized.split("\n").reverse().join("\n"), ingredients), [...ingredients].reverse());
+  assert.deepEqual(parseIngredients("2 eggs"), [{ amount: 2, unit: "", name: "eggs" }]);
 });
 test("first load honors a custom grocery default even when default list exists", () => {
   const lists = [{ id: "default" }, { id: "pantry" }];

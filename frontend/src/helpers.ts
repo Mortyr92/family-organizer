@@ -46,10 +46,27 @@ export function fraction(value: number) {
 }
 export function parseIngredients(text: string) {
   return text.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+    // Two spaces encode an intentionally blank unit in editor round trips.
+    const withoutUnit = line.match(/^(\d+(?:\.\d+)?(?:\/\d+)?)\s{2,}(.+)$/);
     const match = line.match(/^(\d+(?:\.\d+)?(?:\/\d+)?)(?:\s+)(\S+)(?:\s+)(.+)$/);
-    if (!match) return { amount: 1, unit: "", name: line };
-    const [top, bottom] = match[1].split("/").map(Number);
-    return { amount: bottom ? top / bottom : top, unit: match[2], name: match[3] };
+    const quantity = withoutUnit || match || line.match(/^(\d+(?:\.\d+)?(?:\/\d+)?)\s+(.+)$/);
+    if (!quantity) return { amount: 1, unit: "", name: line };
+    const [top, bottom] = quantity[1].split("/").map(Number);
+    return { amount: bottom ? top / bottom : top, unit: withoutUnit || !match ? "" : match[2], name: withoutUnit ? withoutUnit[2] : match ? match[3] : quantity[2] };
+  });
+}
+export function serializeIngredients(ingredients: Item[]) {
+  return ingredients.map(ingredient => `${ingredient.amount ?? 1} ${ingredient.unit || ""} ${ingredient.name || ""}`).join("\n");
+}
+export function mergeIngredients(text: string, original: Item[] = []) {
+  const parsed = parseIngredients(text), used = new Set<number>();
+  return parsed.map((ingredient, position) => {
+    let index = original.findIndex((value, i) => !used.has(i) && value.name === ingredient.name && (value.unit || "") === ingredient.unit && Number(value.amount) === ingredient.amount);
+    if (index < 0) index = original.findIndex((value, i) => !used.has(i) && value.name === ingredient.name && (value.unit || "") === ingredient.unit);
+    if (index < 0) index = original.findIndex((value, i) => !used.has(i) && value.name === ingredient.name);
+    if (index < 0 && parsed.length === original.length && !used.has(position)) index = position;
+    if (index >= 0) used.add(index);
+    return { ...(index >= 0 ? original[index] : {}), ...ingredient };
   });
 }
 export function presetCapability(role: string, capability: string) {
