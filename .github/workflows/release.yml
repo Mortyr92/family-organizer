@@ -24,8 +24,10 @@ jobs:
           version = json.loads(Path("custom_components/family_organizer/manifest.json").read_text())["version"]
           assert os.environ["GITHUB_REF_NAME"] == f"v{version}", "Tag must match integration version"
           assert json.loads(Path("frontend/package.json").read_text())["version"] == version
-          assert json.loads(Path("frontend/package-lock.json").read_text())["version"] == version
+          lock = json.loads(Path("frontend/package-lock.json").read_text())
+          assert lock["version"] == lock["packages"][""]["version"] == version
           assert Path("custom_components/family_organizer/panel/family-organizer-panel.js").stat().st_size > 0
+          assert Path(f"docs/release-{version}.txt").is_file(), "Release notes are required"
           PY
           git diff --exit-code -- custom_components/family_organizer/panel/family-organizer-panel.js
       - name: Package integration
@@ -33,6 +35,6 @@ jobs:
           cd custom_components/family_organizer
           zip -r ../../family_organizer.zip . -x '__pycache__/*' '*.pyc'
           unzip -l ../../family_organizer.zip panel/family-organizer-panel.js manifest.json
-      - run: gh release create "$GITHUB_REF_NAME" family_organizer.zip --notes-file docs/release-0.2.0.txt
+      - run: gh release create "$GITHUB_REF_NAME" family_organizer.zip --notes-file "docs/release-${GITHUB_REF_NAME#v}.txt"
         env:
           GH_TOKEN: ${{ github.token }}
