@@ -2,5 +2,7 @@
   "name": "Family Organizer",
   "content_in_root": false,
   "render_readme": true,
+  "zip_release": true,
+  "filename": "family_organizer.zip",
   "homeassistant": "2024.6.0"
 }

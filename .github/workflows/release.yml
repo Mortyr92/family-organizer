@@ -15,10 +15,24 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: ./scripts/build_frontend.sh
+      - name: Verify release version and compiled bundle
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          version = json.loads(Path("custom_components/family_organizer/manifest.json").read_text())["version"]
+          assert os.environ["GITHUB_REF_NAME"] == f"v{version}", "Tag must match integration version"
+          assert json.loads(Path("frontend/package.json").read_text())["version"] == version
+          assert json.loads(Path("frontend/package-lock.json").read_text())["version"] == version
+          assert Path("custom_components/family_organizer/panel/family-organizer-panel.js").stat().st_size > 0
+          PY
+          git diff --exit-code -- custom_components/family_organizer/panel/family-organizer-panel.js
       - name: Package integration
         run: |
           cd custom_components/family_organizer
           zip -r ../../family_organizer.zip . -x '__pycache__/*' '*.pyc'
-      - run: gh release create "$GITHUB_REF_NAME" family_organizer.zip --generate-notes
+          unzip -l ../../family_organizer.zip panel/family-organizer-panel.js manifest.json
+      - run: gh release create "$GITHUB_REF_NAME" family_organizer.zip --notes-file docs/release-0.2.0.txt
         env:
           GH_TOKEN: ${{ github.token }}
