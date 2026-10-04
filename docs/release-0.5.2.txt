@@ -1,0 +1,17 @@
+Family Organizer 0.5.2
+
+Localization
+- Comprehensive Dutch translation of the panel: Today, Shopping, Todos, Meal planner,
+  Recipes, Chores, Diary, Contacts and Birthdays pages, the quick-add menu, all
+  dialog titles, editor form fields/options, permission labels, delete
+  confirmations, aria-labels and success/notice messages.
+- English remains the fallback for any language other than Dutch.
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed.
+- Frontend bundle rebuilt and committed.
+
+Upgrade
+- Existing data is preserved.
+- Restart Home Assistant and hard-refresh the browser after updating.
