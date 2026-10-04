@@ -1,14 +1,21 @@
-﻿# Family Organizer
+# Family Organizer
 
 A local-first Home Assistant integration and touch-friendly family dashboard.
-It provides nine pages modeled on a Cozi-style family organizer: Today, Calendar,
-Shopping, To Do, Meals, Chores, Journal, Birthdays, and Settings.
+It provides ten pages modeled on a Cozi-style family organizer: Today, Calendar,
+Shopping, To Do, Meals, Chores, Journal, Contacts, Birthdays, and Settings.
 
 ## Highlights
 
 - Today dashboard: agenda, upcoming events, meals, shopping, to-dos, chores,
   latest journal moment and upcoming birthday callouts in one view
 - Month/week/day calendar, RFC 5545 recurrence, and timezone-aware ICS/CalDAV sync
+- Event reminders with per-event lead times, delivered through any `notify`
+  service (companion app) or persistent notifications, plus an optional daily
+  agenda digest and a `family_organizer_reminder` event for automations
+- Calendar export as `.ics` from the toolbar or the authenticated
+  `/api/family_organizer/calendar.ics` subscription endpoint
+- Shared family contacts with groups, tap-to-call numbers, mail links and notes
+- Recipe import from any web page that publishes schema.org recipe data
 - Multiple shopping lists with store and assignee routing, merging, and todo entities
 - Separate To Do lists (packing, projects, errands) with due dates and assignees,
   also exposed as Home Assistant todo entities
@@ -80,16 +87,17 @@ repository, install **Family Organizer**, restart Home Assistant, then use
 Copy `custom_components/family_organizer` into the matching directory under the
 Home Assistant configuration directory, restart, and add the integration.
 
-## Update an existing installation to 0.3.1
+## Update an existing installation to 0.4.0
 
 **No uninstall, reconfiguration, or data reset is required.** The integration
 domain, config entries, entities, storage keys and storage version remain
 unchanged. Existing people, lists, events, recipes, chores, permissions and
-auto/light/dark settings are retained. The new To Do and Journal stores are
-created empty on first start; birthdays can be added per person in Settings.
+auto/light/dark settings are retained. The new Contacts store is created empty
+on first start; reminders default to a 15-minute lead using persistent
+notifications until you pick a notify service in Settings.
 
 1. Create a Home Assistant backup including configuration and `.storage`.
-2. Once the owner publishes **v0.3.1**, open **HACS â†’ Integrations â†’ Family
+2. Once the owner publishes **v0.4.0**, open **HACS â†’ Integrations â†’ Family
    Organizer â†’ Update/Redownload** and select that release.
 3. **Restart Home Assistant** (reloading the integration alone does not replace
    already-loaded frontend code).
@@ -105,11 +113,12 @@ files. Restart Home Assistant and reload the frontend. Restore your backup if
 you need to roll back both code and data.
 
 A pull request is **not yet an installable HACS release**. The owner must merge
-this PR into `main`, then tag that merged commit `v0.3.1`. The existing Release
+this PR into `main`, then tag that merged commit `v0.4.0`. The existing Release
 workflow checks matching manifest/frontend versions and a reproducible bundle,
 then publishes the integration ZIP used by HACS. Review the workflow result and
 release asset before offering the update. No tag or release is published by this
-implementation task. Release notes: [0.3.1](docs/release-0.3.1.txt).
+implementation task. Release notes: [0.4.0](docs/release-0.4.0.txt),
+[0.3.1](docs/release-0.3.1.txt).
 
 ## Configuration and calendar providers
 
@@ -121,7 +130,20 @@ the Home Assistant config entry and are never returned over websocket.
 Dashboard settings cover day-overview side/collapse, week start, 12/24-hour
 time, default calendar view and grocery list, meal-slot names, managed stores,
 week/month competition default, language, people, exact roles, and all granular
-capability overrides.
+capability overrides. Reminder preferences set whether reminders are sent, the
+default lead time, the `notify` service to use (for example `mobile_app_phone`;
+empty means persistent notifications) and an optional daily agenda time.
+
+### Reminders, export and sensors
+
+- Each event's **Reminder** picker overrides the family default or disables it.
+- Reminders fire `family_organizer_reminder` on the event bus with the event
+  title, start, location and people, so automations can announce them.
+- **Export .ics** on the calendar downloads the shared calendar; calendar apps
+  can also subscribe to `/api/family_organizer/calendar.ics` using a
+  long-lived access token (optional `?person=<id>` filters by family member).
+- `sensor.family_agenda_today` reports today's event count and lists the events
+  as attributes for Lovelace cards.
 
 ### Apple iCloud
 
@@ -183,11 +205,11 @@ when Playwright is available.
 
 ### Release validation boundaries
 
-The 0.3.1 backend unit/stub suite passes (28 tests), including storage/settings
-preservation, modern and legacy panel registration, reload idempotence,
-permission context and release ZIP layout. The official hassfest container
-reports zero invalid integrations. The actual release ZIP command was also
-checked locally for manifest and compiled-panel placement.
+The 0.4.0 backend unit/stub suite passes (36 tests), including storage/settings
+preservation, reminder timing and agenda formatting, ICS export round-trips,
+schema.org recipe import, modern and legacy panel registration, reload
+idempotence, permission context and release ZIP layout. The official hassfest
+container previously reported zero invalid integrations.
 
 The official HACS action was attempted locally but requires a GitHub token not
 available to that process. The repository's HACS/hassfest Actions checks still

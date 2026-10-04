@@ -74,7 +74,7 @@ export function presetCapability(role: string, capability: string) {
     || (role === "child" && ["manage_calendar_own", "manage_groceries", "manage_todos", "manage_meal_plan", "complete_own_chores", "manage_recipes", "manage_journal"].includes(capability));
 }
 export function calendarPayload(item: Item) {
-  const fields = ["title", "start", "end", "all_day", "person_ids", "description", "location", "recurrence", "exdates", "source_id", "external_id", "shared"];
+  const fields = ["title", "start", "end", "all_day", "person_ids", "description", "location", "recurrence", "exdates", "source_id", "external_id", "shared", "reminder_minutes"];
   return Object.fromEntries(fields.filter(field => item[field] !== undefined).map(field => [field, item[field]]));
 }
 export function duplicateEvent(event: Item) {
@@ -101,7 +101,7 @@ export function nextBirthday(birthday: string | undefined | null, today: string)
   return { date: next, days, age: year ? Number(next.slice(0, 4)) - Number(year) : undefined };
 }
 export function organizerRoute(hash: string) {
-  const match = hash.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|settings)(?:\/(.+))?$/);
+  const match = hash.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|contacts|settings)(?:\/(.+))?$/);
   if (!match) return undefined;
   try { return { page: match[1], recipeId: match[1] === "recipes" ? decodeURIComponent(match[2] || "") : "", malformed: false }; }
   catch { return { page: match[1], recipeId: "", malformed: true }; }

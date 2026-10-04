@@ -18,6 +18,8 @@ from .permissions import capabilities_for, check_capability, person_for
 from .logic import merge_grocery_item
 from .storage import StoreManager
 from .caldav_sync import CalendarSyncCoordinator
+from .http import CalendarExportView
+from .reminders import ReminderScheduler
 from .websocket_api import async_register as async_register_websocket
 
 PLATFORMS = [Platform.CALENDAR, Platform.SENSOR, Platform.TODO]
@@ -38,6 +40,9 @@ async def async_setup_entry(hass, entry):
         async_register_websocket(hass)
         await _async_register_panel(hass)
         _register_services(hass, stores)
+        hass.http.register_view(CalendarExportView(stores))
+        domain_data["reminders"] = ReminderScheduler(hass, stores)
+    domain_data["reminders"].async_start()
     coordinator = CalendarSyncCoordinator(hass, entry, domain_data["stores"])
     domain_data.setdefault("coordinators", {})[entry.entry_id] = coordinator
     entry.async_on_unload(coordinator.async_add_listener(lambda: None))
@@ -54,7 +59,11 @@ async def _async_update_listener(hass, entry):
 
 async def async_unload_entry(hass, entry):
     result = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    hass.data[DOMAIN].get("coordinators", {}).pop(entry.entry_id, None)
+    domain_data = hass.data[DOMAIN]
+    coordinators = domain_data.get("coordinators", {})
+    coordinators.pop(entry.entry_id, None)
+    if not coordinators and (reminders := domain_data.get("reminders")):
+        reminders.async_stop()
     return result
 
 

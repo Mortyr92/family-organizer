@@ -1,10 +1,53 @@
-"""Standards-compliant iCalendar parsing using icalendar."""
+"""Standards-compliant iCalendar parsing and export using icalendar."""
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-from icalendar import Calendar
+from icalendar import Calendar, Event
+
+from .models import parse_datetime
+
+
+def build_ics(items: list[dict[str, Any]], people: list[dict[str, Any]] | None = None, name: str = "Family Organizer") -> bytes:
+    """Serialize stored calendar items (with their RRULE/EXDATE data) to an iCalendar feed."""
+    names = {p.get("id"): p.get("name", "") for p in people or []}
+    calendar = Calendar()
+    calendar.add("PRODID", "-//Family Organizer//Home Assistant//EN")
+    calendar.add("VERSION", "2.0")
+    calendar.add("X-WR-CALNAME", name)
+    for item in items:
+        try:
+            start, end = parse_datetime(item["start"]), parse_datetime(item["end"])
+        except (KeyError, ValueError, TypeError):
+            continue
+        event = Event()
+        event.add("UID", f"{item.get('id', '')}@family-organizer")
+        event.add("SUMMARY", item.get("title", ""))
+        if item.get("all_day"):
+            event.add("DTSTART", start.date())
+            event.add("DTEND", end.date())
+        else:
+            event.add("DTSTART", start)
+            event.add("DTEND", end)
+        event.add("DTSTAMP", datetime.now(timezone.utc))
+        if item.get("description"):
+            event.add("DESCRIPTION", item["description"])
+        if item.get("location"):
+            event.add("LOCATION", item["location"])
+        attendees = [names[i] for i in item.get("person_ids") or [] if names.get(i)]
+        if attendees:
+            event.add("CATEGORIES", attendees)
+        rule = str(item.get("recurrence") or "").removeprefix("RRULE:")
+        if rule:
+            event.add("RRULE", dict(part.split("=", 1) for part in rule.split(";") if "=" in part))
+        for exdate in item.get("exdates") or []:
+            try:
+                event.add("EXDATE", parse_datetime(exdate))
+            except ValueError:
+                continue
+        calendar.add_component(event)
+    return calendar.to_ical()
 
 
 def _iso(value: date | datetime) -> tuple[str, bool]:

@@ -343,6 +343,16 @@ export const panelStyles = css`
   .journal-photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin:12px 0; }
   .journal-photos img { width:100%; height:140px; object-fit:cover; border-radius:10px; }
   .journal-actions { display:flex; gap:6px; }
+  .contact-group { margin:22px 0 10px; font-size:.95rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .contact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+  .contact-card { display:flex; gap:12px; align-items:flex-start; padding:14px 16px; }
+  .contact-card .row-copy { display:grid; gap:4px; flex:1; min-width:0; }
+  .contact-card h3 { margin:0 0 2px; }
+  .contact-card a { color:var(--accent); text-decoration:none; font-weight:600; overflow-wrap:anywhere; }
+  .contact-card a:hover { text-decoration:underline; }
+  .contact-avatar { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-weight:700; background:var(--accent-soft, rgba(240,120,40,.16)); color:var(--accent); flex-shrink:0; }
+  .import-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+  .import-row input { flex:1; min-width:220px; }
   .birthday-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
   .birthday-card { display:flex; align-items:center; gap:14px; border-left:5px solid var(--person-color); }
   .birthday-card .avatar { width:46px; height:46px; min-width:46px; font-size:15px; }

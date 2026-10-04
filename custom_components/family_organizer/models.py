@@ -138,6 +138,18 @@ class JournalEntry(Model):
 
 
 @dataclass
+class Contact(Model):
+    name: str = ""
+    group: str = ""
+    phones: list[str] = field(default_factory=list)
+    emails: list[str] = field(default_factory=list)
+    address: str = ""
+    notes: str = ""
+    creator_id: str | None = None
+    shared: bool = True
+
+
+@dataclass
 class MealPlanEntry(Model):
     day: str = field(default_factory=lambda: date.today().isoformat())
     slot: str = "dinner"

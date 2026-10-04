@@ -1,0 +1,15 @@
+Family Organizer 0.4.0
+
+New
+- Reminders: every event can have its own lead time (or use the family default). Reminders go to a configurable notify service (for example your phone via the companion app) and fall back to Home Assistant persistent notifications. Each reminder also fires a `family_organizer_reminder` event for automations.
+- Daily agenda: optionally receive today's agenda at a chosen time each morning.
+- Contacts: a shared family address book with groups, tap-to-call phone numbers, mail links, addresses and notes. Parents manage it; children can look things up.
+- Recipe import from the web: paste a recipe page URL and the ingredients, steps, servings, times and photo are pre-filled from the page's schema.org data for you to review before saving.
+- Calendar export: download the shared family calendar as an .ics file from the calendar toolbar, or subscribe other apps to the authenticated `/api/family_organizer/calendar.ics` endpoint.
+- Today agenda sensor: `sensor.family_agenda_today` counts today's events and exposes them (with family names and colors) as attributes for dashboard cards.
+
+Settings
+- Preferences gained "Send event reminders", default reminder minutes, notify service and daily agenda time.
+
+Upgrade
+- Existing data is kept; the Contacts store is created empty. Restart Home Assistant and hard-refresh the browser after updating.

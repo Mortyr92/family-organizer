@@ -26,8 +26,15 @@ class Unauthorized(Exception):
 
 storage.Store = Store
 exceptions.Unauthorized = Unauthorized
+core = types.ModuleType("homeassistant.core")
+core.HomeAssistant = object
+core.callback = lambda func: func
+event_helpers = types.ModuleType("homeassistant.helpers.event")
+event_helpers.async_track_time_interval = lambda *args, **kwargs: (lambda: None)
 sys.modules.setdefault("homeassistant", homeassistant)
 sys.modules.setdefault("homeassistant.helpers", helpers)
 sys.modules.setdefault("homeassistant.helpers.storage", storage)
+sys.modules.setdefault("homeassistant.helpers.event", event_helpers)
+sys.modules.setdefault("homeassistant.core", core)
 sys.modules.setdefault("homeassistant.exceptions", exceptions)
 

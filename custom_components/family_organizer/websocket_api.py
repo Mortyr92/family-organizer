@@ -1,15 +1,19 @@
 """Namespaced websocket CRUD, permissions, and live subscriptions."""
 from __future__ import annotations
+import asyncio
 from datetime import datetime, timezone
 
 from uuid import uuid4
 
+import aiohttp
 import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import callback
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN, EVENT_UPDATED, STORES
+from .const import DOMAIN, EVENT_UPDATED, SETTING_KEYS, STORES
 from .logic import merge_grocery_item, recipe_items
+from .recipe_import import recipe_from_html
 from .permissions import (
     can_view,
     capabilities_for,
@@ -27,6 +31,7 @@ _COLLECTIONS = {
     "chores": {"items", "completions", "point_adjustments"},
     "recipes": {"items", "categories"},
     "journal": {"items"},
+    "contacts": {"items"},
     "settings": {"items"},
 }
 
@@ -53,13 +58,7 @@ def _collection(resource: str, requested: str | None) -> str | None:
 
 
 def _validate_settings(values: dict) -> dict:
-    allowed = {
-        "theme", "sync_interval", "overview_position", "overview_collapsed",
-        "week_start", "time_format", "default_calendar_view",
-        "default_grocery_list_id", "meal_slots", "competition_default",
-        "language", "stores",
-    }
-    result = {key: value for key, value in values.items() if key in allowed}
+    result = {key: value for key, value in values.items() if key in SETTING_KEYS}
     enums = {
         "theme": {"auto", "light", "dark"},
         "overview_position": {"left", "right"},
@@ -75,6 +74,22 @@ def _validate_settings(values: dict) -> dict:
         result["sync_interval"] = vol.All(vol.Coerce(int), vol.Range(min=5, max=1440))(
             result["sync_interval"]
         )
+    if "default_reminder_minutes" in result:
+        result["default_reminder_minutes"] = vol.All(vol.Coerce(int), vol.Range(min=0, max=10080))(
+            result["default_reminder_minutes"]
+        )
+    if "reminders_enabled" in result:
+        result["reminders_enabled"] = bool(result["reminders_enabled"])
+    if "notify_service" in result:
+        service = str(result["notify_service"] or "").strip()
+        if service and not vol.Match(r"^(notify\.)?[a-z0-9_]+$")(service):
+            raise vol.Invalid("Invalid notify service")
+        result["notify_service"] = service.removeprefix("notify.")
+    if "daily_agenda_time" in result:
+        value = str(result["daily_agenda_time"] or "").strip()
+        if value and not vol.Match(r"^([01]\d|2[0-3]):[0-5]\d$")(value):
+            raise vol.Invalid("Invalid daily agenda time")
+        result["daily_agenda_time"] = value
     for key in ("meal_slots", "stores"):
         if key in result:
             result[key] = [str(value).strip() for value in result[key] if str(value).strip()]
@@ -89,13 +104,7 @@ def _public_payload(resource: str, data: dict, user, settings: dict) -> dict:
     """Filter private records. Config-entry credentials never enter stores."""
     if resource == "settings":
         # Calendar URLs and credentials live exclusively in config entries.
-        allowed = {
-            "theme", "sync_interval", "overview_position", "overview_collapsed",
-            "week_start", "time_format", "default_calendar_view",
-            "default_grocery_list_id", "meal_slots", "competition_default",
-            "language", "stores",
-        }
-        result = {key: data.get(key) for key in allowed}
+        result = {key: data.get(key) for key in SETTING_KEYS}
         result["current_user"] = {
             "person_id": (person_for(user, settings) or {}).get("id"),
             "capabilities": capabilities_for(user, settings),
@@ -166,6 +175,7 @@ async def _mutate(hass, connection, msg, operation):
         "chores": "manage_chores",
         "recipes": "manage_recipes",
         "journal": "manage_journal",
+        "contacts": "manage_contacts",
     }[resource]
     if operation == "create":
         if resource == "calendar" and collection == "items":
@@ -477,9 +487,39 @@ async def ws_settings(hass, connection, msg):
     )
 
 
+@websocket_api.websocket_command({
+    vol.Required("type"): f"{DOMAIN}/import_recipe",
+    vol.Required("url"): vol.All(str, vol.Match(r"^https?://")),
+})
+@websocket_api.async_response
+async def ws_import_recipe(hass, connection, msg):
+    manager = _manager(hass)
+    check_capability(
+        connection.user, "recipes", "manage_recipes", _settings(manager),
+        people=_people(manager),
+    )
+    try:
+        async with asyncio.timeout(20):
+            response = await async_get_clientsession(hass).get(
+                msg["url"], headers={"User-Agent": "Mozilla/5.0 (compatible; FamilyOrganizer/1.0)"}
+            )
+            response.raise_for_status()
+            body = await response.text(errors="replace")
+    except (asyncio.TimeoutError, aiohttp.ClientError) as err:
+        connection.send_error(msg["id"], "fetch_failed", f"Could not download the page: {err}")
+        return
+    recipe = recipe_from_html(body, msg["url"])
+    if recipe is None:
+        connection.send_error(
+            msg["id"], "no_recipe", "No recipe data was found on that page. Try copying it in manually."
+        )
+        return
+    connection.send_result(msg["id"], recipe)
+
+
 def async_register(hass):
     for command in (
         ws_list, ws_create, ws_update, ws_delete, ws_recipe_to_groceries,
-        ws_complete_chore, ws_adjust_points, ws_subscribe, ws_settings,
+        ws_complete_chore, ws_adjust_points, ws_subscribe, ws_settings, ws_import_recipe,
     ):
         websocket_api.async_register_command(hass, command)

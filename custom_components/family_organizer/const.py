@@ -3,7 +3,7 @@ PANEL_URL = "/family-organizer"
 PANEL_TITLE = "Family Organizer"
 PANEL_ICON = "mdi:home-heart"
 STORE_VERSION = 4
-STORES = ("people", "calendar", "groceries", "todos", "chores", "recipes", "journal", "settings")
+STORES = ("people", "calendar", "groceries", "todos", "chores", "recipes", "journal", "contacts", "settings")
 DEFAULT_SETTINGS = {
     "theme": "auto",
     "permissions": {},
@@ -19,6 +19,18 @@ DEFAULT_SETTINGS = {
     "competition_default": "week",
     "language": "en",
     "stores": [],
+    "reminders_enabled": True,
+    "default_reminder_minutes": 15,
+    "notify_service": "",
+    "daily_agenda_time": "",
 }
 PERMISSION_LEVELS = {"view": 1, "edit": 2, "admin": 3}
 EVENT_UPDATED = f"{DOMAIN}_updated"
+EVENT_REMINDER = f"{DOMAIN}_reminder"
+SETTING_KEYS = (
+    "theme", "sync_interval", "overview_position", "overview_collapsed",
+    "week_start", "time_format", "default_calendar_view",
+    "default_grocery_list_id", "meal_slots", "competition_default",
+    "language", "stores", "reminders_enabled", "default_reminder_minutes",
+    "notify_service", "daily_agenda_time",
+)

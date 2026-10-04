@@ -49,6 +49,12 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
         for entry in result["items"]:
             entry.setdefault("person_ids", [])
             entry.setdefault("photos", [])
+    if name == "contacts":
+        for contact in result["items"]:
+            contact.setdefault("phones", [])
+            contact.setdefault("emails", [])
+            contact.setdefault("group", "")
+            contact.setdefault("shared", True)
     if name == "chores":
         result.setdefault("completions", [])
         result.setdefault("point_adjustments", [])

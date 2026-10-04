@@ -17,6 +17,7 @@ CAPABILITIES = (
     "complete_any_chore",
     "manage_recipes",
     "manage_journal",
+    "manage_contacts",
     "manage_settings",
     "manage_calendar_sync",
 )
@@ -141,7 +142,7 @@ def permission_for(user, resource: str, settings: dict, people: Any = None) -> s
     mapping = {
         "people": "manage_people", "calendar": "manage_calendar_own",
         "groceries": "manage_groceries", "chores": "complete_own_chores",
-        "todos": "manage_todos", "journal": "manage_journal",
+        "todos": "manage_todos", "journal": "manage_journal", "contacts": "manage_contacts",
         "recipes": "manage_recipes", "settings": "manage_settings",
     }
     return "admin" if role_for(user, settings, people) == "parent_admin" else (

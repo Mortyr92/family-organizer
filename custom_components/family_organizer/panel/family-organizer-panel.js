@@ -665,7 +665,8 @@ function Fe(e) {
 		"exdates",
 		"source_id",
 		"external_id",
-		"shared"
+		"shared",
+		"reminder_minutes"
 	].filter((t) => e[t] !== void 0).map((t) => [t, e[t]]));
 }
 function Ie(e) {
@@ -700,7 +701,7 @@ function Re(e, t) {
 	};
 }
 function ze(e) {
-	let t = e.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|settings)(?:\/(.+))?$/);
+	let t = e.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|contacts|settings)(?:\/(.+))?$/);
 	if (t) try {
 		return {
 			page: t[1],
@@ -1163,6 +1164,16 @@ var Ue = o`
   .journal-photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin:12px 0; }
   .journal-photos img { width:100%; height:140px; object-fit:cover; border-radius:10px; }
   .journal-actions { display:flex; gap:6px; }
+  .contact-group { margin:22px 0 10px; font-size:.95rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .contact-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+  .contact-card { display:flex; gap:12px; align-items:flex-start; padding:14px 16px; }
+  .contact-card .row-copy { display:grid; gap:4px; flex:1; min-width:0; }
+  .contact-card h3 { margin:0 0 2px; }
+  .contact-card a { color:var(--accent); text-decoration:none; font-weight:600; overflow-wrap:anywhere; }
+  .contact-card a:hover { text-decoration:underline; }
+  .contact-avatar { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-weight:700; background:var(--accent-soft, rgba(240,120,40,.16)); color:var(--accent); flex-shrink:0; }
+  .import-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+  .import-row input { flex:1; min-width:220px; }
   .birthday-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
   .birthday-card { display:flex; align-items:center; gap:14px; border-left:5px solid var(--person-color); }
   .birthday-card .avatar { width:46px; height:46px; min-width:46px; font-size:15px; }
@@ -1222,6 +1233,7 @@ var We = [
 	"chores",
 	"recipes",
 	"journal",
+	"contacts",
 	"settings"
 ], Ge = [
 	"manage_people",
@@ -1235,6 +1247,7 @@ var We = [
 	"complete_any_chore",
 	"manage_recipes",
 	"manage_journal",
+	"manage_contacts",
 	"manage_settings",
 	"manage_calendar_sync"
 ], Ke = [
@@ -1287,6 +1300,12 @@ var We = [
 		subtitle: "Never miss a chance to celebrate."
 	},
 	{
+		id: "contacts",
+		name: "Contacts",
+		icon: "☎",
+		subtitle: "The people who keep your family running."
+	},
+	{
 		id: "settings",
 		name: "Settings",
 		icon: "⚙",
@@ -1294,7 +1313,7 @@ var We = [
 	}
 ], $ = class extends V {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "month", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.todoListId = "default", this.showDoneTodos = !1, this.journalPerson = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.notice = "", this.loading = !0, this.saving = !1, this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "month", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.todoListId = "default", this.showDoneTodos = !1, this.journalPerson = "", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.notice = "", this.loading = !0, this.saving = !1, this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = ze(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.malformed && (this.notice = "This recipe link is malformed. Showing your cookbook instead."));
 		};
@@ -1446,20 +1465,45 @@ var We = [
 			}), "Deleted", !0);
 			return;
 		}
+		if (i === "recipe-import") {
+			let e = u("url");
+			this.saving = !0, this.error = "";
+			try {
+				let t = await this._hass.callWS({
+					type: "family_organizer/import_recipe",
+					url: e
+				});
+				this.saving = !1, this.notice = "Recipe found. Review the details and save.", this.openEditor("recipe", {
+					title: t.title,
+					image: t.image,
+					servings: t.servings,
+					prep_time: t.prep_time,
+					cook_time: t.cook_time,
+					tags: t.tags,
+					steps: t.steps,
+					ingredients: je((t.ingredient_lines || []).join("\n")),
+					source_url: t.source_url
+				});
+			} catch (e) {
+				this.saving = !1, this.error = this.message(e);
+			}
+			return;
+		}
 		if (i === "event") {
 			o = "calendar";
-			let e = d("all_day"), t = u("day"), r = u("end_day");
+			let e = d("all_day"), t = u("day"), i = u("end_day");
 			if (c = {
 				...c,
 				title: u("title"),
 				start: e ? t : `${t}T${u("start")}:00`,
-				end: e ? G(r, 1) : `${r}T${u("end")}:00`,
+				end: e ? G(i, 1) : `${i}T${u("end")}:00`,
 				all_day: e,
 				description: u("description"),
 				location: u("location"),
 				recurrence: u("recurrence") || null,
 				person_ids: n.getAll("person_ids"),
-				shared: d("shared")
+				shared: d("shared"),
+				reminder_minutes: r.reminder === "" || r.reminder === void 0 ? null : Number(r.reminder)
 			}, new Date(c.end) <= new Date(c.start)) {
 				this.error = "The event must end after it starts.";
 				return;
@@ -1506,7 +1550,20 @@ var We = [
 			photos: u("photos").split(/\r?\n/).map((e) => e.trim()).filter(Boolean),
 			shared: d("shared")
 		};
-		else if (i === "meal") {
+		else if (i === "contact") {
+			o = "contacts";
+			let e = (e) => u(e).split(/\r?\n|,/).map((e) => e.trim()).filter(Boolean);
+			c = {
+				...c,
+				name: u("name"),
+				group: u("group"),
+				phones: e("phones"),
+				emails: e("emails"),
+				address: u("address"),
+				notes: u("notes"),
+				shared: d("shared")
+			};
+		} else if (i === "meal") {
 			o = "groceries", s = "meal_slots";
 			let e = (this.data.recipes.items || []).find((e) => e.id === u("recipe_id"));
 			if (c = {
@@ -1604,7 +1661,7 @@ var We = [
 				"competition_default",
 				"language",
 				"theme"
-			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.sync_interval = l("sync_interval"), e.meal_slots = u("meal_slots").split(",").map((e) => e.trim()).filter(Boolean), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), !e.meal_slots.length) {
+			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.sync_interval = l("sync_interval"), e.reminders_enabled = d("reminders_enabled"), e.default_reminder_minutes = l("default_reminder_minutes"), e.notify_service = u("notify_service"), e.daily_agenda_time = u("daily_agenda_time"), e.meal_slots = u("meal_slots").split(",").map((e) => e.trim()).filter(Boolean), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), !e.meal_slots.length) {
 				this.error = "Enter at least one meal slot.";
 				return;
 			}
@@ -1660,6 +1717,16 @@ var We = [
       ${this.editor ? this.dialog() : P}
     </div>`;
 	}
+	async exportCalendar() {
+		try {
+			let e = await this._hass.fetchWithAuth("/api/family_organizer/calendar.ics");
+			if (!e.ok) throw Error(await e.text());
+			let t = URL.createObjectURL(await e.blob()), n = document.createElement("a");
+			n.href = t, n.download = "family-organizer.ics", n.click(), setTimeout(() => URL.revokeObjectURL(t), 1e3), this.notice = "Calendar exported. Import the .ics file into any calendar app.";
+		} catch (e) {
+			this.error = `Could not export the calendar: ${e.message}`;
+		}
+	}
 	haMenuButton(e = !1) {
 		return M`<button type="button" class=${`ha-shell-menu ${e ? "" : "sidebar-ha-menu"}`} aria-label="Open Home Assistant navigation" @click=${() => this.dispatchEvent(new CustomEvent("hass-toggle-menu", {
 			bubbles: !0,
@@ -1676,6 +1743,7 @@ var We = [
 			case "chores": return this.chores();
 			case "recipes": return this.recipes();
 			case "journal": return this.journal();
+			case "contacts": return this.contacts();
 			case "birthdays": return this.birthdays();
 			default: return this.settings();
 		}
@@ -1711,7 +1779,7 @@ var We = [
 		].map((e) => M`<button class=${this.calendarView === e ? "active" : ""} aria-pressed=${this.calendarView === e} @click=${() => this.calendarView = e}>${e[0].toUpperCase() + e.slice(1)}</button>`)}</div><label class="sr-only" for="calendar-date">Go to date</label><input id="calendar-date" type="date" .value=${this.selectedDay} @change=${(e) => {
 			let t = e.target.value;
 			t && (this.selectedDay = t);
-		}}></div></div>
+		}}><button type="button" title="Download the family calendar as an .ics file for Google, Apple or Outlook" @click=${() => void this.exportCalendar()}>Export .ics</button></div></div>
       ${this.filters()}
       <div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${i ? "overview-closed" : ""}`}><div class="calendar-surface">
         ${this.calendarView === "month" ? M`<div class="weekday-row">${e.slice(0, 7).map((e) => M`<span>${this.date(e, { weekday: "short" })}</span>`)}</div><div class="month-grid">${e.map((e) => {
@@ -1846,7 +1914,7 @@ var We = [
 			return t ? this.recipeDetail(t) : M`<button @click=${() => this.navigate("recipes")}>← All recipes</button>${this.empty("Recipe not found", "It may have been deleted or is no longer shared with you.")}`;
 		}
 		let n = e.filter((e) => (!this.recipeCategory || (e.category_ids || []).includes(this.recipeCategory)) && `${e.title} ${(e.tags || []).join(" ")}`.toLowerCase().includes(this.recipeSearch.toLowerCase()));
-		return M`<section>${this.mealPlanner()}<hr><div class="section-toolbar"><div><span class="eyebrow">THE FAMILY COOKBOOK</span><h2>Favorites, all in one place</h2></div>${this.addButton("New recipe", "recipe", this.can("manage_recipes"))}</div><div class="recipe-toolbar"><label class="search-label"><span class="sr-only">Search recipes or tags</span><input type="search" placeholder="Search recipes or tags…" .value=${this.recipeSearch} @input=${(e) => this.recipeSearch = e.target.value}></label><label>Category<select .value=${this.recipeCategory} @change=${(e) => this.recipeCategory = e.target.value}><option value="">All categories</option>${t.map((e) => M`<option value=${e.id}>${this.categoryPath(e)}</option>`)}</select></label>${this.can("manage_recipes") ? M`<button @click=${() => this.openEditor("categories")}>Manage categories</button>` : P}</div>
+		return M`<section>${this.mealPlanner()}<hr><div class="section-toolbar"><div><span class="eyebrow">THE FAMILY COOKBOOK</span><h2>Favorites, all in one place</h2></div><div class="toolbar-actions">${this.can("manage_recipes") ? M`<button @click=${() => this.openEditor("recipe-import")}>Import from web</button>` : P}${this.addButton("New recipe", "recipe", this.can("manage_recipes"))}</div></div><div class="recipe-toolbar"><label class="search-label"><span class="sr-only">Search recipes or tags</span><input type="search" placeholder="Search recipes or tags…" .value=${this.recipeSearch} @input=${(e) => this.recipeSearch = e.target.value}></label><label>Category<select .value=${this.recipeCategory} @change=${(e) => this.recipeCategory = e.target.value}><option value="">All categories</option>${t.map((e) => M`<option value=${e.id}>${this.categoryPath(e)}</option>`)}</select></label>${this.can("manage_recipes") ? M`<button @click=${() => this.openEditor("categories")}>Manage categories</button>` : P}</div>
       <div class="recipe-grid">${n.length ? n.map((e) => M`<button class="recipe-card" @click=${() => this.navigate("recipes", e.id)}>${e.image ? M`<img src=${e.image} alt="" loading="lazy" referrerpolicy="no-referrer">` : M`<div class="recipe-placeholder" aria-hidden="true">♧<span>FROM OUR KITCHEN</span></div>`}<div class="recipe-card-copy"><span class="eyebrow">${(e.category_ids || []).map((e) => t.find((t) => t.id === e)?.name).filter(Boolean).join(" · ") || "Family favorite"}</span><h3>${e.title}</h3><p class="muted">${Number(e.prep_time || 0) + Number(e.cook_time || 0)} min · ${J(Number(e.servings || 4))} servings</p><div class="tags">${(e.tags || []).slice(0, 3).map((e) => M`<span>${e}</span>`)}</div></div></button>`) : this.empty(this.recipeSearch || this.recipeCategory ? "No recipes match" : "Start your family cookbook", "Save a favorite recipe, scale its servings and send ingredients to your lists.", this.addButton("Add a recipe", "recipe", this.can("manage_recipes")))}</div></section>`;
 	}
 	categoryPath(e) {
@@ -1986,6 +2054,18 @@ var We = [
         ${t ? M`<div class="journal-actions"><button class="icon-button" aria-label=${`Edit ${e.title}`} @click=${() => this.openEditor("journal", e)}>✎</button><button class="icon-button" aria-label=${`Delete ${e.title}`} @click=${() => this.confirmDelete("journal", e)}>×</button></div>` : P}
       </article>`) : this.empty("Your story starts here", this.journalPerson ? "No entries for this family member yet." : "Record first words, big wins and ordinary days you don’t want to forget.", this.addButton("Write the first entry", "journal", t, { day: U(/* @__PURE__ */ new Date()) }))}</div></section>`;
 	}
+	contacts() {
+		let e = this.can("manage_contacts"), t = this.contactQuery.trim().toLowerCase(), n = [...this.data.contacts?.items || []].sort((e, t) => `${e.name}`.localeCompare(t.name)).filter((e) => !t || [
+			e.name,
+			e.group,
+			e.address,
+			e.notes,
+			...e.phones || [],
+			...e.emails || []
+		].some((e) => `${e || ""}`.toLowerCase().includes(t))), r = [...new Set(n.map((e) => e.group || "Other"))].sort((e, t) => e === "Other" ? 1 : t === "Other" ? -1 : e.localeCompare(t));
+		return M`<section><div class="section-toolbar"><div><span class="eyebrow">FAMILY ADDRESS BOOK</span><h2>Who to call</h2></div><div class="toolbar-actions"><label>Search<input type="search" placeholder="Name, school, doctor…" .value=${this.contactQuery} @input=${(e) => this.contactQuery = e.target.value}></label>${this.addButton("New contact", "contact", e)}</div></div>
+      ${n.length ? r.map((t) => M`<h3 class="contact-group">${t}</h3><div class="contact-grid">${n.filter((e) => (e.group || "Other") === t).map((t) => M`<article class="surface contact-card"><div class="contact-avatar" aria-hidden="true">${`${t.name || "?"}`.split(/\s+/).map((e) => e[0]).join("").slice(0, 2).toUpperCase()}</div><div class="row-copy"><h3>${t.name}</h3>${(t.phones || []).map((e) => M`<a href=${`tel:${e.replace(/[^\d+]/g, "")}`}>☎ ${e}</a>`)}${(t.emails || []).map((e) => M`<a href=${`mailto:${e}`}>✉ ${e}</a>`)}${t.address ? M`<p class="muted">${t.address}</p>` : P}${t.notes ? M`<small class="muted">${t.notes}</small>` : P}</div>${e ? M`<div class="journal-actions"><button class="icon-button" aria-label=${`Edit ${t.name}`} @click=${() => this.openEditor("contact", t)}>✎</button><button class="icon-button" aria-label=${`Delete ${t.name}`} @click=${() => this.confirmDelete("contacts", t)}>×</button></div>` : P}</article>`)}</div>`) : this.empty(t ? "No matches" : "Keep everyone close", t ? "Try a different search." : "Babysitters, school, the dentist, grandparents: one shared place for every number.", this.addButton("Add the first contact", "contact", e))}</section>`;
+	}
 	birthdays() {
 		let e = U(/* @__PURE__ */ new Date()), t = this.people.map((t) => ({
 			person: t,
@@ -2002,7 +2082,7 @@ var We = [
 	settings() {
 		let e = this.settingsData;
 		return M`<section><div class="settings-intro"><span class="eyebrow">YOUR HOME, YOUR WAY</span><h2>A place for everyone</h2><p class="muted">Link family members to Home Assistant users, choose their colors and set what they can manage.</p></div><div class="section-toolbar"><h3>Family members</h3>${this.addButton("Add a person", "person", this.can("manage_people"))}</div><div class="people-grid">${this.people.length ? this.people.map((e) => M`<article class="surface person-card">${this.avatar(e.id)}<div class="row-copy"><h3>${e.name}</h3><p class="muted">${e.role === "parent_admin" ? "Family administrator" : e.role === "parent" ? "Parent" : "Child"} · ${e.user_id || e.ha_user_id ? "HA account linked" : "No HA account linked"}</p><small class="muted">${Object.keys(e.permissions || {}).length} permission overrides</small></div>${this.can("manage_people") ? M`<button @click=${() => this.openEditor("person", e)}>Edit</button><button class="icon-button danger" aria-label=${`Remove ${e.name}`} @click=${() => this.confirmDelete("people", e)}>×</button>` : P}</article>`) : this.empty("Welcome to your family space", "Add your first family member and link their Home Assistant user ID.", this.addButton("Add a person", "person", this.can("manage_people")))}</div>
-      <div class="settings-grid"><article class="surface"><span class="eyebrow">DISPLAY & DEFAULTS</span><h3>Set your everyday rhythm</h3><dl><div><dt>Calendar</dt><dd>${e.default_calendar_view || "month"} view · week starts ${e.week_start || "by locale"}</dd></div><div><dt>Day overview</dt><dd>${e.overview_position || "right"} · ${e.overview_collapsed ? "collapsed" : "expanded"}</dd></div><div><dt>Time & language</dt><dd>${e.time_format || "24"} hour · ${e.language || this.locale}</dd></div><div><dt>Meal slots</dt><dd>${(e.meal_slots || []).join(", ")}</dd></div><div><dt>Stores</dt><dd>${(e.stores || []).join(", ") || "No stores yet"}</dd></div><div><dt>Grocery default</dt><dd>${(this.data.groceries.lists || []).find((t) => t.id === e.default_grocery_list_id)?.name || "First list"}</dd></div><div><dt>Competition</dt><dd>${e.competition_default || "week"}</dd></div><div><dt>Sync interval</dt><dd>${e.sync_interval || 30} minutes</dd></div></dl>${this.addButton("Edit preferences", "preferences", this.can("manage_settings"), {
+      <div class="settings-grid"><article class="surface"><span class="eyebrow">DISPLAY & DEFAULTS</span><h3>Set your everyday rhythm</h3><dl><div><dt>Calendar</dt><dd>${e.default_calendar_view || "month"} view · week starts ${e.week_start || "by locale"}</dd></div><div><dt>Day overview</dt><dd>${e.overview_position || "right"} · ${e.overview_collapsed ? "collapsed" : "expanded"}</dd></div><div><dt>Time & language</dt><dd>${e.time_format || "24"} hour · ${e.language || this.locale}</dd></div><div><dt>Meal slots</dt><dd>${(e.meal_slots || []).join(", ")}</dd></div><div><dt>Stores</dt><dd>${(e.stores || []).join(", ") || "No stores yet"}</dd></div><div><dt>Grocery default</dt><dd>${(this.data.groceries.lists || []).find((t) => t.id === e.default_grocery_list_id)?.name || "First list"}</dd></div><div><dt>Competition</dt><dd>${e.competition_default || "week"}</dd></div><div><dt>Sync interval</dt><dd>${e.sync_interval || 30} minutes</dd></div><div><dt>Reminders</dt><dd>${e.reminders_enabled === !1 ? "Off" : `${e.default_reminder_minutes ?? 15} min before · ${e.notify_service ? `notify.${e.notify_service}` : "HA notifications"}${e.daily_agenda_time ? ` · agenda at ${e.daily_agenda_time}` : ""}`}</dd></div></dl>${this.addButton("Edit preferences", "preferences", this.can("manage_settings"), {
 			...e,
 			theme: this.theme
 		})}</article>
@@ -2015,7 +2095,7 @@ var We = [
 		}}><span aria-hidden="true">${e === "auto" ? "◐" : e === "light" ? "☼" : "☾"}</span>${e[0].toUpperCase() + e.slice(1)}</button>`)}</div><hr><span class="eyebrow">CALENDAR CONNECTIONS</span><h3>Keep calendars in sync</h3><p class="muted">Sources and credentials are managed securely in Home Assistant, never in this panel.</p><a class="button-link" href="/config/integrations/integration/family_organizer">Open integration settings →</a><p class="muted">Settings → Devices & services → Family Organizer → Configure.</p>${(this.data.calendar.sources || []).map((e) => M`<div class="compact-row"><span class="event-dot" style=${`background:${this.color(e.color)}`}></span><strong>${e.name}</strong><span class="muted">${e.enabled === !1 ? "Disabled" : "Connected"}</span></div>`)}</article></div></section>`;
 	}
 	field(e, t, n = "", r = "text", i = !1, a = {}) {
-		return M`<label>${e}<input name=${t} type=${r} .value=${String(n ?? "")} ?required=${i} min=${a.min ?? P} max=${a.max ?? P} step=${a.step ?? P} placeholder=${a.placeholder ?? P} ?autofocus=${a.autofocus || !1}></label>`;
+		return M`<label>${e}<input name=${t} type=${r} .value=${String(n ?? "")} ?required=${i} min=${a.min ?? P} max=${a.max ?? P} step=${a.step ?? P} placeholder=${a.placeholder ?? P} list=${a.list ?? P} ?autofocus=${a.autofocus || !1}></label>`;
 	}
 	select(e, t, n, r) {
 		let i = `editor-${t}`;
@@ -2040,6 +2120,8 @@ var We = [
 			todo: t.id ? "Edit to-do" : "Add a to-do",
 			todolist: t.id ? "Edit to-do list" : "Create a to-do list",
 			journal: t.id ? "Edit journal entry" : "New journal entry",
+			contact: t.id ? "Edit contact" : "Add a contact",
+			"recipe-import": "Import a recipe from the web",
 			meal: t.id ? "Edit planned meal" : "Plan a meal",
 			chore: t.id ? "Edit chore" : "Schedule a chore",
 			points: "Adjust family points",
@@ -2128,6 +2210,14 @@ var We = [
 				icon: "✎",
 				enabled: this.can("manage_journal"),
 				item: { day: this.selectedDay }
+			},
+			{
+				kind: "contact",
+				title: "Contact",
+				description: "A number the whole family can find",
+				icon: "☎",
+				enabled: this.can("manage_contacts"),
+				item: {}
 			}
 		];
 		return M`<div class="quick-menu">${e.filter((e) => e.enabled).map((e) => M`<button @click=${() => this.openEditor(e.kind, e.item)}><span class="quick-icon" aria-hidden="true">${e.icon}</span><span><strong>${e.title}</strong><small>${e.description}</small></span><span aria-hidden="true">→</span></button>`)}</div>
@@ -2159,7 +2249,17 @@ var We = [
 				["FREQ=MONTHLY", "Every month"],
 				["FREQ=YEARLY", "Every year"]
 			];
-			return t.recurrence && !a.some(([e]) => e === t.recurrence) && a.push([t.recurrence, `Keep existing: ${t.recurrence}`]), M`${this.field("Event title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Location", "location", t.location)}${this.field("Starts on", "day", i, "date", !0)}${this.field("Ends on (inclusive for all-day)", "end_day", t.all_day && r ? G(r.slice(0, 10), -1) : r.slice(0, 10) || i, "date", !0)}${this.field("Start time", "start", t.start_time || n.slice(11, 16) || "18:00", "time", !0)}${this.field("End time", "end", t.end_time || r.slice(11, 16) || "19:00", "time", !0)}<label class="check full"><input name="all_day" type="checkbox" ?checked=${!!t.all_day}>All-day event (time fields are ignored)</label>${this.select("Repeat", "recurrence", t.recurrence || "", a)}${this.personChecks("person_ids", t.person_ids || (this.can("manage_calendar_all") ? [] : [this.me?.id]), !this.can("manage_calendar_all"))}${this.textarea("Notes", "description", t.description)}${this.shared(t)}`;
+			return t.recurrence && !a.some(([e]) => e === t.recurrence) && a.push([t.recurrence, `Keep existing: ${t.recurrence}`]), M`${this.field("Event title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Location", "location", t.location)}${this.field("Starts on", "day", i, "date", !0)}${this.field("Ends on (inclusive for all-day)", "end_day", t.all_day && r ? G(r.slice(0, 10), -1) : r.slice(0, 10) || i, "date", !0)}${this.field("Start time", "start", t.start_time || n.slice(11, 16) || "18:00", "time", !0)}${this.field("End time", "end", t.end_time || r.slice(11, 16) || "19:00", "time", !0)}<label class="check full"><input name="all_day" type="checkbox" ?checked=${!!t.all_day}>All-day event (time fields are ignored)</label>${this.select("Repeat", "recurrence", t.recurrence || "", a)}${this.select("Reminder", "reminder", t.reminder_minutes === null || t.reminder_minutes === void 0 ? "" : String(t.reminder_minutes), [
+				["", `Family default (${this.settingsData.default_reminder_minutes ?? 15} min)`],
+				["-1", "No reminder"],
+				["0", "At start"],
+				["5", "5 minutes before"],
+				["15", "15 minutes before"],
+				["30", "30 minutes before"],
+				["60", "1 hour before"],
+				["120", "2 hours before"],
+				["1440", "1 day before"]
+			])}${this.personChecks("person_ids", t.person_ids || (this.can("manage_calendar_all") ? [] : [this.me?.id]), !this.can("manage_calendar_all"))}${this.textarea("Notes", "description", t.description)}${this.shared(t)}`;
 		}
 		if (e === "grocery") return M`${this.field("Item name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Quantity", "quantity", t.quantity ?? 1, "number", !0, {
 			min: .001,
@@ -2168,6 +2268,14 @@ var We = [
 		if (e === "list") return M`${this.field("List name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Default store", "store", t.store)}${this.shared(t)}`;
 		if (e === "todo") return M`${this.field("What needs doing?", "title", t.title, "text", !0, { autofocus: !0 })}${this.select("List", "list_id", t.list_id || this.todoListId, (this.data.todos?.lists || []).map((e) => [e.id, e.name]))}${this.field("Due date", "due_date", t.due_date, "date")}<label>Assigned to<select name="assignee_id"><option value="">Anyone</option>${this.peopleOptions(t.assignee_id)}</select></label>${this.textarea("Notes", "notes", t.notes)}${this.shared(t)}`;
 		if (e === "todolist") return M`${this.field("List name", "name", t.name, "text", !0, { autofocus: !0 })}${this.shared(t)}`;
+		if (e === "recipe-import") return M`${this.field("Recipe page URL", "url", t.url, "url", !0, {
+			autofocus: !0,
+			placeholder: "https://…"
+		})}<p class="muted full">We read the recipe details most cooking sites publish, then let you review before saving.</p>`;
+		if (e === "contact") return M`${this.field("Name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Group", "group", t.group, "text", !1, {
+			list: "contact-groups",
+			placeholder: "School, Doctors, Family, Friends…"
+		})}<datalist id="contact-groups">${[...new Set((this.data.contacts?.items || []).map((e) => e.group).filter(Boolean))].map((e) => M`<option value=${e}></option>`)}</datalist>${this.textarea("Phone numbers (one per line)", "phones", (t.phones || []).join("\n"), "+31 6 1234 5678")}${this.textarea("Email addresses (one per line)", "emails", (t.emails || []).join("\n"), "name@example.com")}${this.field("Address", "address", t.address)}${this.textarea("Notes", "notes", t.notes, "Opening hours, who to ask for…")}${this.shared(t)}`;
 		if (e === "journal") return M`${this.field("Title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Date", "day", t.day || U(/* @__PURE__ */ new Date()), "date", !0)}${this.textarea("What happened?", "body", t.body, "First steps, a big win, a funny thing someone said…")}${this.personChecks("person_ids", t.person_ids || [])}${this.textarea("Photo URLs (one per line)", "photos", (t.photos || []).join("\n"), "https://…")}${this.shared(t)}`;
 		if (e === "meal") return M`${this.field("Date", "day", t.day || this.selectedDay, "date", !0)}${this.select("Meal slot", "slot", t.slot || t.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || [
 			"breakfast",
@@ -2255,12 +2363,20 @@ var We = [
 			min: 5,
 			max: 1440,
 			step: 1
-		})}` : P;
+		})}
+      <label class="check full"><input name="reminders_enabled" type="checkbox" ?checked=${t.reminders_enabled !== !1}>Send event reminders</label>
+      ${this.field("Default reminder (minutes before)", "default_reminder_minutes", t.default_reminder_minutes ?? 15, "number", !0, {
+			min: 0,
+			max: 10080,
+			step: 1
+		})}
+      ${this.field("Notify service (e.g. mobile_app_phone)", "notify_service", t.notify_service || "", "text", !1, { placeholder: "Leave empty for Home Assistant notifications" })}
+      ${this.field("Daily agenda time (optional)", "daily_agenda_time", t.daily_agenda_time || "", "time")}` : P;
 	}
 	static {
 		this.styles = Ue;
 	}
 };
-Q([H()], $.prototype, "page", void 0), Q([H()], $.prototype, "data", void 0), Q([H()], $.prototype, "selectedDay", void 0), Q([H()], $.prototype, "calendarView", void 0), Q([H()], $.prototype, "personFilter", void 0), Q([H()], $.prototype, "listId", void 0), Q([H()], $.prototype, "todoListId", void 0), Q([H()], $.prototype, "showDoneTodos", void 0), Q([H()], $.prototype, "journalPerson", void 0), Q([H()], $.prototype, "groceryAssignee", void 0), Q([H()], $.prototype, "groupStores", void 0), Q([H()], $.prototype, "mealWeek", void 0), Q([H()], $.prototype, "scorePeriod", void 0), Q([H()], $.prototype, "recipeSearch", void 0), Q([H()], $.prototype, "recipeCategory", void 0), Q([H()], $.prototype, "recipeId", void 0), Q([H()], $.prototype, "servings", void 0), Q([H()], $.prototype, "selectedIngredients", void 0), Q([H()], $.prototype, "routes", void 0), Q([H()], $.prototype, "theme", void 0), Q([H()], $.prototype, "error", void 0), Q([H()], $.prototype, "notice", void 0), Q([H()], $.prototype, "loading", void 0), Q([H()], $.prototype, "saving", void 0), Q([H()], $.prototype, "editor", void 0), $ = Q([we("family-organizer-panel")], $);
+Q([H()], $.prototype, "page", void 0), Q([H()], $.prototype, "data", void 0), Q([H()], $.prototype, "selectedDay", void 0), Q([H()], $.prototype, "calendarView", void 0), Q([H()], $.prototype, "personFilter", void 0), Q([H()], $.prototype, "listId", void 0), Q([H()], $.prototype, "todoListId", void 0), Q([H()], $.prototype, "showDoneTodos", void 0), Q([H()], $.prototype, "journalPerson", void 0), Q([H()], $.prototype, "contactQuery", void 0), Q([H()], $.prototype, "groceryAssignee", void 0), Q([H()], $.prototype, "groupStores", void 0), Q([H()], $.prototype, "mealWeek", void 0), Q([H()], $.prototype, "scorePeriod", void 0), Q([H()], $.prototype, "recipeSearch", void 0), Q([H()], $.prototype, "recipeCategory", void 0), Q([H()], $.prototype, "recipeId", void 0), Q([H()], $.prototype, "servings", void 0), Q([H()], $.prototype, "selectedIngredients", void 0), Q([H()], $.prototype, "routes", void 0), Q([H()], $.prototype, "theme", void 0), Q([H()], $.prototype, "error", void 0), Q([H()], $.prototype, "notice", void 0), Q([H()], $.prototype, "loading", void 0), Q([H()], $.prototype, "saving", void 0), Q([H()], $.prototype, "editor", void 0), $ = Q([we("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };

@@ -3,6 +3,7 @@ import ast
 from pathlib import Path
 from types import SimpleNamespace
 
+from custom_components.family_organizer.const import SETTING_KEYS
 from custom_components.family_organizer.permissions import capabilities_for, person_for
 
 ROOT = Path(__file__).parents[1]
@@ -12,7 +13,7 @@ def settings_payload(user, settings):
     source = (ROOT / "custom_components/family_organizer/websocket_api.py").read_text()
     module = ast.parse(source)
     function = next(node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == "_public_payload")
-    namespace = {"capabilities_for": capabilities_for, "person_for": person_for}
+    namespace = {"capabilities_for": capabilities_for, "person_for": person_for, "SETTING_KEYS": SETTING_KEYS}
     exec(compile(ast.Module(body=[function], type_ignores=[]), "websocket_api.py", "exec"), namespace)
     return namespace["_public_payload"]("settings", settings, user, settings)
 
