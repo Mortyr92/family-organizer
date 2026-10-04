@@ -1,0 +1,32 @@
+Family Organizer 0.2.0
+
+A redesigned, local-first family dashboard inspired by the layout and
+interactions of Cozi Family Organizer, implemented with original code and
+Family Organizer branding. Not affiliated with Cozi; no Cozi account, service,
+subscription or telemetry is used.
+
+Highlights
+- Responsive sidebar/mobile navigation, family colors and orange quick-add.
+- Accessible create/edit/detail dialogs across calendar, lists, chores and recipes.
+- Calendar date navigation, start times and selected-day agenda.
+- Grocery routing, seven-day meals, chore points and recipe serving scaling.
+- Existing people, roles, granular permissions and theme preferences retained.
+- Modern Home Assistant asynchronous panel registration, with 2024.6 fallback.
+- Versioned frontend URL prevents reuse of the previous release's cached panel.
+
+Upgrade
+1. Back up Home Assistant (including config and .storage).
+2. Update Family Organizer in HACS once v0.2.0 is published.
+3. Restart Home Assistant, then reload open browser/app dashboards.
+4. If an old page remains, hard-refresh the browser or clear the companion
+   app frontend cache. Do not delete/re-add the integration.
+
+Manual fallback: replace only custom_components/family_organizer with the
+contents of family_organizer.zip, then restart Home Assistant. Keep the
+existing config entry and .storage files; no data migration or reset is needed.
+
+Publishing: merge the implementation PR into main, then create/push tag
+v0.2.0 on that commit. The Release workflow validates versions, rebuilds and
+packages the integration and publishes family_organizer.zip. A PR alone is
+not an installable HACS release. Future releases must update their notes file
+alongside the release version.

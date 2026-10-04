@@ -3,5 +3,5 @@ set -euo pipefail
 cd "$(dirname "$0")/../frontend"
 npm ci
 npm run typecheck
+npm test
 npm run build
-

@@ -93,7 +93,12 @@ def _public_payload(resource: str, data: dict, user, settings: dict) -> dict:
             "default_grocery_list_id", "meal_slots", "competition_default",
             "language", "stores",
         }
-        return {key: data.get(key) for key in allowed}
+        result = {key: data.get(key) for key in allowed}
+        result["current_user"] = {
+            "person_id": (person_for(user, settings) or {}).get("id"),
+            "capabilities": capabilities_for(user, settings),
+        }
+        return result
     result = {}
     for key, value in data.items():
         if isinstance(value, list):
@@ -454,7 +459,9 @@ async def ws_settings(hass, connection, msg):
     await manager["settings"].async_save()
     hass.bus.async_fire(EVENT_UPDATED, {"resource": "settings", "operation": "update"})
     connection.send_result(
-        msg["id"], _public_payload("settings", manager["settings"].data, connection.user, _settings(manager))
+        msg["id"], _public_payload("settings", manager["settings"].data, connection.user, {
+            **_settings(manager), "people": _people(manager).get("items", [])
+        })
     )
 
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -58,20 +59,32 @@ async def async_unload_entry(hass, entry):
 
 
 async def _async_register_panel(hass):
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    if domain_data.get("panel_registered"):
+        return
     bundle = Path(__file__).parent / "panel" / "family-organizer-panel.js"
-    # Home Assistant 2024.6 uses the synchronous registration API.
-    hass.http.register_static_path(
-        "/family_organizer/family-organizer-panel.js", str(bundle), True
-    )
+    manifest = bundle.parent.parent / "manifest.json"
+    version = json.loads(await hass.async_add_executor_job(manifest.read_text))["version"]
+    url = f"/family_organizer/{version}/family-organizer-panel.js"
+    try:
+        from homeassistant.components.http import StaticPathConfig
+    except ImportError:
+        # Home Assistant 2024.6 predates the asynchronous static path API.
+        hass.http.register_static_path(url, str(bundle), True)
+    else:
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(url, str(bundle), True)]
+        )
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="family-organizer-panel",
         frontend_url_path=PANEL_URL.strip("/"),
-        module_url="/family_organizer/family-organizer-panel.js",
+        module_url=url,
         sidebar_title=PANEL_TITLE,
         sidebar_icon=PANEL_ICON,
         require_admin=False,
     )
+    domain_data["panel_registered"] = True
 
 
 def _register_services(hass, stores):
