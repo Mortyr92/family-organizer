@@ -23,8 +23,10 @@ _COLLECTIONS = {
     "people": {"items"},
     "calendar": {"items", "sources"},
     "groceries": {"items", "lists", "meal_slots", "meal_plans"},
+    "todos": {"items", "lists"},
     "chores": {"items", "completions", "point_adjustments"},
     "recipes": {"items", "categories"},
+    "journal": {"items"},
     "settings": {"items"},
 }
 
@@ -160,8 +162,10 @@ async def _mutate(hass, connection, msg, operation):
         "people": "manage_people",
         "calendar": "manage_calendar_all",
         "groceries": "manage_meal_plan" if collection in {"meal_slots", "meal_plans"} else "manage_groceries",
+        "todos": "manage_todos",
         "chores": "manage_chores",
         "recipes": "manage_recipes",
+        "journal": "manage_journal",
     }[resource]
     if operation == "create":
         if resource == "calendar" and collection == "items":
@@ -255,6 +259,14 @@ async def _mutate(hass, connection, msg, operation):
                     raise vol.Invalid("At least one grocery list is required")
                 manager["groceries"].data["items"] = [
                     value for value in manager["groceries"].data.get("items", [])
+                    if value.get("list_id") != item["id"]
+                ]
+            if resource == "todos" and collection == "lists":
+                if not items:
+                    items.insert(index, item)
+                    raise vol.Invalid("At least one to-do list is required")
+                manager["todos"].data["items"] = [
+                    value for value in manager["todos"].data.get("items", [])
                     if value.get("list_id") != item["id"]
                 ]
     await manager[resource].async_save()

@@ -3,7 +3,7 @@ PANEL_URL = "/family-organizer"
 PANEL_TITLE = "Family Organizer"
 PANEL_ICON = "mdi:home-heart"
 STORE_VERSION = 4
-STORES = ("people", "calendar", "groceries", "chores", "recipes", "settings")
+STORES = ("people", "calendar", "groceries", "todos", "chores", "recipes", "journal", "settings")
 DEFAULT_SETTINGS = {
     "theme": "auto",
     "permissions": {},

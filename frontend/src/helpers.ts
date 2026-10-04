@@ -71,7 +71,7 @@ export function mergeIngredients(text: string, original: Item[] = []) {
 }
 export function presetCapability(role: string, capability: string) {
   return role === "parent_admin" || (role === "parent" && !["manage_people", "manage_settings", "manage_calendar_sync"].includes(capability))
-    || (role === "child" && ["manage_calendar_own", "manage_groceries", "manage_meal_plan", "complete_own_chores", "manage_recipes"].includes(capability));
+    || (role === "child" && ["manage_calendar_own", "manage_groceries", "manage_todos", "manage_meal_plan", "complete_own_chores", "manage_recipes", "manage_journal"].includes(capability));
 }
 export function calendarPayload(item: Item) {
   const fields = ["title", "start", "end", "all_day", "person_ids", "description", "location", "recurrence", "exdates", "source_id", "external_id", "shared"];
@@ -90,8 +90,18 @@ export function resolveGroceryList(lists: Item[], current: string, preferred?: s
   const candidate = initialize && preferred ? preferred : current;
   return lists.find(list => list.id === candidate)?.id || lists.find(list => list.id === preferred)?.id || lists[0]?.id || "default";
 }
+/** Next occurrence of a birthday (MM-DD or YYYY-MM-DD) on or after `today`, with the age turning if a year is known. */
+export function nextBirthday(birthday: string | undefined | null, today: string) {
+  const match = String(birthday || "").match(/^(?:(\d{4})-)?(\d{2})-(\d{2})$/);
+  if (!match) return undefined;
+  const [, year, month, day] = match;
+  let next = `${today.slice(0, 4)}-${month}-${day}`;
+  if (next < today) next = `${Number(today.slice(0, 4)) + 1}-${month}-${day}`;
+  const days = Math.round((dayDate(next).getTime() - dayDate(today).getTime()) / 86400000);
+  return { date: next, days, age: year ? Number(next.slice(0, 4)) - Number(year) : undefined };
+}
 export function organizerRoute(hash: string) {
-  const match = hash.match(/^#fo\/(calendar|groceries|chores|recipes|settings)(?:\/(.+))?$/);
+  const match = hash.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|settings)(?:\/(.+))?$/);
   if (!match) return undefined;
   try { return { page: match[1], recipeId: match[1] === "recipes" ? decodeURIComponent(match[2] || "") : "", malformed: false }; }
   catch { return { page: match[1], recipeId: "", malformed: true }; }

@@ -26,6 +26,9 @@ def test_exact_roles_capabilities_and_admin():
     assert set(capabilities_for(user("child-user"), {}, PEOPLE)) == set(CAPABILITIES)
     assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_calendar_own"]
     assert not capabilities_for(user("child-user"), {}, PEOPLE)["manage_calendar_all"]
+    assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_todos"]
+    assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_journal"]
+    assert capabilities_for(user("parent-user"), {}, PEOPLE)["manage_journal"]
 
 
 def test_unlinked_denied_and_person_override_authoritative():

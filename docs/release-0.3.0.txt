@@ -1,0 +1,23 @@
+Family Organizer 0.3.0
+
+Completes the Cozi-style feature set inside Home Assistant: alongside the
+existing Calendar, Shopping/Meals, Chores, Recipes and Settings pages the panel
+now offers Today, To Do, Journal and Birthdays. Implemented with original code
+and Family Organizer branding. Not affiliated with Cozi; no Cozi account,
+service, subscription or telemetry is used.
+
+Highlights
+- Today page: agenda, upcoming events, planned meals, shopping, to-dos,
+  chores, latest journal entry and birthday callouts in one glance.
+- To Do: multiple task lists with due dates, assignees, notes and
+  "clear completed"; every list is also a Home Assistant todo entity.
+- Journal: dated family moments with tagged members and photo URLs.
+- Birthdays: per-person birthday field with countdown and age being turned.
+- Weekly meal planner moved onto the Meals page next to the recipe box.
+- Quick add now covers to-dos and journal entries.
+- New `manage_todos` and `manage_journal` capabilities with role presets and
+  per-person overrides.
+
+Upgrade
+- No uninstall or reset is required. Storage version is unchanged; the new
+  todos and journal stores start empty. Restart Home Assistant after updating.

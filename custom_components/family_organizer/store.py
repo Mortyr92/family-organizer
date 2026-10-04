@@ -40,6 +40,15 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
             item.setdefault("list_id", "default")
         result.setdefault("meal_plans", [])
         result.setdefault("meal_slots", result["meal_plans"])
+    if name == "todos":
+        result.setdefault("lists", [{"id": "default", "name": "To Do", "shared": True}])
+        for todo in result["items"]:
+            todo.setdefault("list_id", "default")
+            todo.setdefault("done", False)
+    if name == "journal":
+        for entry in result["items"]:
+            entry.setdefault("person_ids", [])
+            entry.setdefault("photos", [])
     if name == "chores":
         result.setdefault("completions", [])
         result.setdefault("point_adjustments", [])

@@ -1,16 +1,22 @@
 # Family Organizer
 
 A local-first Home Assistant integration and touch-friendly family dashboard.
-It provides five complete pages: calendar, groceries and meal planning, chores,
-recipes, and administration.
+It provides nine pages modeled on a Cozi-style family organizer: Today, Calendar,
+Shopping, To Do, Meals, Chores, Journal, Birthdays, and Settings.
 
 ## Highlights
 
+- Today dashboard: agenda, upcoming events, meals, shopping, to-dos, chores,
+  latest journal moment and upcoming birthday callouts in one view
 - Month/week/day calendar, RFC 5545 recurrence, and timezone-aware ICS/CalDAV sync
-- Multiple grocery lists with store and assignee routing, merging, and todo entities
+- Multiple shopping lists with store and assignee routing, merging, and todo entities
+- Separate To Do lists (packing, projects, errands) with due dates and assignees,
+  also exposed as Home Assistant todo entities
 - Breakfast/lunch/dinner planning across a horizontally swipeable seven-day view
-- Recipe serving scaling and selectable ingredients routed to any grocery list
+- Recipe serving scaling and selectable ingredients routed to any shopping list
 - Scheduled chores and week/month competitions with per-person avatars
+- Family journal with dated entries, tagged family members and photo URLs
+- Birthday countdowns computed from each person's birthday
 - Home Assistant users mapped to `parent_admin`, `parent`, or `child`
 - Per-person capability overrides plus creator/assignee ownership checks
 - Live websocket updates after UI, service, todo-entity, and calendar-sync changes
@@ -53,13 +59,13 @@ event detail/duplicate flow informed this implementation. Direct reference-page
 and image access failed in the implementation sandbox, so this is not a
 pixel-perfect screenshot comparison or a reproduction of Cozi's assets.
 
-| Calendar | Groceries and meals | Chores |
-| --- | --- | --- |
-| Month/week/day switcher, recurrence, day details | List/store routing and three daily meal slots | Scheduling and week/month ranking |
+| Today | Calendar | Shopping and Meals | Chores |
+| --- | --- | --- | --- |
+| Family overview for the current day | Month/week/day switcher, recurrence, day details | List/store routing, weekly planner and three daily meal slots | Scheduling and week/month ranking |
 
-| Recipes | Settings |
-| --- | --- |
-| Ingredient selection, scaling, and list routing | People, avatars, roles, and theme |
+| To Do | Journal | Birthdays | Settings |
+| --- | --- | --- | --- |
+| Multiple task lists, due dates, assignees | Dated family moments with photos | Countdown and age per family member | People, birthdays, avatars, roles, and theme |
 
 ## Install
 
@@ -74,15 +80,16 @@ repository, install **Family Organizer**, restart Home Assistant, then use
 Copy `custom_components/family_organizer` into the matching directory under the
 Home Assistant configuration directory, restart, and add the integration.
 
-## Update an existing installation to 0.2.0
+## Update an existing installation to 0.3.0
 
 **No uninstall, reconfiguration, or data reset is required.** The integration
 domain, config entries, entities, storage keys and storage version remain
 unchanged. Existing people, lists, events, recipes, chores, permissions and
-auto/light/dark settings are retained.
+auto/light/dark settings are retained. The new To Do and Journal stores are
+created empty on first start; birthdays can be added per person in Settings.
 
 1. Create a Home Assistant backup including configuration and `.storage`.
-2. Once the owner publishes **v0.2.0**, open **HACS → Integrations → Family
+2. Once the owner publishes **v0.3.0**, open **HACS → Integrations → Family
    Organizer → Update/Redownload** and select that release.
 3. **Restart Home Assistant** (reloading the integration alone does not replace
    already-loaded frontend code).
@@ -98,11 +105,11 @@ files. Restart Home Assistant and reload the frontend. Restore your backup if
 you need to roll back both code and data.
 
 A pull request is **not yet an installable HACS release**. The owner must merge
-this PR into `main`, then tag that merged commit `v0.2.0`. The existing Release
+this PR into `main`, then tag that merged commit `v0.3.0`. The existing Release
 workflow checks matching manifest/frontend versions and a reproducible bundle,
 then publishes the integration ZIP used by HACS. Review the workflow result and
 release asset before offering the update. No tag or release is published by this
-implementation task. Release notes: [0.2.0](docs/release-0.2.0.txt).
+implementation task. Release notes: [0.3.0](docs/release-0.3.0.txt).
 
 ## Configuration and calendar providers
 
@@ -176,7 +183,7 @@ when Playwright is available.
 
 ### Release validation boundaries
 
-The 0.2.0 backend unit/stub suite passes (27 tests), including storage/settings
+The 0.3.0 backend unit/stub suite passes (28 tests), including storage/settings
 preservation, modern and legacy panel registration, reload idempotence,
 permission context and release ZIP layout. The official hassfest container
 reports zero invalid integrations. The actual release ZIP command was also

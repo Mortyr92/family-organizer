@@ -29,6 +29,7 @@ class Person(Model):
     color: str = "#3b82f6"
     role: str = "child"
     user_id: str | None = None
+    birthday: str | None = None
     permissions: dict[str, bool] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -102,6 +103,36 @@ class GroceryItem(Model):
     list_id: str = "default"
     store: str = ""
     assignee_id: str | None = None
+    creator_id: str | None = None
+    shared: bool = True
+
+
+@dataclass
+class TodoList(Model):
+    name: str = "To Do"
+    shared: bool = True
+    creator_id: str | None = None
+
+
+@dataclass
+class TodoItem(Model):
+    title: str = ""
+    notes: str = ""
+    done: bool = False
+    list_id: str = "default"
+    due_date: str | None = None
+    assignee_id: str | None = None
+    creator_id: str | None = None
+    shared: bool = True
+
+
+@dataclass
+class JournalEntry(Model):
+    title: str = ""
+    body: str = ""
+    day: str = field(default_factory=lambda: date.today().isoformat())
+    person_ids: list[str] = field(default_factory=list)
+    photos: list[str] = field(default_factory=list)
     creator_id: str | None = None
     shared: bool = True
 

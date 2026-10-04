@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarDates, calendarPayload, choreDue, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
+import { calendarDates, calendarPayload, choreDue, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
 
 test("month navigation clamps at month end and handles leap years", () => {
   assert.equal(moveDate("2024-01-31", "month", 1), "2024-02-29");
@@ -147,4 +147,15 @@ test("recipe routes safely decode valid IDs and handle malformed escapes", () =>
   assert.deepEqual(organizerRoute("#fo/recipes/%E0%A4%A"), { page: "recipes", recipeId: "", malformed: true });
   assert.deepEqual(organizerRoute("#fo/calendar"), { page: "calendar", recipeId: "", malformed: false });
   assert.equal(organizerRoute("#unrelated-home-assistant-route"), undefined);
+  assert.deepEqual(organizerRoute("#fo/today"), { page: "today", recipeId: "", malformed: false });
+  assert.equal(organizerRoute("#fo/journal").page, "journal");
+  assert.equal(organizerRoute("#fo/birthdays").page, "birthdays");
+  assert.equal(organizerRoute("#fo/todos").page, "todos");
+});
+test("nextBirthday counts down and computes the age being turned", () => {
+  assert.deepEqual(nextBirthday("2015-03-10", "2026-03-01"), { date: "2026-03-10", days: 9, age: 11 });
+  assert.deepEqual(nextBirthday("03-10", "2026-03-11"), { date: "2027-03-10", days: 364, age: undefined });
+  assert.equal(nextBirthday("2015-03-10", "2026-03-10").days, 0);
+  assert.equal(nextBirthday("", "2026-03-10"), undefined);
+  assert.equal(nextBirthday("not a date", "2026-03-10"), undefined);
 });
