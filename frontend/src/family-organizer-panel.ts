@@ -270,8 +270,8 @@ export class FamilyOrganizerPanel extends LitElement {
     return html`<div class="app" data-theme=${effective}>
       <a class="skip-link" href="#main" @click=${(e: Event) => { e.preventDefault(); (this.renderRoot.querySelector("main") as HTMLElement).focus(); }}>Skip to content</a>
       <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> Quick add</button>
-      <a class="brand" href="#fo/today" @click=${() => this.navigate("today")}>
-        <nav aria-label="Main navigation">${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span class="nav-icon" aria-hidden="true">${page.icon}</span><span>${page.name}</span></button>`)}</nav>
+      <aside class="sidebar"><a class="brand" href="#fo/today" @click=${() => this.navigate("today")}><span class="brand-symbol">⌂</span><span>Family<br><strong>Organizer</strong></span></a><p class="eyebrow">YOUR FAMILY, IN SYNC</p>
+        <nav aria-label="Main navigation">
         <div class="sidebar-family"><span class="eyebrow">OUR PEOPLE</span><div class="avatar-stack">${this.people.map((p: Item) => this.avatar(p.id))}</div><p>${this.people.length ? `${this.people.length} people. One shared home.` : "Your family starts here."}</p></div>
         ${this.haMenuButton()}
         <small class="sidebar-note">Made for everyday together.</small>

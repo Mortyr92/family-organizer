@@ -1,0 +1,8 @@
+﻿Family Organizer 0.3.1
+
+Fixes
+- Navigation: the sidebar wrapper markup was missing, so every navigation click bounced back to the Today page. Calendar, Shopping, To Do, Meals, Chores, Journal, Birthdays and Settings open again.
+
+Upgrade
+- No data changes. Restart Home Assistant and hard-refresh the browser after updating.
+

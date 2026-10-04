@@ -1,4 +1,4 @@
-# Family Organizer
+﻿# Family Organizer
 
 A local-first Home Assistant integration and touch-friendly family dashboard.
 It provides nine pages modeled on a Cozi-style family organizer: Today, Calendar,
@@ -26,7 +26,7 @@ Shopping, To Do, Meals, Chores, Journal, Birthdays, and Settings.
 
 ## Screens
 
-![Family Organizer calendar dashboard — demo fixtures](docs/screenshots/fixture-calendar-desktop.png)
+![Family Organizer calendar dashboard â€” demo fixtures](docs/screenshots/fixture-calendar-desktop.png)
 
 [Mobile calendar](docs/screenshots/fixture-calendar-mobile.png)
 
@@ -73,14 +73,14 @@ pixel-perfect screenshot comparison or a reproduction of Cozi's assets.
 
 Add `https://github.com/Mortyr92/family-organizer` as a custom **Integration**
 repository, install **Family Organizer**, restart Home Assistant, then use
-**Settings → Devices & services → Add integration**.
+**Settings â†’ Devices & services â†’ Add integration**.
 
 ### Manual
 
 Copy `custom_components/family_organizer` into the matching directory under the
 Home Assistant configuration directory, restart, and add the integration.
 
-## Update an existing installation to 0.3.0
+## Update an existing installation to 0.3.1
 
 **No uninstall, reconfiguration, or data reset is required.** The integration
 domain, config entries, entities, storage keys and storage version remain
@@ -89,8 +89,8 @@ auto/light/dark settings are retained. The new To Do and Journal stores are
 created empty on first start; birthdays can be added per person in Settings.
 
 1. Create a Home Assistant backup including configuration and `.storage`.
-2. Once the owner publishes **v0.3.0**, open **HACS → Integrations → Family
-   Organizer → Update/Redownload** and select that release.
+2. Once the owner publishes **v0.3.1**, open **HACS â†’ Integrations â†’ Family
+   Organizer â†’ Update/Redownload** and select that release.
 3. **Restart Home Assistant** (reloading the integration alone does not replace
    already-loaded frontend code).
 4. Reload open dashboard tabs or the companion app. The panel URL includes the
@@ -105,17 +105,17 @@ files. Restart Home Assistant and reload the frontend. Restore your backup if
 you need to roll back both code and data.
 
 A pull request is **not yet an installable HACS release**. The owner must merge
-this PR into `main`, then tag that merged commit `v0.3.0`. The existing Release
+this PR into `main`, then tag that merged commit `v0.3.1`. The existing Release
 workflow checks matching manifest/frontend versions and a reproducible bundle,
 then publishes the integration ZIP used by HACS. Review the workflow result and
 release asset before offering the update. No tag or release is published by this
-implementation task. Release notes: [0.3.0](docs/release-0.3.0.txt).
+implementation task. Release notes: [0.3.1](docs/release-0.3.1.txt).
 
 ## Configuration and calendar providers
 
-Calendar connection data is optional. In **Settings → Devices & services →
-Family Organizer → Configure**, choose ICS or CalDAV and set the URL, optional
-username/password, and polling interval (5–1440 minutes). Credentials stay in
+Calendar connection data is optional. In **Settings â†’ Devices & services â†’
+Family Organizer â†’ Configure**, choose ICS or CalDAV and set the URL, optional
+username/password, and polling interval (5â€“1440 minutes). Credentials stay in
 the Home Assistant config entry and are never returned over websocket.
 
 Dashboard settings cover day-overview side/collapse, week start, 12/24-hour
@@ -183,7 +183,7 @@ when Playwright is available.
 
 ### Release validation boundaries
 
-The 0.3.0 backend unit/stub suite passes (28 tests), including storage/settings
+The 0.3.1 backend unit/stub suite passes (28 tests), including storage/settings
 preservation, modern and legacy panel registration, reload idempotence,
 permission context and release ZIP layout. The official hassfest container
 reports zero invalid integrations. The actual release ZIP command was also
