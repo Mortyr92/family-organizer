@@ -1,0 +1,27 @@
+Family Organizer 0.5.0
+
+New
+- Full mobile-fit improvements so the panel matches phone screens better.
+- Settings navigation is visible and reachable on desktop and mobile.
+- Family member management expanded: profile picture URL, Home Assistant account link, color, role preset, and permissions.
+- Per-member PIN lock support for panel unlock/switch-user flow.
+  - PINs are stored securely as hashes.
+  - PIN hashes are never exposed to frontend payloads.
+- Language support expanded with Dutch (`nl`) option and broad EN/NL UI localization.
+- Display & defaults updates:
+  - Default calendar view and week start
+  - Selectable meal slots (breakfast/lunch/dinner)
+  - Grocery default options (Weekly, Daily, Random, or existing list)
+  - Competition period and sync interval
+- Appearance section supports auto/light/dark.
+- Calendar connections section includes direct "Open integration settings" entry.
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed.
+- Frontend bundle rebuilt and committed.
+- Backend tests passed.
+
+Upgrade
+- Existing data is preserved.
+- Restart Home Assistant and hard-refresh the browser after updating.

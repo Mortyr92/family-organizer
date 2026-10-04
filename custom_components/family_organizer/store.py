@@ -24,6 +24,7 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
             person.setdefault("user_id", person.pop("ha_user_id", None))
             person.setdefault("profile_picture", person.pop("avatar_url", None))
             person.setdefault("permissions", {})
+            person.setdefault("pin_hash", None)
             role = person.get("role")
             person["role"] = {
                 "admin": "parent_admin", "member": "parent", "guest": "child"

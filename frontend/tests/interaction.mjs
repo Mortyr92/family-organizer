@@ -72,7 +72,14 @@ function button(text, scope = root()) {
 async function click(element) { element.click(); await settled(); }
 async function go(page) {
   const navigation = innerWidth < 700 ? ".mobile-nav" : ".sidebar nav";
-  await click(query(`${navigation} button:nth-child(${["calendar", "groceries", "chores", "recipes", "settings"].indexOf(page) + 1})`));
+  const label = {
+    calendar: ["Calendar", "Agenda"],
+    groceries: ["Shopping", "Boodschappen"],
+    chores: ["Chores", "Klussen"],
+    recipes: ["Meals", "Maaltijden"],
+    settings: ["Settings", "Instellingen"],
+  }[page];
+  await click([...root().querySelectorAll(`${navigation} button`)].find(element => label.some(value => element.textContent.trim().endsWith(value))));
   assert(document.documentElement.scrollWidth <= innerWidth, `${page} must not overflow the viewport`);
 }
 async function open(kind, fields = {}) {
@@ -161,7 +168,7 @@ window.runInteractionTests = async () => {
       assert(data.calendar.items.some(e => e.title === "Updated picnic (copy)"), "Duplicate must create new record");
       assert(new Set(data.calendar.items.map(e => e.id)).size === data.calendar.items.length, "Duplicate IDs must remain unique");
       const duplicateRequest = requests.findLast(r => r.type === "family_organizer/create" && r.resource === "calendar");
-      assert(Object.keys(duplicateRequest.item).every(key => ["title", "start", "end", "all_day", "person_ids", "description", "location", "recurrence", "shared"].includes(key)), "Duplicate request must contain only editable backend fields");
+      assert(Object.keys(duplicateRequest.item).every(key => ["title", "start", "end", "all_day", "person_ids", "description", "location", "recurrence", "shared", "reminder_minutes"].includes(key)), "Duplicate request must contain only editable backend fields");
     });
     await check("Calendar week/day views and precise navigation", async () => {
       await click(button("Week"));

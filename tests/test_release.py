@@ -49,4 +49,4 @@ def test_release_zip_layout(tmp_path):
         assert "manifest.json" in zipped.namelist()
         assert "__init__.py" in zipped.namelist()
         assert zipped.getinfo("panel/family-organizer-panel.js").file_size > 0
-        assert json.loads(zipped.read("manifest.json"))["version"] == "0.4.0"
+        assert json.loads(zipped.read("manifest.json"))["version"] == "0.5.0"

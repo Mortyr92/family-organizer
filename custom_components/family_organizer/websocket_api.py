@@ -1,6 +1,9 @@
 """Namespaced websocket CRUD, permissions, and live subscriptions."""
 from __future__ import annotations
 import asyncio
+import hashlib
+import hmac
+import secrets
 from datetime import datetime, timezone
 
 from uuid import uuid4
@@ -15,6 +18,7 @@ from .const import DOMAIN, EVENT_UPDATED, SETTING_KEYS, STORES
 from .logic import merge_grocery_item, recipe_items
 from .recipe_import import recipe_from_html
 from .permissions import (
+    ROLE_CAPABILITIES,
     can_view,
     capabilities_for,
     check_capability,
@@ -55,6 +59,42 @@ def _person(manager, user):
 def _collection(resource: str, requested: str | None) -> str | None:
     value = requested or "items"
     return value if value in _COLLECTIONS[resource] else None
+
+
+def _hash_pin(pin: str) -> str:
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), salt, 120_000)
+    return f"{salt.hex()}${digest.hex()}"
+
+
+def _verify_pin(pin_hash: str, pin: str) -> bool:
+    try:
+        salt_hex, digest_hex = pin_hash.split("$", 1)
+        salt = bytes.fromhex(salt_hex)
+        expected = bytes.fromhex(digest_hex)
+    except ValueError:
+        return False
+    actual = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), salt, 120_000)
+    return hmac.compare_digest(actual, expected)
+
+
+def _person_capabilities(person: dict) -> dict[str, bool]:
+    role = person.get("role") if person.get("role") in ROLE_CAPABILITIES else "child"
+    result = dict(ROLE_CAPABILITIES[role])
+    overrides = person.get("permissions") or {}
+    if isinstance(overrides, dict):
+        for key, value in overrides.items():
+            if key in result and isinstance(value, bool):
+                result[key] = value
+    return result
+
+
+def _sanitize_item(resource: str, item: dict) -> dict:
+    if resource == "people":
+        result = {key: value for key, value in item.items() if key != "pin_hash"}
+        result["has_pin"] = bool(item.get("pin_hash"))
+        return result
+    return item
 
 
 def _validate_settings(values: dict) -> dict:
@@ -114,7 +154,7 @@ def _public_payload(resource: str, data: dict, user, settings: dict) -> dict:
     for key, value in data.items():
         if isinstance(value, list):
             result[key] = [
-                item for item in value
+                _sanitize_item(resource, item) for item in value
                 if not isinstance(item, dict)
                 or _can_view(user, resource, settings, item)
             ]
@@ -198,6 +238,11 @@ async def _mutate(hass, connection, msg, operation):
                 key: value for key, value in item.get("permissions", {}).items()
                 if key in capabilities_for(user, settings, people) and isinstance(value, bool)
             }
+            pin = str(item.pop("pin", "") or "").strip()
+            if pin:
+                if not pin.isdigit() or len(pin) < 4 or len(pin) > 8:
+                    raise vol.Invalid("PIN must be 4 to 8 digits")
+                item["pin_hash"] = _hash_pin(pin)
             if item.get("user_id") and any(
                 existing.get("user_id") == item["user_id"] for existing in items
             ):
@@ -236,6 +281,14 @@ async def _mutate(hass, connection, msg, operation):
                         key: value for key, value in patch["permissions"].items()
                         if key in capabilities_for(user, settings, people) and isinstance(value, bool)
                     }
+                pin = str(patch.pop("pin", "") or "").strip()
+                if pin:
+                    if not pin.isdigit() or len(pin) < 4 or len(pin) > 8:
+                        raise vol.Invalid("PIN must be 4 to 8 digits")
+                    patch["pin_hash"] = _hash_pin(pin)
+                if patch.get("clear_pin"):
+                    patch["pin_hash"] = None
+                patch.pop("clear_pin", None)
                 if patch.get("user_id") and any(
                     existing is not item and existing.get("user_id") == patch["user_id"]
                     for existing in items
@@ -283,7 +336,7 @@ async def _mutate(hass, connection, msg, operation):
     hass.bus.async_fire(EVENT_UPDATED, {
         "resource": resource, "collection": collection, "operation": operation, "item": item
     })
-    connection.send_result(msg["id"], item)
+    connection.send_result(msg["id"], _sanitize_item(resource, item))
 
 
 _CREATE = {
@@ -488,6 +541,37 @@ async def ws_settings(hass, connection, msg):
 
 
 @websocket_api.websocket_command({
+    vol.Required("type"): f"{DOMAIN}/verify_pin",
+    vol.Required("person_id"): str,
+    vol.Required("pin"): str,
+})
+@websocket_api.async_response
+async def ws_verify_pin(hass, connection, msg):
+    manager = _manager(hass)
+    settings = _settings(manager)
+    people = _people(manager)
+    if not can_view(connection.user, settings, people):
+        raise vol.Invalid("User is not linked to a family person")
+    person = next((item for item in people.get("items", []) if item.get("id") == msg["person_id"]), None)
+    if person is None:
+        connection.send_error(msg["id"], "not_found", "Family member not found")
+        return
+    pin_hash = person.get("pin_hash")
+    if not pin_hash:
+        connection.send_error(msg["id"], "pin_not_set", "This family member has no PIN yet")
+        return
+    if not _verify_pin(pin_hash, msg["pin"]):
+        connection.send_error(msg["id"], "invalid_pin", "Incorrect PIN")
+        return
+    connection.send_result(msg["id"], {
+        "person_id": person["id"],
+        "name": person.get("name", ""),
+        "role": person.get("role", "child"),
+        "capabilities": _person_capabilities(person),
+    })
+
+
+@websocket_api.websocket_command({
     vol.Required("type"): f"{DOMAIN}/import_recipe",
     vol.Required("url"): vol.All(str, vol.Match(r"^https?://")),
 })
@@ -520,6 +604,7 @@ async def ws_import_recipe(hass, connection, msg):
 def async_register(hass):
     for command in (
         ws_list, ws_create, ws_update, ws_delete, ws_recipe_to_groceries,
-        ws_complete_chore, ws_adjust_points, ws_subscribe, ws_settings, ws_import_recipe,
+        ws_complete_chore, ws_adjust_points, ws_subscribe, ws_settings,
+        ws_verify_pin, ws_import_recipe,
     ):
         websocket_api.async_register_command(hass, command)

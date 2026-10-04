@@ -31,6 +31,7 @@ class Person(Model):
     user_id: str | None = None
     birthday: str | None = None
     permissions: dict[str, bool] = field(default_factory=dict)
+    pin_hash: str | None = None
 
     def __post_init__(self) -> None:
         if not self.initials:
@@ -41,6 +42,7 @@ class Person(Model):
         migrated = dict(data)
         migrated.setdefault("user_id", migrated.get("ha_user_id"))
         migrated.setdefault("profile_picture", migrated.get("avatar_url"))
+        migrated.setdefault("pin_hash", None)
         return super().from_dict(migrated)
 
     @property
