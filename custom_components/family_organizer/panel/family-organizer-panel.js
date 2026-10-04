@@ -867,11 +867,11 @@ var We = o`
   .brand { display:flex; align-items:center; gap:11px; text-decoration:none; color:var(--text); font-size:18px; line-height:1.2; letter-spacing:-.4px; padding:0 8px; }
   .brand-symbol { width:42px; height:44px; border-radius:13px; background:var(--orange-soft); color:var(--orange); display:grid; place-items:center; font-size:31px; }
   .sidebar>.eyebrow { margin:94px 11px 12px; font-size:9px; }
-  .sidebar nav { display:flex; flex-direction:column; gap:7px; }
-  .sidebar nav button { justify-content:flex-start; gap:11px; padding:12px; border:0; background:none; font-size:13px; color:var(--muted); }
+  .sidebar nav { display:flex; flex-direction:column; gap:7px; margin-top:10px; flex:0 0 auto; }
+  .sidebar nav button { display:flex; width:100%; justify-content:flex-start; gap:11px; padding:12px; border:0; background:none; font-size:13px; color:var(--muted); text-align:left; }
   .sidebar nav button.active { color:var(--orange); background:var(--orange-soft); }
   .nav-icon { font-size:22px; width:25px; text-align:center; }
-  .sidebar-family { margin-top:auto; padding:24px 10px 17px; border-bottom:1px solid var(--line); }
+  .sidebar-family { margin-top:18px; padding:24px 10px 17px; border-bottom:1px solid var(--line); }
   .avatar-stack { display:flex; margin-top:15px; padding-left:3px; flex-wrap:wrap; }
   .avatar-stack .avatar { border:2px solid var(--surface); margin-left:-3px; width:33px; height:33px; }
   .sidebar-family p { font-size:11px; color:var(--muted); margin-top:10px; }
@@ -883,7 +883,7 @@ var We = o`
   .topbar { padding:30px 32px 22px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
   .topbar h1 { margin-top:4px; }
   .topbar p { color:var(--muted); margin-bottom:0; font-size:13px; }
-  .quick-add { position:absolute; top:104px; left:30px; width:160px; z-index:25; flex-shrink:0; border-radius:12px; padding:9px 17px; }
+  .quick-add { position:sticky; top:10px; left:auto; width:100%; z-index:3; flex-shrink:0; border-radius:12px; padding:9px 17px; margin:10px 8px 14px; }
   .quick-add>span { font-size:26px; font-weight:400; line-height:1; }
   main { padding:0 32px 38px; outline:none; max-width:1800px; margin:auto; }
   .mobile-nav { display:none; }
@@ -1182,10 +1182,10 @@ var We = o`
   .countdown { white-space:nowrap; color:var(--orange); }
   .list-tools .check { flex-direction:row; align-items:center; }
   @media(min-width:1600px) { .month-cell { min-height:145px; } .calendar-shell { grid-template-columns:minmax(0,1fr) 280px; } .calendar-shell.overview-left { grid-template-columns:280px minmax(0,1fr); } }
-  @media(max-width:1200px) { .sidebar { width:190px; min-width:190px; padding:25px 12px 15px; } .quick-add { left:24px; top:96px; width:142px; font-size:12px; } .workspace { width:calc(100% - 190px); } .topbar { padding:24px; } main { padding:0 24px 30px; } .calendar-shell,.calendar-shell.overview-left { grid-template-columns:minmax(0,1fr); } .calendar-shell .agenda { order:2; } .agenda-events { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:15px 0; } .agenda-event { margin:0; } .agenda>.primary { width:auto; } .agenda .empty { grid-column:1/-1; } .month-cell { min-height:118px; } .shopping-layout { grid-template-columns:minmax(0,1fr) 220px; } .chore-layout { grid-template-columns:minmax(0,1fr) 285px; } .meal-grid { overflow-x:auto; grid-template-columns:repeat(7,minmax(140px,1fr)); padding-bottom:8px; } }
-  @media(max-width:950px) { .sidebar { width:170px; min-width:170px; } .quick-add { left:20px; width:130px; } .workspace { width:calc(100% - 170px); } .brand { font-size:15px; gap:7px; } .brand-symbol { width:34px; height:38px; font-size:26px; } .sidebar nav button { font-size:11px; gap:7px; } .sidebar>.eyebrow { font-size:8px; } .shopping-layout,.chore-layout,.settings-grid { grid-template-columns:minmax(0,1fr); } .shopping-list { padding:20px; } .chore-layout .leaderboard { order:2; } .leaderboard .score-row { margin:16px 0; } .recipe-detail-grid { grid-template-columns:minmax(0,1fr); } .recipe-hero { grid-template-columns:230px 1fr; gap:22px; } .recipe-hero>img,.recipe-hero-art { height:210px; } .recipe-hero h2 { font-size:28px; } .date-navigation h2 { font-size:19px; } .section-toolbar { gap:12px; } .recipe-toolbar { flex-wrap:wrap; } .search-label { min-width:220px; } }
+  @media(max-width:1200px) { .sidebar { width:190px; min-width:190px; padding:25px 12px 15px; } .quick-add { width:100%; font-size:12px; margin:8px 4px 12px; } .workspace { width:calc(100% - 190px); } .topbar { padding:24px; } main { padding:0 24px 30px; } .calendar-shell,.calendar-shell.overview-left { grid-template-columns:minmax(0,1fr); } .calendar-shell .agenda { order:2; } .agenda-events { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:15px 0; } .agenda-event { margin:0; } .agenda>.primary { width:auto; } .agenda .empty { grid-column:1/-1; } .month-cell { min-height:118px; } .shopping-layout { grid-template-columns:minmax(0,1fr) 220px; } .chore-layout { grid-template-columns:minmax(0,1fr) 285px; } .meal-grid { overflow-x:auto; grid-template-columns:repeat(7,minmax(140px,1fr)); padding-bottom:8px; } }
+  @media(max-width:950px) { .sidebar { width:170px; min-width:170px; } .quick-add { width:100%; margin:8px 2px 12px; } .workspace { width:calc(100% - 170px); } .brand { font-size:15px; gap:7px; } .brand-symbol { width:34px; height:38px; font-size:26px; } .sidebar nav button { font-size:11px; gap:7px; } .sidebar>.eyebrow { font-size:8px; } .shopping-layout,.chore-layout,.settings-grid { grid-template-columns:minmax(0,1fr); } .shopping-list { padding:20px; } .chore-layout .leaderboard { order:2; } .leaderboard .score-row { margin:16px 0; } .recipe-detail-grid { grid-template-columns:minmax(0,1fr); } .recipe-hero { grid-template-columns:230px 1fr; gap:22px; } .recipe-hero>img,.recipe-hero-art { height:210px; } .recipe-hero h2 { font-size:28px; } .date-navigation h2 { font-size:19px; } .section-toolbar { gap:12px; } .recipe-toolbar { flex-wrap:wrap; } .search-label { min-width:220px; } }
   @media(max-width:700px) {
-    .sidebar { display:none; } .app { max-width:100vw; overflow-x:hidden; } .workspace { width:100%; } .topbar { padding:23px 130px 21px 16px; align-items:flex-start; gap:10px; }
+    .sidebar { display:none; } .quick-add { position:fixed; top:43px; left:auto; right:16px; width:auto; margin:0; z-index:45; } .app { max-width:100vw; overflow-x:hidden; } .workspace { width:100%; } .topbar { padding:23px 130px 21px 16px; align-items:flex-start; gap:10px; }
     .event-start { font-size:9px; }
     .mobile-nav { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(62px,1fr); overflow-x:auto; scrollbar-width:none; position:fixed; bottom:0; left:0; right:0; padding:6px 4px max(6px,env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--line); z-index:40; box-shadow:0 -3px 15px #00000014; -webkit-overflow-scrolling:touch; }
     .mobile-nav::-webkit-scrollbar { display:none; }
@@ -1921,8 +1921,8 @@ var Ge = [
       <a class="skip-link" href="#main" @click=${(e) => {
 			e.preventDefault(), this.renderRoot.querySelector("main").focus();
 		}}>${this.t("skip_content")}</a>
-      <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> ${this.t("quick_add")}</button>
       <aside class="sidebar"><a class="brand" href="#fo/today" @click=${() => this.navigate("today")}><span class="brand-symbol">⌂</span><span>Family<br><strong>Organizer</strong></span></a><p class="eyebrow">${this.t("family_sync")}</p>
+        <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> ${this.t("quick_add")}</button>
         <nav aria-label="Main navigation">${Q.map((e) => j`<button class=${this.page === e.id ? "active" : ""} aria-current=${this.page === e.id ? "page" : N} @click=${() => this.navigate(e.id)}><span class="nav-icon" aria-hidden="true">${e.icon}</span>${this.pageName(e.id, e.name)}</button>`)}</nav>
         <div class="sidebar-family"><span class="eyebrow">${this.t("our_people")}</span><div class="avatar-stack">${this.people.map((e) => this.avatar(e.id))}</div><p>${this.people.length ? `${this.people.length} people. One shared home.` : this.t("family_starts")}</p></div>
         ${this.haMenuButton()}

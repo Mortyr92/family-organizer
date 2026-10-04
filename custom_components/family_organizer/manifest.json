@@ -9,5 +9,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Mortyr92/family-organizer/issues",
   "requirements": ["caldav>=3.3.0a1", "icalendar>=6.3.1"],
-  "version": "0.5.0"
+  "version": "0.5.1"
 }

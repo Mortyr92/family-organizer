@@ -1,0 +1,19 @@
+Family Organizer 0.5.1
+
+Fixes
+- Sidebar quick-add button no longer drifts while scrolling.
+- Sidebar navigation remains visible and reachable in the left menu.
+- Minor UI stability improvements for desktop/tablet sidebar behavior.
+
+Localization
+- Continued Dutch coverage improvements for shell/settings/dialog/runtime messaging.
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed.
+- Frontend bundle rebuilt and committed.
+- Backend tests passed.
+
+Upgrade
+- Existing data is preserved.
+- Restart Home Assistant and hard-refresh the browser after updating.

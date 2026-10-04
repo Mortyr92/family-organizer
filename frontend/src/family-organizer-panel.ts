@@ -394,8 +394,8 @@ export class FamilyOrganizerPanel extends LitElement {
     const effective = this.theme === "auto" ? (this._hass?.themes?.darkMode ? "dark" : "auto") : this.theme;
     return html`<div class="app" data-theme=${effective}>
       <a class="skip-link" href="#main" @click=${(e: Event) => { e.preventDefault(); (this.renderRoot.querySelector("main") as HTMLElement).focus(); }}>${this.t("skip_content")}</a>
-      <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> ${this.t("quick_add")}</button>
       <aside class="sidebar"><a class="brand" href="#fo/today" @click=${() => this.navigate("today")}><span class="brand-symbol">⌂</span><span>Family<br><strong>Organizer</strong></span></a><p class="eyebrow">${this.t("family_sync")}</p>
+        <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> ${this.t("quick_add")}</button>
         <nav aria-label="Main navigation">${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span class="nav-icon" aria-hidden="true">${page.icon}</span>${this.pageName(page.id, page.name)}</button>`)}</nav>
         <div class="sidebar-family"><span class="eyebrow">${this.t("our_people")}</span><div class="avatar-stack">${this.people.map((p: Item) => this.avatar(p.id))}</div><p>${this.people.length ? `${this.people.length} people. One shared home.` : this.t("family_starts")}</p></div>
         ${this.haMenuButton()}
