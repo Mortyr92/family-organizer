@@ -1,0 +1,18 @@
+Family Organizer 0.5.3
+
+Features
+- Family member editor can copy a Home Assistant user: pick an HA user that is not
+  linked to another family member yet; the user ID, name and profile picture are
+  filled in automatically.
+- Optional "keep profile picture in sync with Home Assistant": the member's picture
+  follows the HA user's person picture.
+- New websocket command family_organizer/ha_users (requires manage_people).
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed.
+- Frontend bundle rebuilt and committed.
+
+Upgrade
+- Existing data is preserved; the new sync_picture field defaults to off.
+- Restart Home Assistant and hard-refresh the browser after updating.

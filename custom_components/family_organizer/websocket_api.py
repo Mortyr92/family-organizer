@@ -61,6 +61,31 @@ def _collection(resource: str, requested: str | None) -> str | None:
     return value if value in _COLLECTIONS[resource] else None
 
 
+def _ha_user_pictures(hass) -> dict[str, str]:
+    """Map Home Assistant user IDs to the picture of their linked person entity."""
+    result: dict[str, str] = {}
+    for state in hass.states.async_all("person"):
+        user_id = state.attributes.get("user_id")
+        picture = state.attributes.get("entity_picture")
+        if user_id and picture:
+            result[user_id] = picture
+    return result
+
+
+def _sync_pictures(hass, people: list[dict]) -> bool:
+    """Refresh profile pictures for members that follow their Home Assistant user."""
+    pictures = _ha_user_pictures(hass)
+    changed = False
+    for person in people:
+        if not person.get("sync_picture") or not person.get("user_id"):
+            continue
+        picture = pictures.get(person["user_id"])
+        if picture and person.get("profile_picture") != picture:
+            person["profile_picture"] = picture
+            changed = True
+    return changed
+
+
 def _hash_pin(pin: str) -> str:
     salt = secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), salt, 120_000)
@@ -179,6 +204,8 @@ async def ws_list(hass, connection, msg):
     resource = msg["resource"]
     if not can_view(connection.user, _settings(manager), _people(manager)):
         raise vol.Invalid("User is not linked to a family person")
+    if resource == "people" and _sync_pictures(hass, _people(manager).get("items", [])):
+        await manager["people"].async_save()
     connection.send_result(
         msg["id"],
         _public_payload(resource, manager[resource].data, connection.user, {
@@ -234,6 +261,9 @@ async def _mutate(hass, connection, msg, operation):
             item["role"] = item.get("role") if item.get("role") in ("parent_admin", "parent", "child") else "child"
             item["user_id"] = item.get("user_id") or item.pop("ha_user_id", None)
             item["profile_picture"] = item.get("profile_picture") or item.pop("avatar_url", None)
+            item["sync_picture"] = bool(item.get("sync_picture")) and bool(item.get("user_id"))
+            if item["sync_picture"]:
+                item["profile_picture"] = _ha_user_pictures(hass).get(item["user_id"]) or item["profile_picture"]
             item["permissions"] = {
                 key: value for key, value in item.get("permissions", {}).items()
                 if key in capabilities_for(user, settings, people) and isinstance(value, bool)
@@ -294,6 +324,13 @@ async def _mutate(hass, connection, msg, operation):
                     for existing in items
                 ):
                     raise vol.Invalid("Home Assistant user is already linked")
+                if "sync_picture" in patch or "user_id" in patch:
+                    user_id = patch.get("user_id", item.get("user_id"))
+                    patch["sync_picture"] = bool(patch.get("sync_picture", item.get("sync_picture"))) and bool(user_id)
+                    if patch["sync_picture"]:
+                        picture = _ha_user_pictures(hass).get(user_id)
+                        if picture:
+                            patch["profile_picture"] = picture
             if resource == "recipes" and collection == "categories" and "parent_id" in patch:
                 parent_id = patch["parent_id"]
                 seen = {item["id"]}
@@ -601,10 +638,38 @@ async def ws_import_recipe(hass, connection, msg):
     connection.send_result(msg["id"], recipe)
 
 
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/ha_users"})
+@websocket_api.async_response
+async def ws_ha_users(hass, connection, msg):
+    """List Home Assistant users that can be copied into a family member."""
+    manager = _manager(hass)
+    check_capability(
+        connection.user, "people", "manage_people", _settings(manager),
+        people=_people(manager),
+    )
+    linked = {
+        person.get("user_id"): person.get("id")
+        for person in _people(manager).get("items", []) if person.get("user_id")
+    }
+    pictures = _ha_user_pictures(hass)
+    users = []
+    for user in await hass.auth.async_get_users():
+        if user.system_generated or not user.is_active:
+            continue
+        users.append({
+            "id": user.id,
+            "name": user.name or "",
+            "picture": pictures.get(user.id),
+            "person_id": linked.get(user.id),
+        })
+    users.sort(key=lambda entry: entry["name"].lower())
+    connection.send_result(msg["id"], users)
+
+
 def async_register(hass):
     for command in (
         ws_list, ws_create, ws_update, ws_delete, ws_recipe_to_groceries,
         ws_complete_chore, ws_adjust_points, ws_subscribe, ws_settings,
-        ws_verify_pin, ws_import_recipe,
+        ws_verify_pin, ws_import_recipe, ws_ha_users,
     ):
         websocket_api.async_register_command(hass, command)

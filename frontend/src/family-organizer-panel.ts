@@ -68,6 +68,9 @@ const nlStrings: Record<string, string> = {
   // Shared
   "Saved": "Opgeslagen", "Edit": "Bewerken", "Delete": "Verwijderen", "Remove": "Verwijderen", "Anyone": "Iedereen", "Everyone": "Iedereen", "Family member": "Familielid", "Family members": "Familieleden", "Notes": "Notities", "Name": "Naam", "Date": "Datum", "Title": "Titel", "Description": "Omschrijving", "Assigned to": "Toegewezen aan", "Share with the family": "Delen met het gezin", "All day": "Hele dag", "Not planned": "Niet gepland", "Done ✓": "Klaar ✓", "pts": "ptn", "servings": "porties", "more": "meer", "Main navigation": "Hoofdnavigatie", "Mobile navigation": "Mobiele navigatie", "Dismiss notification": "Melding sluiten",
   "people. One shared home.": "mensen. Eén gedeeld thuis.", "Welcome": "Welkom",
+  "Copy from Home Assistant user": "Kopiëren van Home Assistant-gebruiker", "Don’t link a Home Assistant user": "Geen Home Assistant-gebruiker koppelen",
+  "Keep profile picture in sync with Home Assistant": "Profielfoto synchroon houden met Home Assistant",
+  "Only users that aren’t linked to another family member are listed. The name and profile picture are copied over.": "Alleen gebruikers die nog niet aan een ander familielid zijn gekoppeld worden getoond. De naam en profielfoto worden overgenomen.",
   // Groceries
   "SHOPPING LIST": "BOODSCHAPPENLIJST", "Groceries": "Boodschappen", "to buy": "te kopen", "in the basket": "in de mand", "Add item": "Item toevoegen", "Grocery lists": "Boodschappenlijsten", "Group by store": "Groeperen op winkel", "Clear bought": "Gekochte wissen", "Bought items cleared": "Gekochte items gewist", "No store": "Geen winkel", "Moved back to your list": "Terug op je lijst gezet", "Added to the basket": "In de mand gelegd", "A fresh start": "Een frisse start", "No items assigned to this person.": "Geen items toegewezen aan deze persoon.", "Add an item or send ingredients from a recipe.": "Voeg een item toe of stuur ingrediënten vanuit een recept.", "Add your first item": "Voeg je eerste item toe", "A LITTLE ORGANIZATION": "EEN BEETJE ORDE", "One list for every stop": "Eén lijst voor elke winkel", "Keep the supermarket, farmers’ market and pantry runs separate. Matching items merge automatically.": "Houd supermarkt, markt en voorraadkast gescheiden. Gelijke items worden automatisch samengevoegd.", "New list": "Nieuwe lijst", "Edit list": "Lijst bewerken", "Delete list": "Lijst verwijderen", "Deleting a list also removes its grocery items. Keep at least one list.": "Als je een lijst verwijdert, verdwijnen ook de items. Houd minimaal één lijst.", "What’s cooking?": "Wat eten we?", "Plan the week and shop recipe ingredients straight into this list.": "Plan de week en zet receptingrediënten direct op deze lijst.", "Meal planner & recipes →": "Maaltijdplanner & recepten →", "Mark": "Markeer", "bought": "gekocht", "Created by": "Gemaakt door", "a family member": "een familielid",
   // Meal planner
@@ -148,6 +151,7 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private loading = true;
   @state() private saving = false;
   @state() private editor?: Editor;
+  @state() private haUsers: Item[] = [];
   private _hass?: Hass;
   private unsubscribe?: () => void;
   private subscribing = false;
@@ -319,6 +323,7 @@ export class FamilyOrganizerPanel extends LitElement {
     if (!this.editor) this.returnFocus = (this.renderRoot as ShadowRoot).activeElement as HTMLElement;
     this.error = "";
     this.editor = { kind, item: { ...item }, resource, collection };
+    if (kind === "person") void this.loadHaUsers();
     void this.updateComplete.then(() => {
       const dialog = this.renderRoot.querySelector("dialog") as HTMLDialogElement;
       if (!dialog.open) dialog.showModal();
@@ -330,6 +335,16 @@ export class FamilyOrganizerPanel extends LitElement {
     (this.renderRoot.querySelector("dialog") as HTMLDialogElement)?.close();
     this.editor = undefined;
     void this.updateComplete.then(() => this.returnFocus?.isConnected ? this.returnFocus.focus() : (this.renderRoot.querySelector(".quick-add") as HTMLElement)?.focus());
+  }
+  private async loadHaUsers() {
+    try { this.haUsers = await this._hass!.callWS<Item[]>({ type: "family_organizer/ha_users" }); } catch { this.haUsers = []; }
+  }
+  private applyHaUser(userId: string) {
+    if (!this.editor) return;
+    const user = this.haUsers.find((u: Item) => u.id === userId);
+    const item: Item = { ...this.editor.item, user_id: userId || null, sync_picture: !!user };
+    if (user) { if (!item.name) item.name = user.name; if (user.picture) item.profile_picture = user.picture; }
+    this.editor = { ...this.editor, item };
   }
   private async saveEditor(event: SubmitEvent) {
     event.preventDefault();
@@ -403,7 +418,7 @@ export class FamilyOrganizerPanel extends LitElement {
       resource = "people";
       const permissions: Item = {};
       capabilities.forEach(cap => { const value = text(cap); if (value !== "default") permissions[cap] = value === "allow"; });
-      patch = { ...patch, name: text("name"), initials: text("name").split(/\s+/).map(x => x[0]).join("").slice(0, 2).toUpperCase(), color: text("color"), profile_picture: text("profile_picture") || null, user_id: text("user_id") || null, birthday: text("birthday") || null, role: text("role"), permissions, pin: text("pin"), clear_pin: checked("clear_pin"), shared: true };
+      patch = { ...patch, name: text("name"), initials: text("name").split(/\s+/).map(x => x[0]).join("").slice(0, 2).toUpperCase(), color: text("color"), profile_picture: text("profile_picture") || null, user_id: text("user_id") || null, sync_picture: checked("sync_picture"), birthday: text("birthday") || null, role: text("role"), permissions, pin: text("pin"), clear_pin: checked("clear_pin"), shared: true };
     } else if (kind === "preferences") {
       const settings: Item = {};
       ["overview_position", "week_start", "time_format", "default_calendar_view", "default_grocery_list_id", "competition_default", "language", "theme"].forEach(key => settings[key] = text(key));
@@ -688,6 +703,17 @@ export class FamilyOrganizerPanel extends LitElement {
   private textarea(label: string, name: string, value = "", placeholder = "") { return html`<label class="full">${this.x(label)}<textarea name=${name} rows="4" .value=${value} placeholder=${this.x(placeholder)}></textarea></label>`; }
   private personChecks(name: string, selected: string[] = [], ownOnly = false) { return html`<fieldset class="full"><legend>${this.x("Family members")}</legend><div class="checkbox-group">${this.people.filter((p: Item) => !ownOnly || p.id === this.me?.id).map((p: Item) => html`<label class="check"><input type="checkbox" name=${name} value=${p.id} ?checked=${selected.includes(p.id)}>${this.avatar(p.id)}${p.name}</label>`)}</div></fieldset>`; }
   private shared(item: Item) { return html`<label class="check full"><input name="shared" type="checkbox" ?checked=${item.shared !== false}>${this.x("Share with the family")}</label>`; }
+  private haUserPicker(item: Item) {
+    const current = item.user_id || item.ha_user_id || "";
+    const available = this.haUsers.filter((u: Item) => !u.person_id || u.person_id === item.id);
+    return html`<div class="form-field full"><label for="editor-ha-user">${this.x("Copy from Home Assistant user")}</label>
+      <select id="editor-ha-user" @change=${(e: Event) => this.applyHaUser((e.target as HTMLSelectElement).value)}>
+        <option value="" ?selected=${!current}>${this.x("Don’t link a Home Assistant user")}</option>
+        ${available.map((u: Item) => html`<option value=${u.id} ?selected=${u.id === current}>${u.name}</option>`)}
+      </select>
+      <label class="check"><input name="sync_picture" type="checkbox" ?checked=${!!item.sync_picture} ?disabled=${!current}>${this.x("Keep profile picture in sync with Home Assistant")}</label>
+      <p class="muted">${this.x("Only users that aren’t linked to another family member are listed. The name and profile picture are copied over.")}</p></div>`;
+  }
   private dialog() {
     const { kind, item } = this.editor!;
     const titles: Item = this.languageCode === "nl"
@@ -738,7 +764,7 @@ export class FamilyOrganizerPanel extends LitElement {
       const isDescendant = (candidate: Item) => { const seen = new Set<string>(); let parent = candidate; while (parent) { if (parent.id === item.id || seen.has(parent.id)) return true; seen.add(parent.id); parent = (this.data.recipes.categories || []).find((c: Item) => c.id === parent.parent_id); } return false; };
       return html`${this.field("Category name", "name", item.name, "text", true, { autofocus: true })}${this.select("Parent category", "parent_id", item.parent_id || "", [["", "Root category"], ...(this.data.recipes.categories || []).filter((c: Item) => !isDescendant(c)).map((c: Item): [string, string] => [c.id, this.categoryPath(c)])])}`;
     }
-    if (kind === "person") return html`${this.field("Name", "name", item.name, "text", true, { autofocus: true })}${this.field("Family color", "color", this.color(item.color), "color")}${this.field("Home Assistant user ID", "user_id", item.user_id || item.ha_user_id)}
+    if (kind === "person") return html`${this.haUserPicker(item)}${this.field("Name", "name", item.name, "text", true, { autofocus: true })}${this.field("Family color", "color", this.color(item.color), "color")}${this.field("Home Assistant user ID", "user_id", item.user_id || item.ha_user_id)}
       ${this.field("Profile picture URL", "profile_picture", item.profile_picture || item.avatar_url, "url")}${this.field("Birthday", "birthday", item.birthday, "date")}
       ${this.select("Role preset", "role", item.role || "child", [["parent", "Parent (all rights)"], ["child", "Child (limited rights)"]])}
       ${this.field("PIN code (4-8 digits)", "pin", "", "password", !item.id, { inputmode: "numeric", minlength: 4, maxlength: 8, pattern: "[0-9]*", placeholder: item.has_pin ? "Enter new PIN to change" : "Set a PIN" })}

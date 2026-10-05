@@ -1463,6 +1463,10 @@ var We = [
 	"Dismiss notification": "Melding sluiten",
 	"people. One shared home.": "mensen. Eén gedeeld thuis.",
 	Welcome: "Welkom",
+	"Copy from Home Assistant user": "Kopiëren van Home Assistant-gebruiker",
+	"Don’t link a Home Assistant user": "Geen Home Assistant-gebruiker koppelen",
+	"Keep profile picture in sync with Home Assistant": "Profielfoto synchroon houden met Home Assistant",
+	"Only users that aren’t linked to another family member are listed. The name and profile picture are copied over.": "Alleen gebruikers die nog niet aan een ander familielid zijn gekoppeld worden getoond. De naam en profielfoto worden overgenomen.",
 	"SHOPPING LIST": "BOODSCHAPPENLIJST",
 	Groceries: "Boodschappen",
 	"to buy": "te kopen",
@@ -1813,7 +1817,7 @@ var We = [
 	}
 }, $ = class extends V {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "month", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.todoListId = "default", this.showDoneTodos = !1, this.journalPerson = "", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.locked = !1, this.loading = !0, this.saving = !1, this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "month", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.todoListId = "default", this.showDoneTodos = !1, this.journalPerson = "", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.locked = !1, this.loading = !0, this.saving = !1, this.haUsers = [], this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = ze(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.malformed && (this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.")));
 		};
@@ -2009,13 +2013,32 @@ var We = [
 			item: { ...t },
 			resource: n,
 			collection: r
-		}, this.updateComplete.then(() => {
+		}, e === "person" && this.loadHaUsers(), this.updateComplete.then(() => {
 			let e = this.renderRoot.querySelector("dialog");
 			e.open || e.showModal(), (e.querySelector("[autofocus]") || e.querySelector("input,select,button"))?.focus();
 		}));
 	}
 	closeEditor(e = !1) {
 		(!this.saving || e) && (this.renderRoot.querySelector("dialog")?.close(), this.editor = void 0, this.updateComplete.then(() => this.returnFocus?.isConnected ? this.returnFocus.focus() : this.renderRoot.querySelector(".quick-add")?.focus()));
+	}
+	async loadHaUsers() {
+		try {
+			this.haUsers = await this._hass.callWS({ type: "family_organizer/ha_users" });
+		} catch {
+			this.haUsers = [];
+		}
+	}
+	applyHaUser(e) {
+		if (!this.editor) return;
+		let t = this.haUsers.find((t) => t.id === e), n = {
+			...this.editor.item,
+			user_id: e || null,
+			sync_picture: !!t
+		};
+		t && (n.name ||= t.name, t.picture && (n.profile_picture = t.picture)), this.editor = {
+			...this.editor,
+			item: n
+		};
 	}
 	async saveEditor(e) {
 		if (e.preventDefault(), !this.editor || this.saving) return;
@@ -2210,6 +2233,7 @@ var We = [
 				color: u("color"),
 				profile_picture: u("profile_picture") || null,
 				user_id: u("user_id") || null,
+				sync_picture: d("sync_picture"),
 				birthday: u("birthday") || null,
 				role: u("role"),
 				permissions: e,
@@ -2678,6 +2702,16 @@ var We = [
 	shared(e) {
 		return M`<label class="check full"><input name="shared" type="checkbox" ?checked=${e.shared !== !1}>${this.x("Share with the family")}</label>`;
 	}
+	haUserPicker(e) {
+		let t = e.user_id || e.ha_user_id || "", n = this.haUsers.filter((t) => !t.person_id || t.person_id === e.id);
+		return M`<div class="form-field full"><label for="editor-ha-user">${this.x("Copy from Home Assistant user")}</label>
+      <select id="editor-ha-user" @change=${(e) => this.applyHaUser(e.target.value)}>
+        <option value="" ?selected=${!t}>${this.x("Don’t link a Home Assistant user")}</option>
+        ${n.map((e) => M`<option value=${e.id} ?selected=${e.id === t}>${e.name}</option>`)}
+      </select>
+      <label class="check"><input name="sync_picture" type="checkbox" ?checked=${!!e.sync_picture} ?disabled=${!t}>${this.x("Keep profile picture in sync with Home Assistant")}</label>
+      <p class="muted">${this.x("Only users that aren’t linked to another family member are listed. The name and profile picture are copied over.")}</p></div>`;
+	}
 	dialog() {
 		let { kind: e, item: t } = this.editor, n = this.languageCode === "nl" ? {
 			quick: "Wat wil je toevoegen?",
@@ -2912,7 +2946,7 @@ var We = [
 			};
 			return M`${this.field("Category name", "name", t.name, "text", !0, { autofocus: !0 })}${this.select("Parent category", "parent_id", t.parent_id || "", [["", "Root category"], ...(this.data.recipes.categories || []).filter((t) => !e(t)).map((e) => [e.id, this.categoryPath(e)])])}`;
 		}
-		return e === "person" ? M`${this.field("Name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Family color", "color", this.color(t.color), "color")}${this.field("Home Assistant user ID", "user_id", t.user_id || t.ha_user_id)}
+		return e === "person" ? M`${this.haUserPicker(t)}${this.field("Name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Family color", "color", this.color(t.color), "color")}${this.field("Home Assistant user ID", "user_id", t.user_id || t.ha_user_id)}
       ${this.field("Profile picture URL", "profile_picture", t.profile_picture || t.avatar_url, "url")}${this.field("Birthday", "birthday", t.birthday, "date")}
       ${this.select("Role preset", "role", t.role || "child", [["parent", "Parent (all rights)"], ["child", "Child (limited rights)"]])}
       ${this.field("PIN code (4-8 digits)", "pin", "", "password", !t.id, {
@@ -2978,6 +3012,6 @@ var We = [
 		this.styles = Ue;
 	}
 };
-Q([H()], $.prototype, "page", void 0), Q([H()], $.prototype, "data", void 0), Q([H()], $.prototype, "selectedDay", void 0), Q([H()], $.prototype, "calendarView", void 0), Q([H()], $.prototype, "personFilter", void 0), Q([H()], $.prototype, "listId", void 0), Q([H()], $.prototype, "todoListId", void 0), Q([H()], $.prototype, "showDoneTodos", void 0), Q([H()], $.prototype, "journalPerson", void 0), Q([H()], $.prototype, "contactQuery", void 0), Q([H()], $.prototype, "groceryAssignee", void 0), Q([H()], $.prototype, "groupStores", void 0), Q([H()], $.prototype, "mealWeek", void 0), Q([H()], $.prototype, "scorePeriod", void 0), Q([H()], $.prototype, "recipeSearch", void 0), Q([H()], $.prototype, "recipeCategory", void 0), Q([H()], $.prototype, "recipeId", void 0), Q([H()], $.prototype, "servings", void 0), Q([H()], $.prototype, "selectedIngredients", void 0), Q([H()], $.prototype, "routes", void 0), Q([H()], $.prototype, "theme", void 0), Q([H()], $.prototype, "error", void 0), Q([H()], $.prototype, "notice", void 0), Q([H()], $.prototype, "pinPersonId", void 0), Q([H()], $.prototype, "pinCapabilites", void 0), Q([H()], $.prototype, "locked", void 0), Q([H()], $.prototype, "loading", void 0), Q([H()], $.prototype, "saving", void 0), Q([H()], $.prototype, "editor", void 0), $ = Q([we("family-organizer-panel")], $);
+Q([H()], $.prototype, "page", void 0), Q([H()], $.prototype, "data", void 0), Q([H()], $.prototype, "selectedDay", void 0), Q([H()], $.prototype, "calendarView", void 0), Q([H()], $.prototype, "personFilter", void 0), Q([H()], $.prototype, "listId", void 0), Q([H()], $.prototype, "todoListId", void 0), Q([H()], $.prototype, "showDoneTodos", void 0), Q([H()], $.prototype, "journalPerson", void 0), Q([H()], $.prototype, "contactQuery", void 0), Q([H()], $.prototype, "groceryAssignee", void 0), Q([H()], $.prototype, "groupStores", void 0), Q([H()], $.prototype, "mealWeek", void 0), Q([H()], $.prototype, "scorePeriod", void 0), Q([H()], $.prototype, "recipeSearch", void 0), Q([H()], $.prototype, "recipeCategory", void 0), Q([H()], $.prototype, "recipeId", void 0), Q([H()], $.prototype, "servings", void 0), Q([H()], $.prototype, "selectedIngredients", void 0), Q([H()], $.prototype, "routes", void 0), Q([H()], $.prototype, "theme", void 0), Q([H()], $.prototype, "error", void 0), Q([H()], $.prototype, "notice", void 0), Q([H()], $.prototype, "pinPersonId", void 0), Q([H()], $.prototype, "pinCapabilites", void 0), Q([H()], $.prototype, "locked", void 0), Q([H()], $.prototype, "loading", void 0), Q([H()], $.prototype, "saving", void 0), Q([H()], $.prototype, "editor", void 0), Q([H()], $.prototype, "haUsers", void 0), $ = Q([we("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };

@@ -26,6 +26,7 @@ class Person(Model):
     name: str = ""
     initials: str = ""
     profile_picture: str | None = None
+    sync_picture: bool = False
     color: str = "#3b82f6"
     role: str = "child"
     user_id: str | None = None
