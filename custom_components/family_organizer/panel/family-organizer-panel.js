@@ -2406,9 +2406,7 @@ var Ge = [
         ${this.calendarView === "month" ? j`<div class="weekday-row">${e.slice(0, 7).map((e) => j`<span>${this.date(e, { weekday: "short" })}</span>`)}</div><div class="month-grid">${e.map((e) => {
 			let t = X(r, e);
 			return j`<div class=${`month-cell ${e.slice(0, 7) === this.selectedDay.slice(0, 7) ? "" : "outside"} ${e === this.selectedDay ? "selected" : ""}`}>
-            <button class=${e === H(/* @__PURE__ */ new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(e)}`} aria-pressed=${e === this.selectedDay} @click=${() => this.selectedDay = e}>${U(e).getDate()}</button>${this.canEvent() ? j`<button class="date-add" aria-label=${`${this.s("Add event on", "Afspraak toevoegen op")} ${this.date(e)}`} @click=${() => {
-				this.selectedDay = e, this.openEditor("event", { day: e });
-			}}>+</button>` : N}</div>
+            <div class="cell-heading"><button class=${e === H(/* @__PURE__ */ new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(e)}`}
             <button class="cell-create" aria-label=${`${this.s("Create event on", "Afspraak maken op")} ${this.date(e)}`} ?disabled=${!this.canEvent()} @click=${() => {
 				this.selectedDay = e, this.openEditor("event", { day: e });
 			}}></button>

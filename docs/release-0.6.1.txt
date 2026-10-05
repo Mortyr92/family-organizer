@@ -1,0 +1,13 @@
+﻿Family Organizer 0.6.1
+
+Fixes
+- Month view: every click opened the create-event dialog. The day-number row
+  was missing its cell-heading wrapper, so the full-cell create button covered
+  the whole cell. Wrapper restored; day numbers, + and events are clickable
+  again and empty space still creates an event.
+
+Validation
+- Frontend typecheck, tests (20/20) and bundle rebuild passed.
+
+Upgrade
+- Existing data is preserved. Restart Home Assistant and hard-refresh.

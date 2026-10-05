@@ -521,7 +521,7 @@ export class FamilyOrganizerPanel extends LitElement {
         ${this.calendarView === "month" ? html`<div class="weekday-row">${dates.slice(0, 7).map(day => html`<span>${this.date(day, { weekday: "short" })}</span>`)}</div><div class="month-grid">${dates.map(day => {
           const items = eventsOnDay(events, day);
           return html`<div class=${`month-cell ${day.slice(0, 7) !== this.selectedDay.slice(0, 7) ? "outside" : ""} ${day === this.selectedDay ? "selected" : ""}`}>
-            <button class=${day === iso(new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(day)}`} aria-pressed=${day === this.selectedDay} @click=${() => this.selectedDay = day}>${dayDate(day).getDate()}</button>${this.canEvent() ? html`<button class="date-add" aria-label=${`${this.s("Add event on", "Afspraak toevoegen op")} ${this.date(day)}`} @click=${() => { this.selectedDay = day; this.openEditor("event", { day }); }}>+</button>` : nothing}</div>
+            <div class="cell-heading"><button class=${day === iso(new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(day)}`}
             <button class="cell-create" aria-label=${`${this.s("Create event on", "Afspraak maken op")} ${this.date(day)}`} ?disabled=${!this.canEvent()} @click=${() => { this.selectedDay = day; this.openEditor("event", { day }); }}></button>
             <div class="cell-events">${items.slice(0, 3).map(event => this.eventChip(event))}${items.length > 3 ? html`<button class="more-events" @click=${() => this.selectedDay = day}>+${items.length - 3} ${this.s("more", "meer")}</button>` : nothing}</div>
           </div>`;
