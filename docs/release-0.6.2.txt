@@ -1,0 +1,22 @@
+Family Organizer 0.6.2
+
+Calendar UI refresh (Qudoo-style)
+- Reworked the list calendar into a visual style closer to Qudoo:
+  - prominent blue hero block with date/time/weather context,
+  - per-day grouped sections,
+  - clean event rows with time, category badge, title/subtitle,
+  - right-aligned profile avatars.
+- Improved responsive behavior for the redesigned list view on mobile.
+
+Fixes included
+- Preserved month-cell heading interaction fix from 0.6.1.
+- Localized remaining chores text in Dutch for chore board/leaderboard/history labels.
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed (20/20).
+- Frontend bundle rebuilt and committed.
+
+Upgrade
+- Existing data is preserved.
+- Restart Home Assistant and hard-refresh the browser after updating.

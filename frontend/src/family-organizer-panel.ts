@@ -76,7 +76,7 @@ const nlStrings: Record<string, string> = {
   // Meal planner
   "LESS “WHAT’S FOR DINNER?”": "MINDER “WAT ETEN WE VANAVOND?”", "Your weekly meal plan": "Jullie weekmenu", "Previous meal week": "Vorige maaltijdweek", "Next meal week": "Volgende maaltijdweek", "This week": "Deze week", "Recipe →": "Recept →", "Plan meal": "Maaltijd plannen", "Plan": "Plan", "on": "op", "from": "van", "breakfast": "ontbijt", "lunch": "lunch", "dinner": "diner",
   // Chores
-  "Score period": "Scoreperiode", "This month": "Deze maand",
+  "TEAMWORK MAKES HOME WORK": "SAMENWERKEN LAAT HET THUIS WERKEN", "The chore board": "Het klussenbord", "New chore": "Nieuwe klus", "Chores for": "Klussen voor", "scheduled": "gepland", "completed": "afgerond", "Nice work!": "Goed gedaan!", "Overdue": "Te laat", "Due": "Uiterlijk", "today": "vandaag", "rotating": "roulerend", "Complete": "Afronden", "Completions are recorded for today": "Afrondingen worden voor vandaag geregistreerd", "Chore completed. Thank you!": "Klus afgerond. Dankjewel!", "All clear for this day": "Alles gedaan voor deze dag", "Schedule a chore to share the load.": "Plan een klus om het werk te verdelen.", "Create a chore": "Klus maken", "You’re browsing another day. Chore completions are recorded for today only.": "Je bekijkt een andere dag. Klusafrondingen worden alleen voor vandaag geregistreerd.", "All scheduled chores": "Alle geplande klussen", "A FRIENDLY LITTLE COMPETITION": "EEN VRIENDELIJKE KLEINE COMPETITIE", "Family leaderboard": "Familieklassement", "Score period": "Scoreperiode", "This month": "Deze maand", "points": "punten", "Meet your team": "Maak kennis met je team", "Add family members in Settings.": "Voeg familieleden toe in Instellingen.", "Last week’s star": "Ster van vorige week", "Last month’s star": "Ster van vorige maand", "A fresh start for everyone": "Een frisse start voor iedereen", "EVERY CONTRIBUTION COUNTS": "ELKE BIJDRAGE TELT", "Recent activity": "Recente activiteit", "Adjust points": "Punten aanpassen", "Manual adjustment": "Handmatige aanpassing", "Completed chore": "Afgeronde klus", "Your story starts here": "Jullie verhaal begint hier", "Completed chores and point adjustments will appear here.": "Afgeronde klussen en puntenaanpassingen verschijnen hier.", "daily": "dagelijks", "weekly": "wekelijks", "monthly": "maandelijks", "one_time": "eenmalig", "interval": "interval",
   // Recipes
   "THE FAMILY COOKBOOK": "HET GEZINSKOOKBOEK", "Favorites, all in one place": "Favorieten, allemaal op één plek", "Import from web": "Importeren van internet", "New recipe": "Nieuw recept", "Search recipes or tags": "Zoek recepten of tags", "Search recipes or tags…": "Zoek recepten of tags…", "Category": "Categorie", "All categories": "Alle categorieën", "Manage categories": "Categorieën beheren", "FROM OUR KITCHEN": "UIT ONZE KEUKEN", "Family favorite": "Gezinsfavoriet", "min": "min", "No recipes match": "Geen recepten gevonden", "Start your family cookbook": "Begin jullie gezinskookboek", "Save a favorite recipe, scale its servings and send ingredients to your lists.": "Bewaar een favoriet recept, pas de porties aan en stuur ingrediënten naar je lijsten.", "Add a recipe": "Recept toevoegen", "All recipes": "Alle recepten", "Edit recipe": "Recept bewerken", "FROM THE FAMILY COOKBOOK": "UIT HET GEZINSKOOKBOEK", "Prep": "Voorbereiding", "Cook": "Bereiding", "Plan this meal": "Deze maaltijd plannen", "Ingredients": "Ingrediënten", "Decrease servings": "Minder porties", "Increase servings": "Meer porties", "Servings": "Porties", "automatically scaled from": "automatisch omgerekend vanaf", "Check ingredients to send to your grocery lists.": "Vink ingrediënten aan om ze naar je boodschappenlijsten te sturen.", "List for": "Lijst voor", "ingredients sent to your grocery lists": "ingrediënten naar je boodschappenlijsten gestuurd", "Add selected to groceries": "Selectie aan boodschappen toevoegen", "LET’S MAKE SOMETHING GOOD": "LATEN WE IETS LEKKERS MAKEN", "Method": "Bereidingswijze", "No instructions yet. Edit this recipe to add the method.": "Nog geen bereidingswijze. Bewerk dit recept om stappen toe te voegen.", "New category": "Nieuwe categorie",
   // Today
@@ -237,6 +237,25 @@ export class FamilyOrganizerPanel extends LitElement {
   private color(value?: string) { return /^#[0-9a-f]{3,8}$/i.test(value || "") ? value! : "#64748b"; }
   private date(day: string, options: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" }) { return dayDate(day).toLocaleDateString(this.locale, options); }
   private time(value: string) { return new Date(value).toLocaleTimeString(this.locale, { hour: "numeric", minute: "2-digit", hour12: this.settingsData.time_format === "12" }); }
+  private weatherHero() {
+    const states = (this._hass as any)?.states || {};
+    const entity = Object.keys(states).find(id => id.startsWith("weather."));
+    const weather = entity ? states[entity] : undefined;
+    const attrs = weather?.attributes || {};
+    const temp = Number(attrs.temperature);
+    const unit = String(attrs.temperature_unit || "°C");
+    const condition = String(attrs.friendly_name || weather?.state || this.s("No weather data", "Geen weerdata"));
+    const detail = String(attrs.forecast?.[0]?.condition || attrs.precipitation_probability ? `${attrs.forecast?.[0]?.condition || ""} ${attrs.precipitation_probability ? `· ${attrs.precipitation_probability}%` : ""}`.trim() : "");
+    return {
+      weekday: this.date(iso(new Date()), { weekday: "long" }),
+      day: this.date(iso(new Date()), { day: "numeric" }),
+      month: this.date(iso(new Date()), { month: "long" }),
+      clock: new Date().toLocaleTimeString(this.locale, { hour: "2-digit", minute: "2-digit", hour12: this.settingsData.time_format === "12" }),
+      temperature: Number.isFinite(temp) ? `${Math.round(temp)}${unit}` : "",
+      condition,
+      detail,
+    };
+  }
   private peopleOptions(selected?: string) { return this.people.map((p: Item) => html`<option value=${p.id} ?selected=${p.id === selected}>${p.name}</option>`); }
   private groceryDefaultLabel(value?: string) {
     const fixed: Record<string, string> = { weekly: this.s("Weekly groceries", "Wekelijkse boodschappen"), daily: this.s("Daily groceries", "Dagelijkse boodschappen"), random: this.s("Random list", "Willekeurige lijst") };
@@ -532,19 +551,27 @@ export class FamilyOrganizerPanel extends LitElement {
     </section>`;
   }
   private listView(dates: string[], events: Item[]) {
-    const today = iso(new Date()), tomorrow = shift(today, 1);
+    const today = iso(new Date()), tomorrow = shift(today, 1), hero = this.weatherHero();
     const label = (day: string) => day === today ? this.s("Today", "Vandaag") : day === tomorrow ? this.s("Tomorrow", "Morgen") : this.date(day, { weekday: "long" });
     const days = dates.map(day => ({ day, items: eventsOnDay(events, day) })).filter(({ day, items }) => items.length || day === today);
     if (!days.length) return html`<div class="list-view">${this.empty(this.s("Room to breathe", "Even rust"), this.calendarSearch ? this.s("No events match your search.", "Geen afspraken gevonden voor je zoekopdracht.") : this.s("Nothing planned in this period.", "Niets gepland in deze periode."))}</div>`;
-    return html`<div class="list-view">${days.map(({ day, items }) => html`<section class=${`list-day ${day === today ? "is-today" : ""}`}>
-      <h3>${label(day)} <span class="list-date">${this.date(day, { day: "numeric", month: "long" })}</span></h3>
-      ${items.length ? items.map(event => this.listEvent(event)) : html`<p class="muted empty-day">${this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag.")}</p>`}
-    </section>`)}</div>`;
+    return html`<div class="list-view qudoo-list">
+      <header class="list-hero" aria-label=${this.s("Today overview", "Overzicht van vandaag")}>
+        <div><p>${hero.weekday}</p><strong>${hero.day}</strong><span>${hero.month}</span></div>
+        <time datetime=${new Date().toISOString()}>${hero.clock}</time>
+        <div class="list-hero-weather"><strong>${hero.temperature || ""}</strong><span>${hero.condition}</span>${hero.detail ? html`<small>${hero.detail}</small>` : nothing}</div>
+      </header>
+      ${days.map(({ day, items }) => html`<section class=${`list-day ${day === today ? "is-today" : ""}`}>
+        <h3><span>${label(day)}</span><small>${this.date(day, { day: "numeric", month: "long" })}</small><span class="list-day-icon" aria-hidden="true">🗓</span></h3>
+        ${items.length ? items.map(event => this.listEvent(event)) : html`<p class="muted empty-day">${this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag.")}</p>`}
+      </section>`)}</div>`;
   }
   private listEvent(event: Item) {
+    const icon = event.category === "meal" ? "🍽" : event.category === "sport" ? "⚽" : "🗒";
     return html`<button class="list-event" style=${`--event-color:${this.eventColor(event)}`} @click=${() => this.openEditor("event-detail", event)}>
-      <span class="event-time">${event.all_day ? this.s("All day", "Hele dag") : html`${this.time(event.occurrence_start)}<small>${this.time(event.occurrence_end)}</small>`}</span>
-      <span><strong>${event.title}</strong>${event.location ? html`<span class="muted">${event.location}</span>` : nothing}</span>
+      <span class="event-time">${event.all_day ? this.s("All day", "Hele dag") : `${this.time(event.occurrence_start)} - ${this.time(event.occurrence_end)}`}</span>
+      <span class="event-type" aria-hidden="true">${icon}</span>
+      <span class="event-copy"><strong>${event.title}</strong>${event.location ? html`<small class="muted">${event.location}</small>` : nothing}</span>
       <span class="event-people">${(event.person_ids || []).map((id: string) => this.avatar(id))}</span>
     </button>`;
   }
@@ -599,7 +626,7 @@ export class FamilyOrganizerPanel extends LitElement {
         const overdue = !done && (this.selectedDay < today || (this.selectedDay === today && chore.due_time && chore.due_time < new Date().toTimeString().slice(0, 5)));
         const own = this.me && (ids.includes(this.me.id) || [this.me.id, this._hass?.user?.id].includes(chore.creator_id));
         const canComplete = this.can("complete_any_chore") || (this.can("complete_own_chores") && own);
-        return html`<article class=${`chore-card ${done ? "done" : overdue ? "overdue" : ""}`}><div class="chore-symbol" aria-hidden="true">${this.choreIcon(chore)}</div><div class="row-copy"><strong>${chore.title}</strong><span class="muted">${chore.description || (done ? this.x("Nice work!") : overdue ? this.x("Overdue") : `${this.x("Due")} ${chore.due_time || this.x("today")}`)}</span><span class="assignee">${this.avatar(active)}${this.person(active)?.name || this.x("Anyone")}${chore.rotate ? ` · ${this.x("rotating")}` : ""}</span></div><span class="points-badge">${chore.points} ${this.x("pts")}</span><button class=${done ? "" : "primary"} ?disabled=${done || !canComplete || this.saving || this.selectedDay !== today} title=${this.selectedDay !== today ? this.x("Completions are recorded for today") : ""} @click=${() => void this.action(() => this._hass!.callWS({ type: "family_organizer/complete_chore", chore_id: chore.id, ...(this.can("complete_any_chore") ? active ? { person_id: active } : {} : { person_id: this.me.id }) }), "Chore completed. Thank you!")}>${done ? this.x("Done ✓") : this.x("Complete")}</button>${this.can("manage_chores") ? html`<button class="icon-button" aria-label=${`${this.x("Edit")} ${chore.title}`} @click=${() => this.openEditor("chore", chore)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${chore.title}`} @click=${() => this.confirmDelete("chores", chore)}>×</button>` : nothing}</article>`;
+        return html`<article class=${`chore-card ${done ? "done" : overdue ? "overdue" : ""}`}><div class="chore-symbol" aria-hidden="true">${this.choreIcon(chore)}</div><div class="row-copy"><strong>${chore.title}</strong><span class="muted">${chore.description || (done ? this.x("Nice work!") : overdue ? this.x("Overdue") : `${this.x("Due")} ${chore.due_time || this.x("today")}`)}</span><span class="assignee">${this.avatar(active)}${this.person(active)?.name || this.x("Anyone")}${chore.rotate ? ` · ${this.x("rotating")}` : ""}</span></div><span class="points-badge">${chore.points} ${this.x("pts")}</span><button class=${done ? "" : "primary"} ?disabled=${done || !canComplete || this.saving || this.selectedDay !== today} title=${this.selectedDay !== today ? this.x("Completions are recorded for today") : ""} @click=${() => void this.action(() => this._hass!.callWS({ type: "family_organizer/complete_chore", chore_id: chore.id, ...(this.can("complete_any_chore") ? active ? { person_id: active } : {} : { person_id: this.me.id }) }), this.x("Chore completed. Thank you!"))}>${done ? this.x("Done ✓") : this.x("Complete")}</button>${this.can("manage_chores") ? html`<button class="icon-button" aria-label=${`${this.x("Edit")} ${chore.title}`} @click=${() => this.openEditor("chore", chore)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${chore.title}`} @click=${() => this.confirmDelete("chores", chore)}>×</button>` : nothing}</article>`;
       }) : this.empty("All clear for this day", "Schedule a chore to share the load.", this.addButton("Create a chore", "chore", this.can("manage_chores")))}</div>
       ${this.selectedDay !== today ? html`<p class="muted">${this.x("You’re browsing another day. Chore completions are recorded for today only.")}</p>` : nothing}
       <details class="all-chores"><summary>${this.x("All scheduled chores")} (${chores.length})</summary>${chores.map((chore: Item) => html`<div class="compact-row"><span>${chore.title} <small class="muted">· ${this.x(chore.schedule)}</small></span>${this.can("manage_chores") ? html`<button @click=${() => this.openEditor("chore", chore)}>${this.x("Edit")}</button>` : nothing}</div>`)}</details></div>

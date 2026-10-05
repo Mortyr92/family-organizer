@@ -918,19 +918,29 @@ var We = o`
   .person-pick:hover:not(:disabled) { opacity:1; background:none; }
   .calendar-search { display:flex; align-items:center; gap:8px; }
   .calendar-search input { min-width:180px; border-radius:24px; padding:8px 14px; }
-  .list-view { display:flex; flex-direction:column; gap:22px; padding:8px 4px 4px; }
-  .list-day h3 { display:flex; align-items:baseline; gap:10px; font-size:14px; margin:0 0 8px; padding:0 6px; }
-  .list-day h3 .list-date { color:var(--muted); font-weight:500; font-size:12px; }
-  .list-day.is-today h3 { color:var(--orange); }
-  .list-day .muted.empty-day { font-size:12px; padding:0 6px; }
-  .list-event { display:grid; grid-template-columns:72px minmax(0,1fr) auto; gap:14px; align-items:center; width:100%; text-align:left; border:1px solid var(--line); border-left:4px solid var(--event-color); border-radius:12px; padding:11px 14px; margin:6px 0; background:var(--surface); font-size:13px; }
-  .list-event:hover:not(:disabled) { background:color-mix(in srgb,var(--event-color) 8%,var(--surface)); }
-  .list-event .event-time { display:flex; flex-direction:column; gap:2px; line-height:1.2; }
-  .list-event .event-time small { color:var(--muted); font-weight:500; }
-  .list-event strong { display:block; font-weight:650; }
-  .list-event .muted { font-size:12px; }
-  .list-event .event-people { justify-content:flex-end; gap:8px; }
-  .list-event .event-people .avatar { width:30px; height:30px; min-width:30px; }
+  .list-view { display:flex; flex-direction:column; gap:0; padding:0; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--surface); }
+  .list-hero { display:grid; grid-template-columns:auto 1fr auto; gap:10px 20px; align-items:start; padding:18px 18px 16px; color:#fff; background:linear-gradient(135deg,#587fc7 0%,#8ba8df 100%); }
+  .list-hero p { margin:0; font-size:18px; opacity:.95; text-transform:capitalize; }
+  .list-hero strong { display:block; font-size:48px; line-height:1; font-weight:700; margin-top:2px; }
+  .list-hero span { font-size:28px; text-transform:capitalize; }
+  .list-hero time { justify-self:end; font-size:36px; font-weight:650; letter-spacing:.5px; }
+  .list-hero-weather { grid-column:1/-1; display:flex; flex-direction:column; gap:2px; margin-top:4px; }
+  .list-hero-weather strong { font-size:44px; line-height:1; margin:0; }
+  .list-hero-weather span { font-size:22px; }
+  .list-hero-weather small { font-size:16px; opacity:.9; }
+  .list-day { background:#fff; }
+  .list-day h3 { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:12px; margin:0; padding:10px 14px; background:#f2f4f7; border-top:1px solid #e5e9f0; font-size:34px; font-weight:650; text-transform:lowercase; }
+  .list-day h3 small { font-size:26px; font-weight:550; color:#111827; }
+  .list-day-icon { color:#88a1cf; font-size:20px; }
+  .list-day .muted.empty-day { font-size:16px; padding:10px 14px; }
+  .list-event { display:grid; grid-template-columns:190px 48px minmax(0,1fr) auto; gap:14px; align-items:center; width:100%; text-align:left; border:0; border-top:1px solid #eceff4; border-radius:0; padding:14px 14px; margin:0; background:#fff; font-size:34px; color:#111827; }
+  .list-event:hover:not(:disabled) { background:#f8fafc; }
+  .list-event .event-time { font-size:34px; color:#1f2937; letter-spacing:.1px; }
+  .list-event .event-type { display:inline-grid; place-items:center; width:38px; height:38px; border-radius:8px; background:var(--event-color); font-size:22px; }
+  .list-event .event-copy strong { display:block; font-weight:650; line-height:1.15; }
+  .list-event .event-copy .muted { display:block; font-size:24px; margin-top:2px; color:#6b7280; }
+  .list-event .event-people { display:flex; justify-content:flex-end; gap:6px; }
+  .list-event .event-people .avatar { width:34px; height:34px; min-width:34px; box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--person-color,#64748b); }
   .fallback { background:var(--person-color,#64748b); color:#fff; font-size:10px; font-weight:750; text-shadow:0 1px 2px #0007; box-shadow:inset 0 0 0 1px #0001; }
   .calendar-shell { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:20px; align-items:start; }
   .calendar-shell.overview-left { grid-template-columns:250px minmax(0,1fr); }
@@ -1246,6 +1256,21 @@ var We = o`
     .app input[type=checkbox]:checked:after { content:"✓"; position:absolute; color:white; font-size:17px; font-weight:700; }
     .app input[type=checkbox]:disabled { opacity:.5; }
   }
+  @media(max-width:700px) {
+    .qudoo-list .list-hero { padding:14px; grid-template-columns:1fr auto; }
+    .qudoo-list .list-hero p { font-size:14px; }
+    .qudoo-list .list-hero strong { font-size:34px; }
+    .qudoo-list .list-hero span { font-size:20px; }
+    .qudoo-list .list-hero time { font-size:24px; }
+    .qudoo-list .list-hero-weather strong { font-size:30px; }
+    .qudoo-list .list-hero-weather span { font-size:16px; }
+    .qudoo-list .list-day h3 { font-size:22px; padding:8px 10px; }
+    .qudoo-list .list-day h3 small { font-size:16px; }
+    .qudoo-list .list-event { grid-template-columns:120px 32px minmax(0,1fr) auto; font-size:18px; padding:10px; }
+    .qudoo-list .list-event .event-time { font-size:18px; }
+    .qudoo-list .list-event .event-type { width:28px; height:28px; font-size:16px; }
+    .qudoo-list .list-event .event-copy .muted { font-size:14px; }
+  }
   @media(hover:none) { .date-add { opacity:1; } }
   @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
 `;
@@ -1534,8 +1559,47 @@ var Ge = [
 	breakfast: "ontbijt",
 	lunch: "lunch",
 	dinner: "diner",
+	"TEAMWORK MAKES HOME WORK": "SAMENWERKEN LAAT HET THUIS WERKEN",
+	"The chore board": "Het klussenbord",
+	"New chore": "Nieuwe klus",
+	"Chores for": "Klussen voor",
+	scheduled: "gepland",
+	completed: "afgerond",
+	"Nice work!": "Goed gedaan!",
+	Overdue: "Te laat",
+	Due: "Uiterlijk",
+	today: "vandaag",
+	rotating: "roulerend",
+	Complete: "Afronden",
+	"Completions are recorded for today": "Afrondingen worden voor vandaag geregistreerd",
+	"Chore completed. Thank you!": "Klus afgerond. Dankjewel!",
+	"All clear for this day": "Alles gedaan voor deze dag",
+	"Schedule a chore to share the load.": "Plan een klus om het werk te verdelen.",
+	"Create a chore": "Klus maken",
+	"You’re browsing another day. Chore completions are recorded for today only.": "Je bekijkt een andere dag. Klusafrondingen worden alleen voor vandaag geregistreerd.",
+	"All scheduled chores": "Alle geplande klussen",
+	"A FRIENDLY LITTLE COMPETITION": "EEN VRIENDELIJKE KLEINE COMPETITIE",
+	"Family leaderboard": "Familieklassement",
 	"Score period": "Scoreperiode",
 	"This month": "Deze maand",
+	points: "punten",
+	"Meet your team": "Maak kennis met je team",
+	"Add family members in Settings.": "Voeg familieleden toe in Instellingen.",
+	"Last week’s star": "Ster van vorige week",
+	"Last month’s star": "Ster van vorige maand",
+	"A fresh start for everyone": "Een frisse start voor iedereen",
+	"EVERY CONTRIBUTION COUNTS": "ELKE BIJDRAGE TELT",
+	"Recent activity": "Recente activiteit",
+	"Adjust points": "Punten aanpassen",
+	"Manual adjustment": "Handmatige aanpassing",
+	"Completed chore": "Afgeronde klus",
+	"Your story starts here": "Jullie verhaal begint hier",
+	"Completed chores and point adjustments will appear here.": "Afgeronde klussen en puntenaanpassingen verschijnen hier.",
+	daily: "dagelijks",
+	weekly: "wekelijks",
+	monthly: "maandelijks",
+	one_time: "eenmalig",
+	interval: "interval",
 	"THE FAMILY COOKBOOK": "HET GEZINSKOOKBOEK",
 	"Favorites, all in one place": "Favorieten, allemaal op één plek",
 	"Import from web": "Importeren van internet",
@@ -1938,6 +2002,22 @@ var Ge = [
 			minute: "2-digit",
 			hour12: this.settingsData.time_format === "12"
 		});
+	}
+	weatherHero() {
+		let e = this._hass?.states || {}, t = Object.keys(e).find((e) => e.startsWith("weather.")), n = t ? e[t] : void 0, r = n?.attributes || {}, i = Number(r.temperature), a = String(r.temperature_unit || "°C"), o = String(r.friendly_name || n?.state || this.s("No weather data", "Geen weerdata")), s = String(r.forecast?.[0]?.condition || r.precipitation_probability ? `${r.forecast?.[0]?.condition || ""} ${r.precipitation_probability ? `· ${r.precipitation_probability}%` : ""}`.trim() : "");
+		return {
+			weekday: this.date(H(/* @__PURE__ */ new Date()), { weekday: "long" }),
+			day: this.date(H(/* @__PURE__ */ new Date()), { day: "numeric" }),
+			month: this.date(H(/* @__PURE__ */ new Date()), { month: "long" }),
+			clock: (/* @__PURE__ */ new Date()).toLocaleTimeString(this.locale, {
+				hour: "2-digit",
+				minute: "2-digit",
+				hour12: this.settingsData.time_format === "12"
+			}),
+			temperature: Number.isFinite(i) ? `${Math.round(i)}${a}` : "",
+			condition: o,
+			detail: s
+		};
 	}
 	peopleOptions(e) {
 		return this.people.map((t) => j`<option value=${t.id} ?selected=${t.id === e}>${t.name}</option>`);
@@ -2427,22 +2507,30 @@ var Ge = [
     </section>`;
 	}
 	listView(e, t) {
-		let n = H(/* @__PURE__ */ new Date()), r = W(n, 1), i = (e) => e === n ? this.s("Today", "Vandaag") : e === r ? this.s("Tomorrow", "Morgen") : this.date(e, { weekday: "long" }), a = e.map((e) => ({
+		let n = H(/* @__PURE__ */ new Date()), r = W(n, 1), i = this.weatherHero(), a = (e) => e === n ? this.s("Today", "Vandaag") : e === r ? this.s("Tomorrow", "Morgen") : this.date(e, { weekday: "long" }), o = e.map((e) => ({
 			day: e,
 			items: X(t, e)
 		})).filter(({ day: e, items: t }) => t.length || e === n);
-		return a.length ? j`<div class="list-view">${a.map(({ day: e, items: t }) => j`<section class=${`list-day ${e === n ? "is-today" : ""}`}>
-      <h3>${i(e)} <span class="list-date">${this.date(e, {
+		return o.length ? j`<div class="list-view qudoo-list">
+      <header class="list-hero" aria-label=${this.s("Today overview", "Overzicht van vandaag")}>
+        <div><p>${i.weekday}</p><strong>${i.day}</strong><span>${i.month}</span></div>
+        <time datetime=${(/* @__PURE__ */ new Date()).toISOString()}>${i.clock}</time>
+        <div class="list-hero-weather"><strong>${i.temperature || ""}</strong><span>${i.condition}</span>${i.detail ? j`<small>${i.detail}</small>` : N}</div>
+      </header>
+      ${o.map(({ day: e, items: t }) => j`<section class=${`list-day ${e === n ? "is-today" : ""}`}>
+        <h3><span>${a(e)}</span><small>${this.date(e, {
 			day: "numeric",
 			month: "long"
-		})}</span></h3>
-      ${t.length ? t.map((e) => this.listEvent(e)) : j`<p class="muted empty-day">${this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag.")}</p>`}
-    </section>`)}</div>` : j`<div class="list-view">${this.empty(this.s("Room to breathe", "Even rust"), this.calendarSearch ? this.s("No events match your search.", "Geen afspraken gevonden voor je zoekopdracht.") : this.s("Nothing planned in this period.", "Niets gepland in deze periode."))}</div>`;
+		})}</small><span class="list-day-icon" aria-hidden="true">🗓</span></h3>
+        ${t.length ? t.map((e) => this.listEvent(e)) : j`<p class="muted empty-day">${this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag.")}</p>`}
+      </section>`)}</div>` : j`<div class="list-view">${this.empty(this.s("Room to breathe", "Even rust"), this.calendarSearch ? this.s("No events match your search.", "Geen afspraken gevonden voor je zoekopdracht.") : this.s("Nothing planned in this period.", "Niets gepland in deze periode."))}</div>`;
 	}
 	listEvent(e) {
+		let t = e.category === "meal" ? "🍽" : e.category === "sport" ? "⚽" : "🗒";
 		return j`<button class="list-event" style=${`--event-color:${this.eventColor(e)}`} @click=${() => this.openEditor("event-detail", e)}>
-      <span class="event-time">${e.all_day ? this.s("All day", "Hele dag") : j`${this.time(e.occurrence_start)}<small>${this.time(e.occurrence_end)}</small>`}</span>
-      <span><strong>${e.title}</strong>${e.location ? j`<span class="muted">${e.location}</span>` : N}</span>
+      <span class="event-time">${e.all_day ? this.s("All day", "Hele dag") : `${this.time(e.occurrence_start)} - ${this.time(e.occurrence_end)}`}</span>
+      <span class="event-type" aria-hidden="true">${t}</span>
+      <span class="event-copy"><strong>${e.title}</strong>${e.location ? j`<small class="muted">${e.location}</small>` : N}</span>
       <span class="event-people">${(e.person_ids || []).map((e) => this.avatar(e))}</span>
     </button>`;
 	}
@@ -2523,7 +2611,7 @@ var Ge = [
 				type: "family_organizer/complete_chore",
 				chore_id: e.id,
 				...this.can("complete_any_chore") ? i ? { person_id: i } : {} : { person_id: this.me.id }
-			}), "Chore completed. Thank you!")}>${a ? this.x("Done ✓") : this.x("Complete")}</button>${this.can("manage_chores") ? j`<button class="icon-button" aria-label=${`${this.x("Edit")} ${e.title}`} @click=${() => this.openEditor("chore", e)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${e.title}`} @click=${() => this.confirmDelete("chores", e)}>×</button>` : N}</article>`;
+			}), this.x("Chore completed. Thank you!"))}>${a ? this.x("Done ✓") : this.x("Complete")}</button>${this.can("manage_chores") ? j`<button class="icon-button" aria-label=${`${this.x("Edit")} ${e.title}`} @click=${() => this.openEditor("chore", e)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${e.title}`} @click=${() => this.confirmDelete("chores", e)}>×</button>` : N}</article>`;
 		}) : this.empty("All clear for this day", "Schedule a chore to share the load.", this.addButton("Create a chore", "chore", this.can("manage_chores")))}</div>
       ${this.selectedDay === r ? N : j`<p class="muted">${this.x("You’re browsing another day. Chore completions are recorded for today only.")}</p>`}
       <details class="all-chores"><summary>${this.x("All scheduled chores")} (${e.length})</summary>${e.map((e) => j`<div class="compact-row"><span>${e.title} <small class="muted">· ${this.x(e.schedule)}</small></span>${this.can("manage_chores") ? j`<button @click=${() => this.openEditor("chore", e)}>${this.x("Edit")}</button>` : N}</div>`)}</details></div>

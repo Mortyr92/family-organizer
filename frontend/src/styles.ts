@@ -96,19 +96,29 @@ export const panelStyles = css`
   .person-pick:hover:not(:disabled) { opacity:1; background:none; }
   .calendar-search { display:flex; align-items:center; gap:8px; }
   .calendar-search input { min-width:180px; border-radius:24px; padding:8px 14px; }
-  .list-view { display:flex; flex-direction:column; gap:22px; padding:8px 4px 4px; }
-  .list-day h3 { display:flex; align-items:baseline; gap:10px; font-size:14px; margin:0 0 8px; padding:0 6px; }
-  .list-day h3 .list-date { color:var(--muted); font-weight:500; font-size:12px; }
-  .list-day.is-today h3 { color:var(--orange); }
-  .list-day .muted.empty-day { font-size:12px; padding:0 6px; }
-  .list-event { display:grid; grid-template-columns:72px minmax(0,1fr) auto; gap:14px; align-items:center; width:100%; text-align:left; border:1px solid var(--line); border-left:4px solid var(--event-color); border-radius:12px; padding:11px 14px; margin:6px 0; background:var(--surface); font-size:13px; }
-  .list-event:hover:not(:disabled) { background:color-mix(in srgb,var(--event-color) 8%,var(--surface)); }
-  .list-event .event-time { display:flex; flex-direction:column; gap:2px; line-height:1.2; }
-  .list-event .event-time small { color:var(--muted); font-weight:500; }
-  .list-event strong { display:block; font-weight:650; }
-  .list-event .muted { font-size:12px; }
-  .list-event .event-people { justify-content:flex-end; gap:8px; }
-  .list-event .event-people .avatar { width:30px; height:30px; min-width:30px; }
+  .list-view { display:flex; flex-direction:column; gap:0; padding:0; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--surface); }
+  .list-hero { display:grid; grid-template-columns:auto 1fr auto; gap:10px 20px; align-items:start; padding:18px 18px 16px; color:#fff; background:linear-gradient(135deg,#587fc7 0%,#8ba8df 100%); }
+  .list-hero p { margin:0; font-size:18px; opacity:.95; text-transform:capitalize; }
+  .list-hero strong { display:block; font-size:48px; line-height:1; font-weight:700; margin-top:2px; }
+  .list-hero span { font-size:28px; text-transform:capitalize; }
+  .list-hero time { justify-self:end; font-size:36px; font-weight:650; letter-spacing:.5px; }
+  .list-hero-weather { grid-column:1/-1; display:flex; flex-direction:column; gap:2px; margin-top:4px; }
+  .list-hero-weather strong { font-size:44px; line-height:1; margin:0; }
+  .list-hero-weather span { font-size:22px; }
+  .list-hero-weather small { font-size:16px; opacity:.9; }
+  .list-day { background:#fff; }
+  .list-day h3 { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:12px; margin:0; padding:10px 14px; background:#f2f4f7; border-top:1px solid #e5e9f0; font-size:34px; font-weight:650; text-transform:lowercase; }
+  .list-day h3 small { font-size:26px; font-weight:550; color:#111827; }
+  .list-day-icon { color:#88a1cf; font-size:20px; }
+  .list-day .muted.empty-day { font-size:16px; padding:10px 14px; }
+  .list-event { display:grid; grid-template-columns:190px 48px minmax(0,1fr) auto; gap:14px; align-items:center; width:100%; text-align:left; border:0; border-top:1px solid #eceff4; border-radius:0; padding:14px 14px; margin:0; background:#fff; font-size:34px; color:#111827; }
+  .list-event:hover:not(:disabled) { background:#f8fafc; }
+  .list-event .event-time { font-size:34px; color:#1f2937; letter-spacing:.1px; }
+  .list-event .event-type { display:inline-grid; place-items:center; width:38px; height:38px; border-radius:8px; background:var(--event-color); font-size:22px; }
+  .list-event .event-copy strong { display:block; font-weight:650; line-height:1.15; }
+  .list-event .event-copy .muted { display:block; font-size:24px; margin-top:2px; color:#6b7280; }
+  .list-event .event-people { display:flex; justify-content:flex-end; gap:6px; }
+  .list-event .event-people .avatar { width:34px; height:34px; min-width:34px; box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--person-color,#64748b); }
   .fallback { background:var(--person-color,#64748b); color:#fff; font-size:10px; font-weight:750; text-shadow:0 1px 2px #0007; box-shadow:inset 0 0 0 1px #0001; }
   .calendar-shell { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:20px; align-items:start; }
   .calendar-shell.overview-left { grid-template-columns:250px minmax(0,1fr); }
@@ -423,6 +433,21 @@ export const panelStyles = css`
     .app input[type=checkbox]:checked:before { background:#c45013; border-color:#c45013; }
     .app input[type=checkbox]:checked:after { content:"✓"; position:absolute; color:white; font-size:17px; font-weight:700; }
     .app input[type=checkbox]:disabled { opacity:.5; }
+  }
+  @media(max-width:700px) {
+    .qudoo-list .list-hero { padding:14px; grid-template-columns:1fr auto; }
+    .qudoo-list .list-hero p { font-size:14px; }
+    .qudoo-list .list-hero strong { font-size:34px; }
+    .qudoo-list .list-hero span { font-size:20px; }
+    .qudoo-list .list-hero time { font-size:24px; }
+    .qudoo-list .list-hero-weather strong { font-size:30px; }
+    .qudoo-list .list-hero-weather span { font-size:16px; }
+    .qudoo-list .list-day h3 { font-size:22px; padding:8px 10px; }
+    .qudoo-list .list-day h3 small { font-size:16px; }
+    .qudoo-list .list-event { grid-template-columns:120px 32px minmax(0,1fr) auto; font-size:18px; padding:10px; }
+    .qudoo-list .list-event .event-time { font-size:18px; }
+    .qudoo-list .list-event .event-type { width:28px; height:28px; font-size:16px; }
+    .qudoo-list .list-event .event-copy .muted { font-size:14px; }
   }
   @media(hover:none) { .date-add { opacity:1; } }
   @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
