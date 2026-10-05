@@ -13,7 +13,8 @@ DEFAULT_SETTINGS = {
     "overview_collapsed": False,
     "week_start": "monday",
     "time_format": "24",
-    "default_calendar_view": "month",
+    "default_calendar_view": "list",
+    "calendar_list_mode": "planned",
     "default_grocery_list_id": "default",
     "meal_slots": ["breakfast", "lunch", "dinner"],
     "competition_default": "week",
@@ -29,7 +30,7 @@ EVENT_UPDATED = f"{DOMAIN}_updated"
 EVENT_REMINDER = f"{DOMAIN}_reminder"
 SETTING_KEYS = (
     "theme", "sync_interval", "overview_position", "overview_collapsed",
-    "week_start", "time_format", "default_calendar_view",
+    "week_start", "time_format", "default_calendar_view", "calendar_list_mode",
     "default_grocery_list_id", "meal_slots", "competition_default",
     "language", "stores", "reminders_enabled", "default_reminder_minutes",
     "notify_service", "daily_agenda_time",

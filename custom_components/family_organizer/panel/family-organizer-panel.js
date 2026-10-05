@@ -2352,6 +2352,7 @@ var Ge = [
 				"week_start",
 				"time_format",
 				"default_calendar_view",
+				"calendar_list_mode",
 				"default_grocery_list_id",
 				"competition_default",
 				"language",
@@ -2486,7 +2487,9 @@ var Ge = [
         ${this.calendarView === "month" ? j`<div class="weekday-row">${e.slice(0, 7).map((e) => j`<span>${this.date(e, { weekday: "short" })}</span>`)}</div><div class="month-grid">${e.map((e) => {
 			let t = X(r, e);
 			return j`<div class=${`month-cell ${e.slice(0, 7) === this.selectedDay.slice(0, 7) ? "" : "outside"} ${e === this.selectedDay ? "selected" : ""}`}>
-            <div class="cell-heading"><button class=${e === H(/* @__PURE__ */ new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(e)}`}
+            <div class="cell-heading"><button class=${e === H(/* @__PURE__ */ new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(e)}`} aria-pressed=${e === this.selectedDay} @click=${() => this.selectedDay = e}>${U(e).getDate()}</button>${this.canEvent() ? j`<button class="date-add" aria-label=${`${this.s("Add event on", "Afspraak toevoegen op")} ${this.date(e)}`} @click=${() => {
+				this.selectedDay = e, this.openEditor("event", { day: e });
+			}}>+</button>` : N}</div>
             <button class="cell-create" aria-label=${`${this.s("Create event on", "Afspraak maken op")} ${this.date(e)}`} ?disabled=${!this.canEvent()} @click=${() => {
 				this.selectedDay = e, this.openEditor("event", { day: e });
 			}}></button>
@@ -2507,17 +2510,17 @@ var Ge = [
     </section>`;
 	}
 	listView(e, t) {
-		let n = H(/* @__PURE__ */ new Date()), r = W(n, 1), i = this.weatherHero(), a = (e) => e === n ? this.s("Today", "Vandaag") : e === r ? this.s("Tomorrow", "Morgen") : this.date(e, { weekday: "long" }), o = e.map((e) => ({
+		let n = H(/* @__PURE__ */ new Date()), r = W(n, 1), i = this.weatherHero(), a = (e) => e === n ? this.s("Today", "Vandaag") : e === r ? this.s("Tomorrow", "Morgen") : this.date(e, { weekday: "long" }), o = this.settingsData.calendar_list_mode === "all", s = e.map((e) => ({
 			day: e,
 			items: X(t, e)
-		})).filter(({ day: e, items: t }) => t.length || e === n);
-		return o.length ? j`<div class="list-view qudoo-list">
+		})).filter(({ day: e, items: t }) => o || t.length || e === n);
+		return s.length ? j`<div class="list-view qudoo-list">
       <header class="list-hero" aria-label=${this.s("Today overview", "Overzicht van vandaag")}>
         <div><p>${i.weekday}</p><strong>${i.day}</strong><span>${i.month}</span></div>
         <time datetime=${(/* @__PURE__ */ new Date()).toISOString()}>${i.clock}</time>
         <div class="list-hero-weather"><strong>${i.temperature || ""}</strong><span>${i.condition}</span>${i.detail ? j`<small>${i.detail}</small>` : N}</div>
       </header>
-      ${o.map(({ day: e, items: t }) => j`<section class=${`list-day ${e === n ? "is-today" : ""}`}>
+      ${s.map(({ day: e, items: t }) => j`<section class=${`list-day ${e === n ? "is-today" : ""}`}>
         <h3><span>${a(e)}</span><small>${this.date(e, {
 			day: "numeric",
 			month: "long"
@@ -3107,7 +3110,12 @@ var Ge = [
       <label class="check full"><input name="overview_collapsed" type="checkbox" ?checked=${!!t.overview_collapsed}>${this.x("Collapse day overview by default")}</label>
       ${this.select("Week starts", "week_start", t.week_start || (this.firstDay === 0 ? "sunday" : "monday"), [["monday", "Monday"], ["sunday", "Sunday"]])}
       ${this.select("Time format", "time_format", t.time_format || "24", [["24", "24 hour"], ["12", "12 hour"]])}
-      item.default_calendar_view || "list", [["list", "List"], ["month", "Month"], ["week", "Week"], ["day", "Day"]])}
+      ${this.select("List view days", "calendar_list_mode", t.calendar_list_mode || "planned", [["planned", "Only days with planned events"], ["all", "Every day (also empty days)"]])}
+      ${this.select("Default calendar view", "default_calendar_view", t.default_calendar_view === "day" ? "list" : t.default_calendar_view || "list", [
+			["list", "List"],
+			["week", "Week"],
+			["month", "Month"]
+		])}
       ${this.select("Grocery default", "default_grocery_list_id", t.default_grocery_list_id || this.listId, [
 			["weekly", "Weekly groceries"],
 			["daily", "Daily groceries"],

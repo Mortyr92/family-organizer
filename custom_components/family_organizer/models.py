@@ -265,7 +265,8 @@ class Settings(Model):
     overview_collapsed: bool = False
     week_start: str = "monday"
     time_format: str = "24"
-    default_calendar_view: str = "month"
+    default_calendar_view: str = "list"
+    calendar_list_mode: str = "planned"
     default_grocery_list_id: str = "default"
     meal_slots: list[str] = field(default_factory=lambda: ["breakfast", "lunch", "dinner"])
     competition_default: str = "week"

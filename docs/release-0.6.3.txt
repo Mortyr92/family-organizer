@@ -1,0 +1,21 @@
+Family Organizer 0.6.3
+
+Fixes
+- Month overview no longer shows raw click-handler text inside every day cell.
+  A broken Lit template fragment in the month-cell header has been restored,
+  so day numbers, the add (+) control, and create-event click handling render
+  correctly again.
+
+Included
+- Calendar settings improvements from current working tree:
+  - list mode option: show only planned days or every day,
+  - default calendar view option constrained to list/week/month.
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed (20/20).
+- Frontend bundle rebuilt and committed.
+
+Upgrade
+- Existing data is preserved.
+- Restart Home Assistant and hard-refresh the browser after updating.

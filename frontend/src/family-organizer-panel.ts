@@ -441,7 +441,7 @@ export class FamilyOrganizerPanel extends LitElement {
       patch = { ...patch, name: text("name"), initials: text("name").split(/\s+/).map(x => x[0]).join("").slice(0, 2).toUpperCase(), color: text("color"), profile_picture: text("profile_picture") || null, user_id: text("user_id") || null, sync_picture: checked("sync_picture"), birthday: text("birthday") || null, role: text("role"), permissions, pin: text("pin"), clear_pin: checked("clear_pin"), shared: true };
     } else if (kind === "preferences") {
       const settings: Item = {};
-      ["overview_position", "week_start", "time_format", "default_calendar_view", "default_grocery_list_id", "competition_default", "language", "theme"].forEach(key => settings[key] = text(key));
+      ["overview_position", "week_start", "time_format", "default_calendar_view", "calendar_list_mode", "default_grocery_list_id", "competition_default", "language", "theme"].forEach(key => settings[key] = text(key));
       settings.overview_collapsed = checked("overview_collapsed");
       settings.sync_interval = number("sync_interval");
       settings.reminders_enabled = checked("reminders_enabled");
@@ -540,7 +540,7 @@ export class FamilyOrganizerPanel extends LitElement {
         ${this.calendarView === "month" ? html`<div class="weekday-row">${dates.slice(0, 7).map(day => html`<span>${this.date(day, { weekday: "short" })}</span>`)}</div><div class="month-grid">${dates.map(day => {
           const items = eventsOnDay(events, day);
           return html`<div class=${`month-cell ${day.slice(0, 7) !== this.selectedDay.slice(0, 7) ? "outside" : ""} ${day === this.selectedDay ? "selected" : ""}`}>
-            <div class="cell-heading"><button class=${day === iso(new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(day)}`}
+            <div class="cell-heading"><button class=${day === iso(new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(day)}`} aria-pressed=${day === this.selectedDay} @click=${() => this.selectedDay = day}>${dayDate(day).getDate()}</button>${this.canEvent() ? html`<button class="date-add" aria-label=${`${this.s("Add event on", "Afspraak toevoegen op")} ${this.date(day)}`} @click=${() => { this.selectedDay = day; this.openEditor("event", { day }); }}>+</button>` : nothing}</div>
             <button class="cell-create" aria-label=${`${this.s("Create event on", "Afspraak maken op")} ${this.date(day)}`} ?disabled=${!this.canEvent()} @click=${() => { this.selectedDay = day; this.openEditor("event", { day }); }}></button>
             <div class="cell-events">${items.slice(0, 3).map(event => this.eventChip(event))}${items.length > 3 ? html`<button class="more-events" @click=${() => this.selectedDay = day}>+${items.length - 3} ${this.s("more", "meer")}</button>` : nothing}</div>
           </div>`;
@@ -553,7 +553,8 @@ export class FamilyOrganizerPanel extends LitElement {
   private listView(dates: string[], events: Item[]) {
     const today = iso(new Date()), tomorrow = shift(today, 1), hero = this.weatherHero();
     const label = (day: string) => day === today ? this.s("Today", "Vandaag") : day === tomorrow ? this.s("Tomorrow", "Morgen") : this.date(day, { weekday: "long" });
-    const days = dates.map(day => ({ day, items: eventsOnDay(events, day) })).filter(({ day, items }) => items.length || day === today);
+    const showAllDays = this.settingsData.calendar_list_mode === "all";
+    const days = dates.map(day => ({ day, items: eventsOnDay(events, day) })).filter(({ day, items }) => showAllDays || items.length || day === today);
     if (!days.length) return html`<div class="list-view">${this.empty(this.s("Room to breathe", "Even rust"), this.calendarSearch ? this.s("No events match your search.", "Geen afspraken gevonden voor je zoekopdracht.") : this.s("Nothing planned in this period.", "Niets gepland in deze periode."))}</div>`;
     return html`<div class="list-view qudoo-list">
       <header class="list-hero" aria-label=${this.s("Today overview", "Overzicht van vandaag")}>
@@ -823,7 +824,8 @@ export class FamilyOrganizerPanel extends LitElement {
       <label class="check full"><input name="overview_collapsed" type="checkbox" ?checked=${!!item.overview_collapsed}>${this.x("Collapse day overview by default")}</label>
       ${this.select("Week starts", "week_start", item.week_start || (this.firstDay === 0 ? "sunday" : "monday"), [["monday", "Monday"], ["sunday", "Sunday"]])}
       ${this.select("Time format", "time_format", item.time_format || "24", [["24", "24 hour"], ["12", "12 hour"]])}
-      item.default_calendar_view || "list", [["list", "List"], ["month", "Month"], ["week", "Week"], ["day", "Day"]])}
+      ${this.select("List view days", "calendar_list_mode", item.calendar_list_mode || "planned", [["planned", "Only days with planned events"], ["all", "Every day (also empty days)"]])}
+      ${this.select("Default calendar view", "default_calendar_view", (item.default_calendar_view === "day" ? "list" : (item.default_calendar_view || "list")), [["list", "List"], ["week", "Week"], ["month", "Month"]])}
       ${this.select("Grocery default", "default_grocery_list_id", item.default_grocery_list_id || this.listId, [["weekly", "Weekly groceries"], ["daily", "Daily groceries"], ["random", "Random list"], ...(this.data.groceries.lists || []).map((x: Item): [string, string] => [x.id, x.name])])}
       <fieldset class="full permissions"><legend>${this.x("Meal slots")}</legend>${["breakfast", "lunch", "dinner"].map(slot => html`<label class="check"><input name="meal_slots" type="checkbox" value=${slot} ?checked=${(item.meal_slots || ["breakfast", "lunch", "dinner"]).includes(slot)}>${this.x(slot[0].toUpperCase() + slot.slice(1))}</label>`)}</fieldset>
       ${this.field("Stores (comma separated)", "stores", (item.stores || []).join(", "))}
