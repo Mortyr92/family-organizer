@@ -87,7 +87,7 @@ repository, install **Family Organizer**, restart Home Assistant, then use
 Copy `custom_components/family_organizer` into the matching directory under the
 Home Assistant configuration directory, restart, and add the integration.
 
-## Update an existing installation to 0.5.4
+## Update an existing installation to 0.6.0
 
 **No uninstall, reconfiguration, or data reset is required.** The integration
 domain, config entries, entities, storage keys and storage version remain
@@ -97,7 +97,7 @@ on first start; reminders default to a 15-minute lead using persistent
 notifications until you pick a notify service in Settings.
 
 1. Create a Home Assistant backup including configuration and `.storage`.
-2. Once the owner publishes **v0.5.4**, open
+2. Once the owner publishes **v0.6.0**, open
    Organizer â†’ Update/Redownload** and select that release.
 3. **Restart Home Assistant** (reloading the integration alone does not replace
    already-loaded frontend code).
@@ -113,11 +113,12 @@ files. Restart Home Assistant and reload the frontend. Restore your backup if
 you need to roll back both code and data.
 
 A pull request is **not yet an installable HACS release**. The owner must merge
-this PR into `main`, then tag that merged commit `v0.5.4`.
+this PR into `main`, then tag that merged commit `v0.6.0`.
 workflow checks matching manifest/frontend versions and a reproducible bundle,
 then publishes the integration ZIP used by HACS. Review the workflow result and
 release asset before offering the update. No tag or release is published by this
-implementation task. Release notes: [0.5.4](docs/release-0.5.4.txt),
+implementation task. Release notes: [0.6.0](docs/release-0.6.0.txt),
+[0.5.4](docs/release-0.5.4.txt),
 [0.5.3](docs/release-0.5.3.txt),
 [0.5.2](docs/release-0.5.2.txt),
 [0.5.1](docs/release-0.5.1.txt),

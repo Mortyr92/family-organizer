@@ -129,7 +129,7 @@ def _validate_settings(values: dict) -> dict:
         "overview_position": {"left", "right"},
         "week_start": {"monday", "sunday"},
         "time_format": {"12", "24"},
-        "default_calendar_view": {"month", "week", "day"},
+        "default_calendar_view": {"list", "month", "week", "day"},
         "competition_default": {"week", "month"},
     }
     for key, choices in enums.items():

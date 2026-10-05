@@ -566,7 +566,7 @@ function W(e, t) {
 	return n.setDate(n.getDate() + t), H(n);
 }
 function G(e, t, n) {
-	if (t !== "month") return W(e, n * (t === "week" ? 7 : 1));
+	if (t !== "month") return W(e, n * (t === "week" ? 7 : t === "list" ? 14 : 1));
 	let r = U(e), i = r.getDate();
 	r.setDate(1), r.setMonth(r.getMonth() + n);
 	let a = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
@@ -594,6 +594,7 @@ function K(e, t = 1) {
 }
 function je(e, t, n = 1) {
 	if (t === "day") return [e];
+	if (t === "list") return Array.from({ length: 14 }, (t, n) => W(e, n));
 	let r = K(t === "month" ? `${e.slice(0, 7)}-01` : e, n);
 	return Array.from({ length: t === "month" ? 42 : 7 }, (e, t) => W(r, t));
 }
@@ -906,7 +907,30 @@ var We = o`
   .chip { border-radius:24px; font-size:12px; min-height:36px; padding:4px 12px 4px 5px; font-weight:550; }
   .chip:first-child { padding-left:13px; }
   .chip.active { color:var(--orange); border-color:var(--orange); background:var(--orange-soft); }
-  .avatar { display:inline-grid; place-items:center; width:29px; height:29px; min-width:29px; border-radius:50%; object-fit:cover; vertical-align:middle; }
+  .avatar { display:inline-grid; place-items:center; width:29px; height:29px; min-width:29px; border-radius:50%; object-fit:cover; vertical-align:middle; box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--person-color,#64748b); }
+  .avatar-stack .avatar,.agenda-event .avatar,.chip .avatar { box-shadow:0 0 0 1.5px var(--surface), 0 0 0 3px var(--person-color,#64748b); }
+  .person-strip { display:flex; gap:14px; align-items:flex-start; overflow-x:auto; padding:6px 4px 14px; margin-bottom:10px; scrollbar-width:thin; }
+  .person-pick { display:flex; flex-direction:column; align-items:center; gap:7px; min-width:64px; border:0; background:none; padding:4px 2px; border-radius:12px; color:var(--muted); font-size:11px; font-weight:600; opacity:.55; transition:opacity .15s, transform .15s; }
+  .person-pick .avatar { width:50px; height:50px; min-width:50px; font-size:16px; }
+  .person-pick.everyone .avatar { background:var(--soft); color:var(--text); font-size:20px; box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--line); }
+  .person-pick.active { opacity:1; color:var(--text); }
+  .person-pick.active .avatar { box-shadow:0 0 0 3px var(--surface), 0 0 0 6px var(--person-color,var(--orange)); transform:scale(1.04); }
+  .person-pick:hover:not(:disabled) { opacity:1; background:none; }
+  .calendar-search { display:flex; align-items:center; gap:8px; }
+  .calendar-search input { min-width:180px; border-radius:24px; padding:8px 14px; }
+  .list-view { display:flex; flex-direction:column; gap:22px; padding:8px 4px 4px; }
+  .list-day h3 { display:flex; align-items:baseline; gap:10px; font-size:14px; margin:0 0 8px; padding:0 6px; }
+  .list-day h3 .list-date { color:var(--muted); font-weight:500; font-size:12px; }
+  .list-day.is-today h3 { color:var(--orange); }
+  .list-day .muted.empty-day { font-size:12px; padding:0 6px; }
+  .list-event { display:grid; grid-template-columns:72px minmax(0,1fr) auto; gap:14px; align-items:center; width:100%; text-align:left; border:1px solid var(--line); border-left:4px solid var(--event-color); border-radius:12px; padding:11px 14px; margin:6px 0; background:var(--surface); font-size:13px; }
+  .list-event:hover:not(:disabled) { background:color-mix(in srgb,var(--event-color) 8%,var(--surface)); }
+  .list-event .event-time { display:flex; flex-direction:column; gap:2px; line-height:1.2; }
+  .list-event .event-time small { color:var(--muted); font-weight:500; }
+  .list-event strong { display:block; font-weight:650; }
+  .list-event .muted { font-size:12px; }
+  .list-event .event-people { justify-content:flex-end; gap:8px; }
+  .list-event .event-people .avatar { width:30px; height:30px; min-width:30px; }
   .fallback { background:var(--person-color,#64748b); color:#fff; font-size:10px; font-weight:750; text-shadow:0 1px 2px #0007; box-shadow:inset 0 0 0 1px #0001; }
   .calendar-shell { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:20px; align-items:start; }
   .calendar-shell.overview-left { grid-template-columns:250px minmax(0,1fr); }
@@ -1817,7 +1841,7 @@ var Ge = [
 	}
 }, $ = class extends B {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = H(/* @__PURE__ */ new Date()), this.calendarView = "month", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.todoListId = "default", this.showDoneTodos = !1, this.journalPerson = "", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.locked = !1, this.loading = !0, this.saving = !1, this.haUsers = [], this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = H(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.todoListId = "default", this.showDoneTodos = !1, this.journalPerson = "", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.locked = !1, this.loading = !0, this.saving = !1, this.haUsers = [], this.calendarSearch = "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = Be(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.malformed && (this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.")));
 		};
@@ -1896,7 +1920,7 @@ var Ge = [
 	}
 	avatar(e) {
 		let t = this.person(e), n = t?.profile_picture || t?.avatar_url;
-		return n ? j`<img class="avatar" src=${n} alt=${t.name} loading="lazy" referrerpolicy="no-referrer">` : j`<span class="avatar fallback" style=${`--person-color:${this.color(t?.color)}`} aria-label=${t?.name || this.t("unassigned")}>${t?.initials || t?.name?.split(/\s+/).map((e) => e[0]).join("").slice(0, 2).toUpperCase() || "?"}</span>`;
+		return n ? j`<img class="avatar" src=${n} alt=${t.name} style=${`--person-color:${this.color(t?.color)}`} loading="lazy" referrerpolicy="no-referrer">` : j`<span class="avatar fallback" style=${`--person-color:${this.color(t?.color)}`} aria-label=${t?.name || this.t("unassigned")}>${t?.initials || t?.name?.split(/\s+/).map((e) => e[0]).join("").slice(0, 2).toUpperCase() || "?"}</span>`;
 	}
 	color(e) {
 		return /^#[0-9a-f]{3,8}$/i.test(e || "") ? e : "#64748b";
@@ -1936,7 +1960,7 @@ var Ge = [
 			if (e !== this.loadSequence) return;
 			this.data = Object.fromEntries(Ge.map((e, n) => [e, t[n]]));
 			let n = this.settingsData;
-			if (this.listId = Re(this.data.groceries.lists || [], this.listId, n.default_grocery_list_id, !this.initialized), this.todoListId = Re(this.data.todos?.lists || [], this.todoListId), this.initialized ||= (this.calendarView = n.default_calendar_view || "month", this.scorePeriod = n.competition_default || "week", this.theme = localStorage.getItem("family-organizer-theme") || n.theme || "auto", !0), this.error = "", this.pinPersonId ||= this.settingsData.current_user?.person_id || "", this.locked = !!this.pinPersonId && !!this.people.find((e) => e.id === this.pinPersonId && e.has_pin), !this.unsubscribe && !this.subscribing && this.isConnected) {
+			if (this.listId = Re(this.data.groceries.lists || [], this.listId, n.default_grocery_list_id, !this.initialized), this.todoListId = Re(this.data.todos?.lists || [], this.todoListId), this.initialized ||= (this.calendarView = n.default_calendar_view || "list", this.scorePeriod = n.competition_default || "week", this.theme = localStorage.getItem("family-organizer-theme") || n.theme || "auto", !0), this.error = "", this.pinPersonId ||= this.settingsData.current_user?.person_id || "", this.locked = !!this.pinPersonId && !!this.people.find((e) => e.id === this.pinPersonId && e.has_pin), !this.unsubscribe && !this.subscribing && this.isConnected) {
 				this.subscribing = !0;
 				try {
 					let e = await this._hass.connection.subscribeMessage(() => void this.load(), { type: "family_organizer/subscribe" });
@@ -2346,35 +2370,41 @@ var Ge = [
 		return n ? j`<button class="primary" @click=${() => this.openEditor(t, r)}>+ ${this.x(e)}</button>` : N;
 	}
 	filters() {
-		return j`<div class="family-filters" aria-label=${this.s("Filter calendar by family member", "Filter agenda op familielid")}><button class=${this.personFilter.size ? "chip" : "chip active"} aria-pressed=${!this.personFilter.size} @click=${() => this.personFilter = /* @__PURE__ */ new Set()}>${this.s("Everyone", "Iedereen")}</button>${this.people.map((e) => j`<button class=${this.personFilter.has(e.id) ? "chip active" : "chip"} aria-pressed=${this.personFilter.has(e.id)} @click=${() => {
+		let e = (e) => {
 			let t = new Set(this.personFilter);
-			t.has(e.id) ? t.delete(e.id) : t.add(e.id), this.personFilter = t;
-		}}>${this.avatar(e.id)}${e.name}</button>`)}</div>`;
+			t.has(e) ? t.delete(e) : t.add(e), this.personFilter = t;
+		};
+		return j`<div class="person-strip" role="group" aria-label=${this.s("Filter calendar by family member", "Filter agenda op familielid")}><button class=${this.personFilter.size ? "person-pick everyone" : "person-pick everyone active"} aria-pressed=${!this.personFilter.size} @click=${() => this.personFilter = /* @__PURE__ */ new Set()}><span class="avatar fallback" aria-hidden="true">⌂</span><span>${this.s("Everyone", "Iedereen")}</span></button>${this.people.map((t) => j`<button class=${this.personFilter.has(t.id) ? "person-pick active" : "person-pick"} style=${`--person-color:${this.color(t.color)}`} aria-pressed=${this.personFilter.has(t.id)} @click=${() => e(t.id)}>${this.avatar(t.id)}<span>${t.name}</span></button>`)}</div>`;
 	}
 	calendar() {
-		let e = je(this.selectedDay, this.calendarView, this.firstDay), t = Y(this.data.calendar.items || [], e[0], e.at(-1)).filter((e) => !this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e))), n = X(t, this.selectedDay), r = (this.data.calendar.items || []).filter((e) => He(e.recurrence) && (!this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e)))), i = this.localOverview ?? this.settingsData.overview_collapsed, a = this.calendarView === "month" ? this.date(this.selectedDay, {
+		let e = je(this.selectedDay, this.calendarView, this.firstDay), t = Y(this.data.calendar.items || [], e[0], e.at(-1)), n = this.calendarSearch.trim().toLowerCase(), r = t.filter((e) => (!this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e))) && (!n || [
+			e.title,
+			e.location,
+			e.description
+		].some((e) => String(e || "").toLowerCase().includes(n)))), i = X(r, this.selectedDay), a = (this.data.calendar.items || []).filter((e) => He(e.recurrence) && (!this.personFilter.size || (e.person_ids || []).some((e) => this.personFilter.has(e)))), o = this.localOverview ?? this.settingsData.overview_collapsed, s = this.calendarView === "month" ? this.date(this.selectedDay, {
 			month: "long",
 			year: "numeric"
 		}) : this.calendarView === "day" ? this.date(this.selectedDay) : `${this.date(e[0], {
 			month: "short",
 			day: "numeric"
-		})} – ${this.date(e[6], {
+		})} – ${this.date(e.at(-1), {
 			month: "short",
 			day: "numeric",
 			year: "numeric"
 		})}`;
-		return j`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}><div class="section-toolbar"><div class="date-navigation"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = G(this.selectedDay, this.calendarView, -1)}>‹</button><button @click=${() => this.selectedDay = H(/* @__PURE__ */ new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = G(this.selectedDay, this.calendarView, 1)}>›</button><h2>${a}</h2></div><div class="toolbar-actions"><div class="segmented" role="group" aria-label=${this.s("Calendar view", "Agendaweergave")}>${[
-			["month", this.s("Month", "Maand")],
+		return j`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}><div class="section-toolbar"><div class="date-navigation"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = G(this.selectedDay, this.calendarView, -1)}>‹</button><button @click=${() => this.selectedDay = H(/* @__PURE__ */ new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = G(this.selectedDay, this.calendarView, 1)}>›</button><h2>${s}</h2></div><div class="toolbar-actions"><div class="segmented" role="group" aria-label=${this.s("Calendar view", "Agendaweergave")}>${[
+			["list", this.s("List", "Lijst")],
+			["day", this.s("Day", "Dag")],
 			["week", this.s("Week", "Week")],
-			["day", this.s("Day", "Dag")]
-		].map(([e, t]) => j`<button class=${this.calendarView === e ? "active" : ""} aria-pressed=${this.calendarView === e} @click=${() => this.calendarView = String(e)}>${t}</button>`)}</div><label class="sr-only" for="calendar-date">${this.s("Go to date", "Ga naar datum")}</label><input id="calendar-date" type="date" .value=${this.selectedDay} @change=${(e) => {
+			["month", this.s("Month", "Maand")]
+		].map(([e, t]) => j`<button class=${this.calendarView === e ? "active" : ""} aria-pressed=${this.calendarView === e} @click=${() => this.calendarView = String(e)}>${t}</button>`)}</div><label class="sr-only" for="calendar-search">${this.s("Search events", "Zoek afspraken")}</label><input id="calendar-search" class="calendar-search" type="search" placeholder=${this.s("Search events…", "Zoek afspraken…")} .value=${this.calendarSearch} @input=${(e) => this.calendarSearch = e.target.value}><label class="sr-only" for="calendar-date">${this.s("Go to date", "Ga naar datum")}</label><input id="calendar-date" type="date" .value=${this.selectedDay} @change=${(e) => {
 			let t = e.target.value;
 			t && (this.selectedDay = t);
 		}}><button type="button" title=${this.s("Download the family calendar as an .ics file for Google, Apple or Outlook", "Download de gezinsagenda als .ics-bestand voor Google, Apple of Outlook")} @click=${() => void this.exportCalendar()}>${this.s("Export .ics", "Exporteer .ics")}</button></div></div>
       ${this.filters()}
-      <div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${i ? "overview-closed" : ""}`}><div class="calendar-surface">
+      <div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${o ? "overview-closed" : ""}`}><div class="calendar-surface">
         ${this.calendarView === "month" ? j`<div class="weekday-row">${e.slice(0, 7).map((e) => j`<span>${this.date(e, { weekday: "short" })}</span>`)}</div><div class="month-grid">${e.map((e) => {
-			let n = X(t, e);
+			let t = X(r, e);
 			return j`<div class=${`month-cell ${e.slice(0, 7) === this.selectedDay.slice(0, 7) ? "" : "outside"} ${e === this.selectedDay ? "selected" : ""}`}>
             <button class=${e === H(/* @__PURE__ */ new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(e)}`} aria-pressed=${e === this.selectedDay} @click=${() => this.selectedDay = e}>${U(e).getDate()}</button>${this.canEvent() ? j`<button class="date-add" aria-label=${`${this.s("Add event on", "Afspraak toevoegen op")} ${this.date(e)}`} @click=${() => {
 				this.selectedDay = e, this.openEditor("event", { day: e });
@@ -2382,21 +2412,41 @@ var Ge = [
             <button class="cell-create" aria-label=${`${this.s("Create event on", "Afspraak maken op")} ${this.date(e)}`} ?disabled=${!this.canEvent()} @click=${() => {
 				this.selectedDay = e, this.openEditor("event", { day: e });
 			}}></button>
-            <div class="cell-events">${n.slice(0, 3).map((e) => this.eventChip(e))}${n.length > 3 ? j`<button class="more-events" @click=${() => this.selectedDay = e}>+${n.length - 3} ${this.s("more", "meer")}</button>` : N}</div>
+            <div class="cell-events">${t.slice(0, 3).map((e) => this.eventChip(e))}${t.length > 3 ? j`<button class="more-events" @click=${() => this.selectedDay = e}>+${t.length - 3} ${this.s("more", "meer")}</button>` : N}</div>
           </div>`;
-		})}</div>` : this.timeGrid(e, t)}
-      </div><aside class="agenda"><button class="agenda-toggle" aria-expanded=${!i} @click=${() => {
-			this.localOverview = !i, this.requestUpdate(), this.can("manage_settings") && this.action(() => this._hass.callWS({
+		})}</div>` : this.calendarView === "list" ? this.listView(e, r) : this.timeGrid(e, r)}
+      </div><aside class="agenda"><button class="agenda-toggle" aria-expanded=${!o} @click=${() => {
+			this.localOverview = !o, this.requestUpdate(), this.can("manage_settings") && this.action(() => this._hass.callWS({
 				type: "family_organizer/settings",
-				settings: { overview_collapsed: !i }
+				settings: { overview_collapsed: !o }
 			}), this.s("Overview updated", "Overzicht bijgewerkt"));
-		}}>${i ? this.s("Show", "Toon") : this.s("Hide", "Verberg")} ${this.s("day agenda", "dagagenda")} <span aria-hidden="true">${i ? "+" : "−"}</span></button>${i ? N : j`<span class="eyebrow">${this.s("THE DAY AT A GLANCE", "DE DAG IN ÉÉN OOGOPSLAG")}</span><h2>${this.date(this.selectedDay, { weekday: "long" })}</h2><p class="muted">${this.date(this.selectedDay, {
+		}}>${o ? this.s("Show", "Toon") : this.s("Hide", "Verberg")} ${this.s("day agenda", "dagagenda")} <span aria-hidden="true">${o ? "+" : "−"}</span></button>${o ? N : j`<span class="eyebrow">${this.s("THE DAY AT A GLANCE", "DE DAG IN ÉÉN OOGOPSLAG")}</span><h2>${this.date(this.selectedDay, { weekday: "long" })}</h2><p class="muted">${this.date(this.selectedDay, {
 			month: "long",
 			day: "numeric"
-		})} · ${n.length} ${this.s("events", "afspraken")}</p><div class="agenda-events">${n.length ? n.map((e) => j`<button class="agenda-event" style=${`--event-color:${this.eventColor(e)}`} @click=${() => this.openEditor("event-detail", e)}><span class="event-time">${e.all_day ? this.s("All day", "Hele dag") : this.time(e.occurrence_start)}</span><strong>${e.title}</strong><span class="muted">${e.location || this.s("No location", "Geen locatie")}</span><span class="event-people">${(e.person_ids || []).map((e) => this.avatar(e))}</span></button>`) : this.empty(this.s("Room to breathe", "Even rust"), this.personFilter.size ? this.s("No events for the selected family members.", "Geen afspraken voor de geselecteerde familieleden.") : this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag."))}</div>${this.addButton(this.s("Add an event", "Afspraak toevoegen"), "event", this.canEvent(), { day: this.selectedDay })}`}</aside></div>
+		})} · ${i.length} ${this.s("events", "afspraken")}</p><div class="agenda-events">${i.length ? i.map((e) => j`<button class="agenda-event" style=${`--event-color:${this.eventColor(e)}`} @click=${() => this.openEditor("event-detail", e)}><span class="event-time">${e.all_day ? this.s("All day", "Hele dag") : this.time(e.occurrence_start)}</span><strong>${e.title}</strong><span class="muted">${e.location || this.s("No location", "Geen locatie")}</span><span class="event-people">${(e.person_ids || []).map((e) => this.avatar(e))}</span></button>`) : this.empty(this.s("Room to breathe", "Even rust"), this.personFilter.size ? this.s("No events for the selected family members.", "Geen afspraken voor de geselecteerde familieleden.") : this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag."))}</div>${this.addButton(this.s("Add an event", "Afspraak toevoegen"), "event", this.canEvent(), { day: this.selectedDay })}`}</aside></div>
       <p class="calendar-hint">${this.s("Select a day number to see its agenda. Select an empty day or + to add an event.", "Selecteer een dagnummer om de agenda te zien. Kies een lege dag of + om een afspraak toe te voegen.")}</p>
-      ${r.length ? j`<div class="banner recurrence-warning" role="status"><p>${this.s("These recurrence rules cannot be expanded in this calendar. Their original text is preserved; only the original event is shown when it falls in the displayed period.", "Deze herhaalregels kunnen in deze agenda niet worden uitgewerkt. De originele tekst blijft bewaard; alleen de originele afspraak wordt getoond als die binnen de periode valt.")}</p><ul>${r.map((e) => j`<li><strong>${e.title}</strong>: <code>${e.recurrence}</code></li>`)}</ul></div>` : N}
+      ${a.length ? j`<div class="banner recurrence-warning" role="status"><p>${this.s("These recurrence rules cannot be expanded in this calendar. Their original text is preserved; only the original event is shown when it falls in the displayed period.", "Deze herhaalregels kunnen in deze agenda niet worden uitgewerkt. De originele tekst blijft bewaard; alleen de originele afspraak wordt getoond als die binnen de periode valt.")}</p><ul>${a.map((e) => j`<li><strong>${e.title}</strong>: <code>${e.recurrence}</code></li>`)}</ul></div>` : N}
     </section>`;
+	}
+	listView(e, t) {
+		let n = H(/* @__PURE__ */ new Date()), r = W(n, 1), i = (e) => e === n ? this.s("Today", "Vandaag") : e === r ? this.s("Tomorrow", "Morgen") : this.date(e, { weekday: "long" }), a = e.map((e) => ({
+			day: e,
+			items: X(t, e)
+		})).filter(({ day: e, items: t }) => t.length || e === n);
+		return a.length ? j`<div class="list-view">${a.map(({ day: e, items: t }) => j`<section class=${`list-day ${e === n ? "is-today" : ""}`}>
+      <h3>${i(e)} <span class="list-date">${this.date(e, {
+			day: "numeric",
+			month: "long"
+		})}</span></h3>
+      ${t.length ? t.map((e) => this.listEvent(e)) : j`<p class="muted empty-day">${this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag.")}</p>`}
+    </section>`)}</div>` : j`<div class="list-view">${this.empty(this.s("Room to breathe", "Even rust"), this.calendarSearch ? this.s("No events match your search.", "Geen afspraken gevonden voor je zoekopdracht.") : this.s("Nothing planned in this period.", "Niets gepland in deze periode."))}</div>`;
+	}
+	listEvent(e) {
+		return j`<button class="list-event" style=${`--event-color:${this.eventColor(e)}`} @click=${() => this.openEditor("event-detail", e)}>
+      <span class="event-time">${e.all_day ? this.s("All day", "Hele dag") : j`${this.time(e.occurrence_start)}<small>${this.time(e.occurrence_end)}</small>`}</span>
+      <span><strong>${e.title}</strong>${e.location ? j`<span class="muted">${e.location}</span>` : N}</span>
+      <span class="event-people">${(e.person_ids || []).map((e) => this.avatar(e))}</span>
+    </button>`;
 	}
 	eventColor(e) {
 		return this.color(this.person(e.person_ids?.[0])?.color || (this.data.calendar.sources || []).find((t) => t.id === e.source_id)?.color);
@@ -2674,7 +2724,7 @@ var Ge = [
 	settings() {
 		let e = this.settingsData;
 		return j`<section><div class="settings-intro"><span class="eyebrow">${this.languageCode === "nl" ? "JULLIE THUIS, JULLIE MANIER" : "YOUR HOME, YOUR WAY"}</span><h2>${this.languageCode === "nl" ? "Een plek voor iedereen" : "A place for everyone"}</h2><p class="muted">${this.languageCode === "nl" ? "Koppel familieleden aan Home Assistant-gebruikers, kies kleuren en bepaal wie wat mag beheren." : "Link family members to Home Assistant users, choose their colors and set what they can manage."}</p></div><div class="section-toolbar"><h3>${this.t("family_member")}${this.languageCode === "nl" ? "en" : "s"}</h3>${this.addButton(this.languageCode === "nl" ? "Persoon toevoegen" : "Add a person", "person", this.can("manage_people"))}</div><div class="people-grid">${this.people.length ? this.people.map((e) => j`<article class="surface person-card">${this.avatar(e.id)}<div class="row-copy"><h3>${e.name}</h3><p class="muted">${e.role === "parent_admin" ? this.t("role_admin") : e.role === "parent" ? this.t("role_parent") : this.t("role_child")} · ${e.user_id || e.ha_user_id ? this.t("ha_linked") : this.t("ha_not_linked")}</p><small class="muted">${Object.keys(e.permissions || {}).length} ${this.t("permission_overrides")}</small></div>${this.can("manage_people") ? j`<button @click=${() => this.openEditor("person", e)}>${this.languageCode === "nl" ? "Bewerken" : "Edit"}</button><button class="icon-button danger" aria-label=${`${this.languageCode === "nl" ? "Verwijder" : "Remove"} ${e.name}`} @click=${() => this.confirmDelete("people", e)}>×</button>` : N}</article>`) : this.empty(this.languageCode === "nl" ? "Welkom in je gezinsomgeving" : "Welcome to your family space", this.languageCode === "nl" ? "Voeg je eerste familielid toe en koppel het Home Assistant-account." : "Add your first family member and link their Home Assistant user ID.", this.addButton(this.languageCode === "nl" ? "Persoon toevoegen" : "Add a person", "person", this.can("manage_people")))}</div>
-      <div class="settings-grid"><article class="surface"><span class="eyebrow">${this.languageCode === "nl" ? "WEERGAVE & STANDAARDEN" : "DISPLAY & DEFAULTS"}</span><h3>${this.languageCode === "nl" ? "Stel jullie dagritme in" : "Set your everyday rhythm"}</h3><dl><div><dt>${this.languageCode === "nl" ? "Agenda" : "Calendar"}</dt><dd>${e.default_calendar_view || "month"} ${this.languageCode === "nl" ? "weergave" : "view"} · ${this.languageCode === "nl" ? "week start" : "week starts"} ${e.week_start || (this.languageCode === "nl" ? "volgens taal" : "by locale")}</dd></div><div><dt>${this.languageCode === "nl" ? "Dagoverzicht" : "Day overview"}</dt><dd>${e.overview_position || "right"} · ${e.overview_collapsed ? this.languageCode === "nl" ? "ingeklapt" : "collapsed" : this.languageCode === "nl" ? "uitgeklapt" : "expanded"}</dd></div><div><dt>${this.languageCode === "nl" ? "Tijd & taal" : "Time & language"}</dt><dd>${e.time_format || "24"} ${this.languageCode === "nl" ? "uur" : "hour"} · ${e.language || this.locale}</dd></div><div><dt>${this.languageCode === "nl" ? "Maaltijdvakken" : "Meal slots"}</dt><dd>${(e.meal_slots || []).join(", ")}</dd></div><div><dt>${this.languageCode === "nl" ? "Winkels" : "Stores"}</dt><dd>${(e.stores || []).join(", ") || (this.languageCode === "nl" ? "Nog geen winkels" : "No stores yet")}</dd></div><div><dt>${this.languageCode === "nl" ? "Boodschappen standaard" : "Grocery default"}</dt><dd>${this.groceryDefaultLabel(e.default_grocery_list_id)}</dd></div><div><dt>${this.languageCode === "nl" ? "Competitie" : "Competition"}</dt><dd>${e.competition_default || "week"}</dd></div><div><dt>${this.languageCode === "nl" ? "Sync-interval" : "Sync interval"}</dt><dd>${e.sync_interval || 30} ${this.languageCode === "nl" ? "minuten" : "minutes"}</dd></div><div><dt>${this.languageCode === "nl" ? "Herinneringen" : "Reminders"}</dt><dd>${e.reminders_enabled === !1 ? this.languageCode === "nl" ? "Uit" : "Off" : `${e.default_reminder_minutes ?? 15} min ${this.languageCode === "nl" ? "vooraf" : "before"} · ${e.notify_service ? `notify.${e.notify_service}` : this.languageCode === "nl" ? "HA-meldingen" : "HA notifications"}${e.daily_agenda_time ? ` · ${this.languageCode === "nl" ? "agenda om" : "agenda at"} ${e.daily_agenda_time}` : ""}`}</dd></div></dl>${this.addButton(this.languageCode === "nl" ? "Voorkeuren bewerken" : "Edit preferences", "preferences", this.can("manage_settings"), {
+      <div class="settings-grid"><article class="surface"><span class="eyebrow">${this.languageCode === "nl" ? "WEERGAVE & STANDAARDEN" : "DISPLAY & DEFAULTS"}</span><h3>${this.languageCode === "nl" ? "Stel jullie dagritme in" : "Set your everyday rhythm"}</h3><dl><div><dt>${this.languageCode === "nl" ? "Agenda" : "Calendar"}</dt><dd>${e.default_calendar_view || "list"} ${this.languageCode === "nl" ? "weergave" : "view"} · ${this.languageCode === "nl" ? "week start" : "week starts"} ${e.week_start || (this.languageCode === "nl" ? "volgens taal" : "by locale")}</dd></div><div><dt>${this.languageCode === "nl" ? "Dagoverzicht" : "Day overview"}</dt><dd>${e.overview_position || "right"} · ${e.overview_collapsed ? this.languageCode === "nl" ? "ingeklapt" : "collapsed" : this.languageCode === "nl" ? "uitgeklapt" : "expanded"}</dd></div><div><dt>${this.languageCode === "nl" ? "Tijd & taal" : "Time & language"}</dt><dd>${e.time_format || "24"} ${this.languageCode === "nl" ? "uur" : "hour"} · ${e.language || this.locale}</dd></div><div><dt>${this.languageCode === "nl" ? "Maaltijdvakken" : "Meal slots"}</dt><dd>${(e.meal_slots || []).join(", ")}</dd></div><div><dt>${this.languageCode === "nl" ? "Winkels" : "Stores"}</dt><dd>${(e.stores || []).join(", ") || (this.languageCode === "nl" ? "Nog geen winkels" : "No stores yet")}</dd></div><div><dt>${this.languageCode === "nl" ? "Boodschappen standaard" : "Grocery default"}</dt><dd>${this.groceryDefaultLabel(e.default_grocery_list_id)}</dd></div><div><dt>${this.languageCode === "nl" ? "Competitie" : "Competition"}</dt><dd>${e.competition_default || "week"}</dd></div><div><dt>${this.languageCode === "nl" ? "Sync-interval" : "Sync interval"}</dt><dd>${e.sync_interval || 30} ${this.languageCode === "nl" ? "minuten" : "minutes"}</dd></div><div><dt>${this.languageCode === "nl" ? "Herinneringen" : "Reminders"}</dt><dd>${e.reminders_enabled === !1 ? this.languageCode === "nl" ? "Uit" : "Off" : `${e.default_reminder_minutes ?? 15} min ${this.languageCode === "nl" ? "vooraf" : "before"} · ${e.notify_service ? `notify.${e.notify_service}` : this.languageCode === "nl" ? "HA-meldingen" : "HA notifications"}${e.daily_agenda_time ? ` · ${this.languageCode === "nl" ? "agenda om" : "agenda at"} ${e.daily_agenda_time}` : ""}`}</dd></div></dl>${this.addButton(this.languageCode === "nl" ? "Voorkeuren bewerken" : "Edit preferences", "preferences", this.can("manage_settings"), {
 			...e,
 			theme: this.theme
 		})}</article>
@@ -2971,11 +3021,7 @@ var Ge = [
       <label class="check full"><input name="overview_collapsed" type="checkbox" ?checked=${!!t.overview_collapsed}>${this.x("Collapse day overview by default")}</label>
       ${this.select("Week starts", "week_start", t.week_start || (this.firstDay === 0 ? "sunday" : "monday"), [["monday", "Monday"], ["sunday", "Sunday"]])}
       ${this.select("Time format", "time_format", t.time_format || "24", [["24", "24 hour"], ["12", "12 hour"]])}
-      ${this.select("Default calendar view", "default_calendar_view", t.default_calendar_view || "month", [
-			["month", "Month"],
-			["week", "Week"],
-			["day", "Day"]
-		])}
+      item.default_calendar_view || "list", [["list", "List"], ["month", "Month"], ["week", "Week"], ["day", "Day"]])}
       ${this.select("Grocery default", "default_grocery_list_id", t.default_grocery_list_id || this.listId, [
 			["weekly", "Weekly groceries"],
 			["daily", "Daily groceries"],
@@ -3012,6 +3058,6 @@ var Ge = [
 		this.styles = We;
 	}
 };
-Z([V()], $.prototype, "page", void 0), Z([V()], $.prototype, "data", void 0), Z([V()], $.prototype, "selectedDay", void 0), Z([V()], $.prototype, "calendarView", void 0), Z([V()], $.prototype, "personFilter", void 0), Z([V()], $.prototype, "listId", void 0), Z([V()], $.prototype, "todoListId", void 0), Z([V()], $.prototype, "showDoneTodos", void 0), Z([V()], $.prototype, "journalPerson", void 0), Z([V()], $.prototype, "contactQuery", void 0), Z([V()], $.prototype, "groceryAssignee", void 0), Z([V()], $.prototype, "groupStores", void 0), Z([V()], $.prototype, "mealWeek", void 0), Z([V()], $.prototype, "scorePeriod", void 0), Z([V()], $.prototype, "recipeSearch", void 0), Z([V()], $.prototype, "recipeCategory", void 0), Z([V()], $.prototype, "recipeId", void 0), Z([V()], $.prototype, "servings", void 0), Z([V()], $.prototype, "selectedIngredients", void 0), Z([V()], $.prototype, "routes", void 0), Z([V()], $.prototype, "theme", void 0), Z([V()], $.prototype, "error", void 0), Z([V()], $.prototype, "notice", void 0), Z([V()], $.prototype, "pinPersonId", void 0), Z([V()], $.prototype, "pinCapabilites", void 0), Z([V()], $.prototype, "locked", void 0), Z([V()], $.prototype, "loading", void 0), Z([V()], $.prototype, "saving", void 0), Z([V()], $.prototype, "editor", void 0), Z([V()], $.prototype, "haUsers", void 0), $ = Z([Te("family-organizer-panel")], $);
+Z([V()], $.prototype, "page", void 0), Z([V()], $.prototype, "data", void 0), Z([V()], $.prototype, "selectedDay", void 0), Z([V()], $.prototype, "calendarView", void 0), Z([V()], $.prototype, "personFilter", void 0), Z([V()], $.prototype, "listId", void 0), Z([V()], $.prototype, "todoListId", void 0), Z([V()], $.prototype, "showDoneTodos", void 0), Z([V()], $.prototype, "journalPerson", void 0), Z([V()], $.prototype, "contactQuery", void 0), Z([V()], $.prototype, "groceryAssignee", void 0), Z([V()], $.prototype, "groupStores", void 0), Z([V()], $.prototype, "mealWeek", void 0), Z([V()], $.prototype, "scorePeriod", void 0), Z([V()], $.prototype, "recipeSearch", void 0), Z([V()], $.prototype, "recipeCategory", void 0), Z([V()], $.prototype, "recipeId", void 0), Z([V()], $.prototype, "servings", void 0), Z([V()], $.prototype, "selectedIngredients", void 0), Z([V()], $.prototype, "routes", void 0), Z([V()], $.prototype, "theme", void 0), Z([V()], $.prototype, "error", void 0), Z([V()], $.prototype, "notice", void 0), Z([V()], $.prototype, "pinPersonId", void 0), Z([V()], $.prototype, "pinCapabilites", void 0), Z([V()], $.prototype, "locked", void 0), Z([V()], $.prototype, "loading", void 0), Z([V()], $.prototype, "saving", void 0), Z([V()], $.prototype, "editor", void 0), Z([V()], $.prototype, "haUsers", void 0), Z([V()], $.prototype, "calendarSearch", void 0), $ = Z([Te("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };

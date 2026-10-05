@@ -8,8 +8,9 @@ export function shift(day: string, amount: number) {
   date.setDate(date.getDate() + amount);
   return iso(date);
 }
+export const LIST_DAYS = 14;
 export function moveDate(day: string, view: string, direction: number) {
-  if (view !== "month") return shift(day, direction * (view === "week" ? 7 : 1));
+  if (view !== "month") return shift(day, direction * (view === "week" ? 7 : view === "list" ? LIST_DAYS : 1));
   const date = dayDate(day), wanted = date.getDate();
   date.setDate(1);
   date.setMonth(date.getMonth() + direction);
@@ -34,6 +35,7 @@ export function weekStart(day: string, firstDay = 1) {
 }
 export function calendarDates(day: string, view: string, firstDay = 1) {
   if (view === "day") return [day];
+  if (view === "list") return Array.from({ length: LIST_DAYS }, (_, i) => shift(day, i));
   const start = weekStart(view === "month" ? `${day.slice(0, 7)}-01` : day, firstDay);
   return Array.from({ length: view === "month" ? 42 : 7 }, (_, i) => shift(start, i));
 }

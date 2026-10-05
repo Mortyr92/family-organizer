@@ -1,0 +1,28 @@
+Family Organizer 0.6.0
+
+Agenda redesign (inspired by qudoo.nl "meerdere agenda's")
+- New List view: a calm, chronological 14-day list grouped per day with
+  "Today" / "Tomorrow" headings, start and end time, location and the profile
+  pictures of everyone involved. List is now the default calendar view; it can
+  be changed back to Month/Week/Day in Settings.
+- View switcher reordered to List / Day / Week / Month.
+- Live search box in the calendar toolbar filters events by title, location
+  and description across the visible period.
+- Family-member filter is now a strip of large round profile pictures with an
+  "Everyone" button, instead of small text chips. Each picture is ringed in the
+  person's colour so it is clear at a glance whose agenda is shown.
+- Profile pictures everywhere (filter strip, list rows, day agenda, dashboard)
+  now carry the person's colour ring; people without a picture keep coloured
+  initials.
+
+Backend
+- Settings accept "list" as default_calendar_view.
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed (20/20).
+- Frontend bundle rebuilt and committed.
+
+Upgrade
+- Existing data is preserved.
+- Restart Home Assistant and hard-refresh the browser after updating.

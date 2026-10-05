@@ -85,7 +85,30 @@ export const panelStyles = css`
   .chip { border-radius:24px; font-size:12px; min-height:36px; padding:4px 12px 4px 5px; font-weight:550; }
   .chip:first-child { padding-left:13px; }
   .chip.active { color:var(--orange); border-color:var(--orange); background:var(--orange-soft); }
-  .avatar { display:inline-grid; place-items:center; width:29px; height:29px; min-width:29px; border-radius:50%; object-fit:cover; vertical-align:middle; }
+  .avatar { display:inline-grid; place-items:center; width:29px; height:29px; min-width:29px; border-radius:50%; object-fit:cover; vertical-align:middle; box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--person-color,#64748b); }
+  .avatar-stack .avatar,.agenda-event .avatar,.chip .avatar { box-shadow:0 0 0 1.5px var(--surface), 0 0 0 3px var(--person-color,#64748b); }
+  .person-strip { display:flex; gap:14px; align-items:flex-start; overflow-x:auto; padding:6px 4px 14px; margin-bottom:10px; scrollbar-width:thin; }
+  .person-pick { display:flex; flex-direction:column; align-items:center; gap:7px; min-width:64px; border:0; background:none; padding:4px 2px; border-radius:12px; color:var(--muted); font-size:11px; font-weight:600; opacity:.55; transition:opacity .15s, transform .15s; }
+  .person-pick .avatar { width:50px; height:50px; min-width:50px; font-size:16px; }
+  .person-pick.everyone .avatar { background:var(--soft); color:var(--text); font-size:20px; box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--line); }
+  .person-pick.active { opacity:1; color:var(--text); }
+  .person-pick.active .avatar { box-shadow:0 0 0 3px var(--surface), 0 0 0 6px var(--person-color,var(--orange)); transform:scale(1.04); }
+  .person-pick:hover:not(:disabled) { opacity:1; background:none; }
+  .calendar-search { display:flex; align-items:center; gap:8px; }
+  .calendar-search input { min-width:180px; border-radius:24px; padding:8px 14px; }
+  .list-view { display:flex; flex-direction:column; gap:22px; padding:8px 4px 4px; }
+  .list-day h3 { display:flex; align-items:baseline; gap:10px; font-size:14px; margin:0 0 8px; padding:0 6px; }
+  .list-day h3 .list-date { color:var(--muted); font-weight:500; font-size:12px; }
+  .list-day.is-today h3 { color:var(--orange); }
+  .list-day .muted.empty-day { font-size:12px; padding:0 6px; }
+  .list-event { display:grid; grid-template-columns:72px minmax(0,1fr) auto; gap:14px; align-items:center; width:100%; text-align:left; border:1px solid var(--line); border-left:4px solid var(--event-color); border-radius:12px; padding:11px 14px; margin:6px 0; background:var(--surface); font-size:13px; }
+  .list-event:hover:not(:disabled) { background:color-mix(in srgb,var(--event-color) 8%,var(--surface)); }
+  .list-event .event-time { display:flex; flex-direction:column; gap:2px; line-height:1.2; }
+  .list-event .event-time small { color:var(--muted); font-weight:500; }
+  .list-event strong { display:block; font-weight:650; }
+  .list-event .muted { font-size:12px; }
+  .list-event .event-people { justify-content:flex-end; gap:8px; }
+  .list-event .event-people .avatar { width:30px; height:30px; min-width:30px; }
   .fallback { background:var(--person-color,#64748b); color:#fff; font-size:10px; font-weight:750; text-shadow:0 1px 2px #0007; box-shadow:inset 0 0 0 1px #0001; }
   .calendar-shell { display:grid; grid-template-columns:minmax(0,1fr) 250px; gap:20px; align-items:start; }
   .calendar-shell.overview-left { grid-template-columns:250px minmax(0,1fr); }
