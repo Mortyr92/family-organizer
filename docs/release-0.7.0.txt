@@ -1,0 +1,12 @@
+Family Organizer 0.7.0
+
+Release notes
+- Freshened the entire UI with a calmer, Qudoo-inspired visual style.
+- Preserved all existing options and feature areas while adding clearer discovery/help entry points.
+
+Validation
+- Frontend file checks passed for the edited UI files.
+- Full workspace build still reports pre-existing TypeScript issues in frontend/tests/interaction.mjs.
+
+Upgrade
+- Restart Home Assistant and hard-refresh the browser after updating.
