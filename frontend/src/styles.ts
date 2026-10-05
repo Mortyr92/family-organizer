@@ -361,11 +361,11 @@ export const panelStyles = css`
   .detail-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
   .detail-actions .danger { margin-left:auto; }
   .category-list { margin-top:20px; }
-  .today-hero { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:18px; padding:28px; margin-bottom:22px; border-radius:18px; background:linear-gradient(135deg,var(--orange-soft),var(--surface)); border:1px solid var(--line); box-shadow:var(--shadow); }
-  .today-hero h2 { font-size:30px; letter-spacing:-.8px; }
-  .birthday-callout { display:flex; flex-direction:column; gap:8px; padding:12px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); font-size:13px; }
-  .birthday-callout>span { display:flex; align-items:center; gap:8px; }
-  .birthday-callout .avatar { width:26px; height:26px; min-width:26px; font-size:9px; }
+  .today-member-strip { display:flex; flex-direction:column; gap:12px; padding:16px 18px; margin-bottom:18px; border-radius:18px; border:1px solid var(--line); background:linear-gradient(180deg,var(--surface),color-mix(in srgb,var(--soft) 55%,var(--surface))); box-shadow:var(--shadow); }
+  .today-member-strip h3 { margin-top:4px; }
+  .today-member-strip .person-strip { margin:0; padding:6px 2px 2px; }
+  .today-member-strip .person-pick { min-width:72px; opacity:.6; }
+  .today-member-strip .person-pick.active { opacity:1; }
   .today-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px; }
   .today-grid .surface { display:flex; flex-direction:column; gap:4px; }
   .today-grid .surface>.primary { margin-top:auto; align-self:flex-start; }

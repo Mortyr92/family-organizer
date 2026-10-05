@@ -146,8 +146,10 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private error = "";
   @state() private notice = "";
   @state() private pinPersonId = localStorage.getItem("family-organizer-person-id") || "";
+  @state() private todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "";
+  @state() private settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "";
+  @state() private settingsUnlocked = false;
   @state() private pinCapabilites?: Record<string, boolean>;
-  @state() private locked = false;
   @state() private loading = true;
   @state() private saving = false;
   @state() private editor?: Editor;
@@ -183,11 +185,19 @@ export class FamilyOrganizerPanel extends LitElement {
     const route = organizerRoute(location.hash);
     if (route) {
       this.page = route.page; this.recipeId = route.recipeId;
+      if (route.page === "settings") {
+        this.settingsUnlocked = false;
+        this.pinCapabilites = undefined;
+      }
       if (route.malformed) this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.");
     }
   };
   private navigate(page: string, id = "") {
     this.page = page; this.recipeId = id;
+    if (page === "settings") {
+      this.settingsUnlocked = false;
+      this.pinCapabilites = undefined;
+    }
     location.hash = `fo/${page}${id ? `/${encodeURIComponent(id)}` : ""}`;
   }
   private get settingsData() { return this.data.settings || {}; }
@@ -217,12 +227,11 @@ export class FamilyOrganizerPanel extends LitElement {
   }
   private can(capability: string) {
     const local = this.pinCapabilites?.[capability];
-    if (this.locked) return false;
     if (typeof local === "boolean") return local;
+    const person = this.me;
+    if (person?.role === "parent" || person?.role === "parent_admin" || this._hass?.user?.is_admin) return true;
     const authoritative = this.settingsData.current_user?.capabilities?.[capability];
     if (typeof authoritative === "boolean") return authoritative;
-    if (this._hass?.user?.is_admin) return true;
-    const person = this.me;
     return person ? person.permissions?.[capability] ?? presetCapability(person.role, capability) : false;
   }
   private canEvent(item?: Item) {
@@ -272,14 +281,17 @@ export class FamilyOrganizerPanel extends LitElement {
       this.listId = resolveGroceryList(this.data.groceries.lists || [], this.listId, settings.default_grocery_list_id, !this.initialized);
       this.todoListId = resolveGroceryList(this.data.todos?.lists || [], this.todoListId);
       if (!this.initialized) {
-        this.calendarView = settings.default_calendar_view || "list";
+        this.calendarView = this.normalizedCalendarView(settings.default_calendar_view || "list", settings);
         this.scorePeriod = settings.competition_default || "week";
         this.theme = localStorage.getItem("family-organizer-theme") || settings.theme || "auto";
         this.initialized = true;
       }
       this.error = "";
       if (!this.pinPersonId) this.pinPersonId = this.settingsData.current_user?.person_id || "";
-      this.locked = !!this.pinPersonId && !!this.people.find((p: Item) => p.id === this.pinPersonId && p.has_pin);
+      const fallbackTodayPerson = this.pinPersonId || this.me?.id || this.people[0]?.id || "";
+      if (!this.people.some((p: Item) => p.id === this.todayPersonId)) this.todayPersonId = fallbackTodayPerson;
+      const admins = this.people.filter((p: Item) => ["parent", "parent_admin"].includes(p.role));
+      if (!admins.some((p: Item) => p.id === this.settingsPinPersonId)) this.settingsPinPersonId = admins[0]?.id || "";
       if (!this.unsubscribe && !this.subscribing && this.isConnected) {
         this.subscribing = true;
         try {
@@ -291,33 +303,35 @@ export class FamilyOrganizerPanel extends LitElement {
     finally { if (sequence === this.loadSequence) this.loading = false; }
   }
   private message(error: unknown) { return this.tm((error as Item)?.message || String(error) || this.t("unknown_error")); }
-  private async verifyPin(event: SubmitEvent) {
+  private async verifySettingsPin(event: SubmitEvent) {
     event.preventDefault();
-    if (!this._hass || !this.pinPersonId) return;
+    if (!this._hass || !this.settingsPinPersonId) return;
     const form = event.currentTarget as HTMLFormElement;
     const pin = String(new FormData(form).get("pin") || "").trim();
     if (!/^\d{4,8}$/.test(pin)) { this.error = this.tm("Enter a 4 to 8 digit PIN."); return; }
     this.error = "";
     this.saving = true;
     try {
-      const result = await this._hass.callWS<Item>({ type: "family_organizer/verify_pin", person_id: this.pinPersonId, pin });
+      const person = this.people.find((p: Item) => p.id === this.settingsPinPersonId);
+      if (!person || !["parent", "parent_admin"].includes(person.role)) {
+        this.error = this.s("Choose a parent or family administrator.", "Kies een ouder of gezinsbeheerder.");
+        return;
+      }
+      const result = await this._hass.callWS<Item>({ type: "family_organizer/verify_pin", person_id: this.settingsPinPersonId, pin });
       this.pinCapabilites = result.capabilities || {};
-      this.locked = false;
-      localStorage.setItem("family-organizer-person-id", this.pinPersonId);
+      this.settingsUnlocked = true;
+      localStorage.setItem("family-organizer-settings-person-id", this.settingsPinPersonId);
       this.notice = `${this.x("Welcome")} ${result.name || ""}`.trim();
     } catch (error) { this.error = this.message(error); }
     finally { this.saving = false; }
   }
-  private switchProfile(id: string) {
-    this.pinPersonId = id;
-    this.pinCapabilites = undefined;
-    localStorage.setItem("family-organizer-person-id", id || "");
-    const person = this.people.find((p: Item) => p.id === id);
-    this.locked = !!person?.has_pin;
+  private switchSettingsPinPerson(id: string) {
+    this.settingsPinPersonId = id;
+    localStorage.setItem("family-organizer-settings-person-id", id || "");
   }
-  private lockScreen() {
-    this.pinCapabilites = undefined;
-    this.locked = true;
+  private selectTodayPerson(id: string) {
+    this.todayPersonId = id;
+    localStorage.setItem("family-organizer-today-person-id", id || "");
   }
   private async action(work: () => Promise<unknown>, success = "Saved", close = false) {
     if (this.saving) return false;
@@ -443,6 +457,9 @@ export class FamilyOrganizerPanel extends LitElement {
       const settings: Item = {};
       ["overview_position", "week_start", "time_format", "default_calendar_view", "calendar_list_mode", "default_grocery_list_id", "competition_default", "language", "theme"].forEach(key => settings[key] = text(key));
       settings.overview_collapsed = checked("overview_collapsed");
+      settings.show_calendar_day_view = checked("show_calendar_day_view");
+      settings.show_calendar_week_view = checked("show_calendar_week_view");
+      settings.show_calendar_export = checked("show_calendar_export");
       settings.sync_interval = number("sync_interval");
       settings.reminders_enabled = checked("reminders_enabled");
       settings.default_reminder_minutes = number("default_reminder_minutes");
@@ -451,9 +468,11 @@ export class FamilyOrganizerPanel extends LitElement {
       settings.meal_slots = values.getAll("meal_slots").map(value => String(value));
       settings.stores = text("stores").split(",").map(x => x.trim()).filter(Boolean);
       if (!settings.meal_slots.length) { this.error = this.tm("Enter at least one meal slot."); return; }
+      settings.default_calendar_view = this.normalizedCalendarView(settings.default_calendar_view || "list", settings);
       try { new Intl.DateTimeFormat(settings.language); } catch { this.error = this.tm("Enter a valid language code, such as en, de or fr."); return; }
       if (await this.action(() => this._hass!.callWS({ type: "family_organizer/settings", settings }), this.languageCode === "nl" ? "Voorkeuren opgeslagen" : "Preferences saved", true)) {
         this.localOverview = undefined;
+        this.calendarView = this.normalizedCalendarView(settings.default_calendar_view || this.calendarView, settings);
         this.theme = settings.theme; localStorage.setItem("family-organizer-theme", this.theme);
       }
       return;
@@ -491,12 +510,10 @@ export class FamilyOrganizerPanel extends LitElement {
       <div class="workspace"><header class="topbar"><div><span class="eyebrow">${this.date(iso(new Date()), { weekday: "long", month: "short", day: "numeric" })}</span><h1>${this.pageName(current.id, current.name)}</h1><p>${this.pageSubtitle(current.id, current.subtitle)}</p></div></header>
         <main id="main" tabindex="-1" aria-busy=${this.loading || this.saving}>
           ${this.error && !this.editor ? html`<div class="banner error" role="alert"><span>${this.error}</span><button @click=${() => void this.load()}>${this.t("retry")}</button></div>` : nothing}
-          ${this.notice ? html`<div class="banner success" role="status">${this.notice}<button aria-label=${this.x("Dismiss notification")} @click=${() => this.notice = ""}>×</button></div>` : nothing}
-          ${this.saving ? html`<p class="saving" role="status">${this.t("saving_changes")}</p>` : nothing}
-          ${this.loading ? html`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : !this.data.people ? html`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>` : this.locked ? html`<section class="surface lock-screen"><h2>${this.t("unlock_title")}</h2><p class="muted">${this.t("unlock_text")}</p><form @submit=${(e: SubmitEvent) => void this.verifyPin(e)}><label>${this.t("family_member")}<select name="person" @change=${(e: Event) => this.switchProfile((e.target as HTMLSelectElement).value)}>${this.people.map((person: Item) => html`<option value=${person.id} ?selected=${person.id === this.pinPersonId}>${person.name}</option>`)}</select></label><label>${this.t("pin")}<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" autofocus></label><div class="dialog-footer"><button class="primary" type="submit" ?disabled=${this.saving}>${this.t("unlock")}</button></div></form></section>` : this.renderPage()}
+          ${this.loading ? html`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : !this.data.people ? html`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>` : this.renderPage()}
         </main>
       </div>
-      <nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span>${this.pageName(page.id, page.name)}</button>`)}${this.pinPersonId && !this.locked ? html`<button @click=${() => this.lockScreen()}><span aria-hidden="true">🔒</span>${this.t("lock")}</button>` : nothing}${this.haMenuButton(true)}</nav>
+      <nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span>${this.pageName(page.id, page.name)}</button>`)}${this.haMenuButton(true)}</nav>
       ${this.editor ? this.dialog() : nothing}
     </div>`;
   }
@@ -515,6 +532,10 @@ export class FamilyOrganizerPanel extends LitElement {
   private haMenuButton(mobile = false) {
     return html`<button type="button" class=${`ha-shell-menu ${mobile ? "" : "sidebar-ha-menu"}`} aria-label=${this.t("open_ha_navigation")} @click=${() => this.dispatchEvent(new CustomEvent("hass-toggle-menu", { bubbles: true, composed: true, detail: {} }))}><span class="ha-menu-icon" aria-hidden="true"></span><span>${mobile ? this.t("ha_menu") : this.t("home_assistant")}</span></button>`;
   }
+  private settingsPinGate() {
+    const admins = this.people.filter((p: Item) => ["parent", "parent_admin"].includes(p.role));
+    return html`<section class="surface lock-screen"><h2>${this.s("Unlock settings", "Instellingen ontgrendelen")}</h2><p class="muted">${this.s("Enter a PIN from a parent or family administrator to open Settings.", "Voer een pincode van een ouder of gezinsbeheerder in om Instellingen te openen.")}</p>${admins.length ? html`<form @submit=${(e: SubmitEvent) => void this.verifySettingsPin(e)}><label>${this.t("family_member")}<select name="person" @change=${(e: Event) => this.switchSettingsPinPerson((e.target as HTMLSelectElement).value)}>${admins.map((person: Item) => html`<option value=${person.id} ?selected=${person.id === this.settingsPinPersonId}>${person.name}</option>`)}</select></label><label>${this.t("pin")}<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" autofocus></label><div class="dialog-footer"><button class="primary" type="submit" ?disabled=${this.saving}>${this.t("unlock")}</button></div></form>` : html`<p class="muted">${this.s("No parent/admin profile is available yet.", "Er is nog geen ouder/beheerder-profiel beschikbaar.")}</p>`}</section>`;
+  }
   private renderPage() {
     switch (this.page) {
       case "today": return this.today();
@@ -526,7 +547,7 @@ export class FamilyOrganizerPanel extends LitElement {
       case "journal": return this.journal();
       case "contacts": return this.contacts();
       case "birthdays": return this.birthdays();
-      default: return this.settings();
+      default: return this.settingsUnlocked ? this.settings() : this.settingsPinGate();
     }
   }
   private empty(title: string, description: string, button?: TemplateResult | typeof nothing) { return html`<div class="empty"><span class="empty-icon" aria-hidden="true">✧</span><h3>${this.x(title)}</h3><p>${this.x(description)}</p>${button || nothing}</div>`; }
@@ -535,16 +556,30 @@ export class FamilyOrganizerPanel extends LitElement {
     const toggle = (id: string) => { const next = new Set(this.personFilter); next.has(id) ? next.delete(id) : next.add(id); this.personFilter = next; };
     return html`<div class="person-strip" role="group" aria-label=${this.s("Filter calendar by family member", "Filter agenda op familielid")}><button class=${!this.personFilter.size ? "person-pick everyone active" : "person-pick everyone"} aria-pressed=${!this.personFilter.size} @click=${() => this.personFilter = new Set()}><span class="avatar fallback" aria-hidden="true">⌂</span><span>${this.s("Everyone", "Iedereen")}</span></button>${this.people.map((p: Item) => html`<button class=${this.personFilter.has(p.id) ? "person-pick active" : "person-pick"} style=${`--person-color:${this.color(p.color)}`} aria-pressed=${this.personFilter.has(p.id)} @click=${() => toggle(p.id)}>${this.avatar(p.id)}<span>${p.name}</span></button>`)}</div>`;
   }
+  private showCalendarDayView(settings: Item = this.settingsData) { return settings.show_calendar_day_view !== false; }
+  private showCalendarWeekView(settings: Item = this.settingsData) { return settings.show_calendar_week_view !== false; }
+  private showCalendarExport(settings: Item = this.settingsData) { return settings.show_calendar_export !== false; }
+  private availableCalendarViews(settings: Item = this.settingsData): [string, string][] {
+    const views: [string, string][] = [["list", this.s("List", "Lijst")], ["month", this.s("Month", "Maand")]];
+    if (this.showCalendarDayView(settings)) views.splice(1, 0, ["day", this.s("Day", "Dag")]);
+    if (this.showCalendarWeekView(settings)) views.splice(this.showCalendarDayView(settings) ? 2 : 1, 0, ["week", this.s("Week", "Week")]);
+    return views;
+  }
+  private normalizedCalendarView(view: string, settings: Item = this.settingsData) {
+    const allowed = new Set(this.availableCalendarViews(settings).map(([id]) => id));
+    return allowed.has(view) ? view : "list";
+  }
   private calendar() {
-    const dates = calendarDates(this.selectedDay, this.calendarView, this.firstDay);
+    const calendarView = this.normalizedCalendarView(this.calendarView);
+    const dates = calendarDates(this.selectedDay, calendarView, this.firstDay);
     const all = occurrences(this.data.calendar.items || [], dates[0], dates.at(-1)!);
     const query = this.calendarSearch.trim().toLowerCase();
     const events = all.filter(e => (!this.personFilter.size || (e.person_ids || []).some((id: string) => this.personFilter.has(id))) && (!query || [e.title, e.location, e.description].some(v => String(v || "").toLowerCase().includes(query))));
     const selected = eventsOnDay(events, this.selectedDay);
     const unsupported = (this.data.calendar.items || []).filter((event: Item) => unsupportedRecurrence(event.recurrence) && (!this.personFilter.size || (event.person_ids || []).some((id: string) => this.personFilter.has(id))));
     const collapsed = this.localOverview ?? this.settingsData.overview_collapsed;
-    const title = this.calendarView === "month" ? this.date(this.selectedDay, { month: "long", year: "numeric" }) : this.calendarView === "day" ? this.date(this.selectedDay) : `${this.date(dates[0], { month: "short", day: "numeric" })} – ${this.date(dates.at(-1)!, { month: "short", day: "numeric", year: "numeric" })}`;
-    return html`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}><div class="section-toolbar"><div class="date-navigation"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, this.calendarView, -1)}>‹</button><button @click=${() => this.selectedDay = iso(new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, this.calendarView, 1)}>›</button><h2>${title}</h2></div><div class="toolbar-actions"><div class="segmented" role="group" aria-label=${this.s("Calendar view", "Agendaweergave")}>${[["list", this.s("List", "Lijst")], ["day", this.s("Day", "Dag")], ["week", this.s("Week", "Week")], ["month", this.s("Month", "Maand")]].map(([view, label]) => html`<button class=${this.calendarView === view ? "active" : ""} aria-pressed=${this.calendarView === view} @click=${() => this.calendarView = String(view)}>${label}</button>`)}</div><label class="sr-only" for="calendar-search">${this.s("Search events", "Zoek afspraken")}</label><input id="calendar-search" class="calendar-search" type="search" placeholder=${this.s("Search events…", "Zoek afspraken…")} .value=${this.calendarSearch} @input=${(e: Event) => this.calendarSearch = (e.target as HTMLInputElement).value}><label class="sr-only" for="calendar-date">${this.s("Go to date", "Ga naar datum")}</label><input id="calendar-date" type="date" .value=${this.selectedDay} @change=${(e: Event) => { const value = (e.target as HTMLInputElement).value; if (value) this.selectedDay = value; }}><button type="button" title=${this.s("Download the family calendar as an .ics file for Google, Apple or Outlook", "Download de gezinsagenda als .ics-bestand voor Google, Apple of Outlook")} @click=${() => void this.exportCalendar()}>${this.s("Export .ics", "Exporteer .ics")}</button></div></div>
+    const title = calendarView === "month" ? this.date(this.selectedDay, { month: "long", year: "numeric" }) : calendarView === "day" ? this.date(this.selectedDay) : `${this.date(dates[0], { month: "short", day: "numeric" })} – ${this.date(dates.at(-1)!, { month: "short", day: "numeric", year: "numeric" })}`;
+    return html`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}><div class="section-toolbar"><div class="date-navigation"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, calendarView, -1)}>‹</button><button @click=${() => this.selectedDay = iso(new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, calendarView, 1)}>›</button><h2>${title}</h2></div><div class="toolbar-actions"><div class="segmented" role="group" aria-label=${this.s("Calendar view", "Agendaweergave")}>${this.availableCalendarViews().map(([view, label]) => html`<button class=${calendarView === view ? "active" : ""} aria-pressed=${calendarView === view} @click=${() => this.calendarView = String(view)}>${label}</button>`)}</div><label class="sr-only" for="calendar-search">${this.s("Search events", "Zoek afspraken")}</label><input id="calendar-search" class="calendar-search" type="search" placeholder=${this.s("Search events…", "Zoek afspraken…")} .value=${this.calendarSearch} @input=${(e: Event) => this.calendarSearch = (e.target as HTMLInputElement).value}><label class="sr-only" for="calendar-date">${this.s("Go to date", "Ga naar datum")}</label><input id="calendar-date" type="date" .value=${this.selectedDay} @change=${(e: Event) => { const value = (e.target as HTMLInputElement).value; if (value) this.selectedDay = value; }}>${this.showCalendarExport() ? html`<button type="button" title=${this.s("Download the family calendar as an .ics file for Google, Apple or Outlook", "Download de gezinsagenda als .ics-bestand voor Google, Apple of Outlook")} @click=${() => void this.exportCalendar()}>${this.s("Export .ics", "Exporteer .ics")}</button>` : nothing}</div></div>
       ${this.filters()}
       <div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${collapsed ? "overview-closed" : ""}`}><div class="calendar-surface">
         ${this.calendarView === "month" ? html`<div class="weekday-row">${dates.slice(0, 7).map(day => html`<span>${this.date(day, { weekday: "short" })}</span>`)}</div><div class="month-grid">${dates.map(day => {
@@ -554,7 +589,7 @@ export class FamilyOrganizerPanel extends LitElement {
             <button class="cell-create" aria-label=${`${this.s("Create event on", "Afspraak maken op")} ${this.date(day)}`} ?disabled=${!this.canEvent()} @click=${() => { this.selectedDay = day; this.openEditor("event", { day }); }}></button>
             <div class="cell-events">${items.slice(0, 3).map(event => this.eventChip(event))}${items.length > 3 ? html`<button class="more-events" @click=${() => this.selectedDay = day}>+${items.length - 3} ${this.s("more", "meer")}</button>` : nothing}</div>
           </div>`;
-        })}</div>` : this.calendarView === "list" ? this.listView(dates, events) : this.timeGrid(dates, events)}
+        })}</div>` : calendarView === "list" ? this.listView(dates, events) : this.timeGrid(dates, events)}
       </div><aside class="agenda"><button class="agenda-toggle" aria-expanded=${!collapsed} @click=${() => { this.localOverview = !collapsed; this.requestUpdate(); if (this.can("manage_settings")) void this.action(() => this._hass!.callWS({ type: "family_organizer/settings", settings: { overview_collapsed: !collapsed } }), this.s("Overview updated", "Overzicht bijgewerkt")); }}>${collapsed ? this.s("Show", "Toon") : this.s("Hide", "Verberg")} ${this.s("day agenda", "dagagenda")} <span aria-hidden="true">${collapsed ? "+" : "−"}</span></button>${collapsed ? nothing : html`<span class="eyebrow">${this.s("THE DAY AT A GLANCE", "DE DAG IN ÉÉN OOGOPSLAG")}</span><h2>${this.date(this.selectedDay, { weekday: "long" })}</h2><p class="muted">${this.date(this.selectedDay, { month: "long", day: "numeric" })} · ${selected.length} ${this.s("events", "afspraken")}</p><div class="agenda-events">${selected.length ? selected.map(event => html`<button class="agenda-event" style=${`--event-color:${this.eventColor(event)}`} @click=${() => this.openEditor("event-detail", event)}><span class="event-time">${event.all_day ? this.s("All day", "Hele dag") : this.time(event.occurrence_start)}</span><strong>${event.title}</strong><span class="muted">${event.location || this.s("No location", "Geen locatie")}</span><span class="event-people">${(event.person_ids || []).map((id: string) => this.avatar(id))}</span></button>`) : this.empty(this.s("Room to breathe", "Even rust"), this.personFilter.size ? this.s("No events for the selected family members.", "Geen afspraken voor de geselecteerde familieleden.") : this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag."))}</div>${this.addButton(this.s("Add an event", "Afspraak toevoegen"), "event", this.canEvent(), { day: this.selectedDay })}`}</aside></div>
       <p class="calendar-hint">${this.s("Select a day number to see its agenda. Select an empty day or + to add an event.", "Selecteer een dagnummer om de agenda te zien. Kies een lege dag of + om een afspraak toe te voegen.")}</p>
       ${unsupported.length ? html`<div class="banner recurrence-warning" role="status"><p>${this.s("These recurrence rules cannot be expanded in this calendar. Their original text is preserved; only the original event is shown when it falls in the displayed period.", "Deze herhaalregels kunnen in deze agenda niet worden uitgewerkt. De originele tekst blijft bewaard; alleen de originele afspraak wordt getoond als die binnen de periode valt.")}</p><ul>${unsupported.map((event: Item) => html`<li><strong>${event.title}</strong>: <code>${event.recurrence}</code></li>`)}</ul></div>` : nothing}
@@ -674,23 +709,19 @@ export class FamilyOrganizerPanel extends LitElement {
 
   private today() {
     const today = iso(new Date()), week = shift(today, 6);
-    const events = eventsOnDay(occurrences(this.data.calendar.items || [], today, today), today);
-    const upcoming = occurrences(this.data.calendar.items || [], shift(today, 1), week).slice(0, 6);
-    const groceries = (this.data.groceries.items || []).filter((x: Item) => !x.checked), todos = (this.data.todos?.items || []).filter((x: Item) => !x.done);
-    const chores = (this.data.chores.items || []).filter((c: Item) => choreDue(c, today)), completions = this.data.chores.completions || [];
+    const selectedPersonId = this.people.some((p: Item) => p.id === this.todayPersonId) ? this.todayPersonId : this.pinPersonId || this.me?.id || this.people[0]?.id || "";
+    const selectedPerson = this.person(selectedPersonId);
+    const matchesPerson = (ids: string[] = []) => !selectedPersonId || !ids.length || ids.includes(selectedPersonId);
+    const events = eventsOnDay(occurrences(this.data.calendar.items || [], today, today), today).filter((event: Item) => matchesPerson(event.person_ids || []));
+    const upcoming = occurrences(this.data.calendar.items || [], shift(today, 1), week).filter((event: Item) => matchesPerson(event.person_ids || [])).slice(0, 6);
+    const groceries = (this.data.groceries.items || []).filter((x: Item) => !x.checked && (!selectedPersonId || !x.assignee_id || x.assignee_id === selectedPersonId));
+    const todos = (this.data.todos?.items || []).filter((x: Item) => !x.done && (!selectedPersonId || !x.assignee_id || x.assignee_id === selectedPersonId));
+    const chores = (this.data.chores.items || []).filter((c: Item) => choreDue(c, today) && matchesPerson(c.assignee_ids || [])), completions = this.data.chores.completions || [];
     const meals = (this.data.groceries.meal_slots || this.data.groceries.meal_plans || []).filter((m: Item) => m.day === today);
-    const birthdays: BirthdayRow[] = this.people.map((p: Item) => ({ person: p, next: nextBirthday(p.birthday, today) })).filter((x: BirthdayRow) => x.next && x.next.days <= 14).sort((a: BirthdayRow, b: BirthdayRow) => a.next!.days - b.next!.days);
-    const greeting = this.x(new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening");
-    const summary = `${events.length ? `${events.length} ${this.x(events.length === 1 ? "event" : "events")}` : this.x("A quiet calendar")} · ${chores.length} ${this.x(chores.length === 1 ? "chore" : "chores")} · ${groceries.length} ${this.x("to buy")} · ${todos.length} ${this.x("to do")}`;
-    const heroLinks = [
-      { label: this.x("App only"), description: this.s("Use the organizer on your own tablet or phone.", "Gebruik de organizer op je eigen tablet of telefoon."), page: "today" },
-      { label: this.x("Discover"), description: this.s("See everything your family can do together.", "Ontdek wat jullie samen kunnen doen."), page: "calendar" },
-      { label: this.x("Premium"), description: this.s("Tidy extras and calmer defaults.", "Handige extra's en rustiger standaardinstellingen."), page: "settings" },
-      { label: this.x("Help & contact"), description: this.s("Questions, manuals and support.", "Vragen, handleidingen en support."), page: "contacts" },
-    ] as const;
-    return html`<section class="today-page"><div class="today-hero"><div><span class="eyebrow">${this.date(today)}</span><h2>${greeting}${this.me ? `, ${this.me.name.split(" ")[0]}` : ""}.</h2><p class="muted">${summary}</p></div>
-      ${birthdays.length ? html`<div class="birthday-callout">${birthdays.map((b: BirthdayRow) => html`<span>${this.avatar(b.person.id)}<strong>${b.person.name}</strong> ${this.x(b.next!.days === 0 ? "turns" : "soon turns")} ${b.next!.age ?? this.x("another year")}${b.next!.days === 0 ? ` ${this.x("today 🎉")}` : ` ${this.x("in")} ${b.next!.days} ${this.x(b.next!.days === 1 ? "day" : "days")}`}</span>`)}</div>` : nothing}
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;width:100%;">${heroLinks.map(link => html`<button @click=${() => this.navigate(link.page)} style="flex:1 1 180px;min-width:180px;align-items:flex-start;flex-direction:column;text-align:left;border-radius:20px;padding:14px 16px;"><strong>${link.label}</strong><small class="muted">${link.description}</small></button>`)}</div></div>
+    return html`<section class="today-page">
+      <div class="today-member-strip"><div><span class="eyebrow">${this.s("Today for", "Vandaag voor")}</span><h3>${selectedPerson?.name || this.s("Family overview", "Gezinsoverzicht")}</h3></div>
+        <div class="person-strip" role="tablist" aria-label=${this.s("Choose family member", "Kies familielid")}>${this.people.map((person: Item) => html`<button class=${selectedPersonId === person.id ? "person-pick active" : "person-pick"} style=${`--person-color:${this.color(person.color)}`} aria-pressed=${selectedPersonId === person.id} @click=${() => this.selectTodayPerson(person.id)}>${this.avatar(person.id)}<span>${person.name.split(" ")[0]}</span></button>`)}</div>
+      </div>
       <div class="today-grid">
         <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("TODAY’S AGENDA")}</span><h3>${this.x("Calendar")}</h3></div><button @click=${() => { this.selectedDay = today; this.navigate("calendar"); }}>${this.x("Open calendar →")}</button></div>${events.length ? events.map(event => html`<button class="agenda-event" style=${`--event-color:${this.eventColor(event)}`} @click=${() => this.openEditor("event-detail", event)}><span class="event-time">${event.all_day ? this.x("All day") : this.time(event.occurrence_start)}</span><strong>${event.title}</strong><span class="event-people">${(event.person_ids || []).map((id: string) => this.avatar(id))}</span></button>`) : html`<p class="muted">${this.x("Nothing scheduled today.")}</p>`}${upcoming.length ? html`<span class="eyebrow">${this.x("COMING UP")}</span>${upcoming.map(event => html`<div class="compact-row"><span class="event-dot" style=${`background:${this.eventColor(event)}`}></span><span class="row-copy"><strong>${event.title}</strong><span class="muted">${this.date(iso(new Date(event.occurrence_start)), { weekday: "short", month: "short", day: "numeric" })}${event.all_day ? "" : ` · ${this.time(event.occurrence_start)}`}</span></span></div>`)}` : nothing}${this.addButton("Add an event", "event", this.canEvent(), { day: today })}</article>
         <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("WHAT’S FOR DINNER?")}</span><h3>${this.x("Meals")}</h3></div><button @click=${() => this.navigate("recipes")}>${this.x("Meal planner →")}</button></div>${(this.settingsData.meal_slots || ["breakfast", "lunch", "dinner"]).map((slot: string) => { const plan = meals.find((m: Item) => (m.slot || m.meal) === slot); return html`<div class="compact-row"><span class="eyebrow">${this.x(slot)}</span><strong>${plan?.title || html`<span class="muted">${this.x("Not planned")}</span>`}</strong></div>`; })}</article>
@@ -839,10 +870,13 @@ export class FamilyOrganizerPanel extends LitElement {
     if (kind === "preferences") return html`${this.select("Appearance default", "theme", item.theme || "auto", [["auto", "Follow Home Assistant"], ["light", "Light"], ["dark", "Dark"]])}
       ${this.select("Day overview position", "overview_position", item.overview_position || "right", [["left", "Left"], ["right", "Right"]])}
       <label class="check full"><input name="overview_collapsed" type="checkbox" ?checked=${!!item.overview_collapsed}>${this.x("Collapse day overview by default")}</label>
+      <label class="check full"><input name="show_calendar_day_view" type="checkbox" ?checked=${item.show_calendar_day_view !== false}>${this.s("Show day view option in Calendar", "Toon dagweergave-optie in agenda")}</label>
+      <label class="check full"><input name="show_calendar_week_view" type="checkbox" ?checked=${item.show_calendar_week_view !== false}>${this.s("Show week view option in Calendar", "Toon weekweergave-optie in agenda")}</label>
+      <label class="check full"><input name="show_calendar_export" type="checkbox" ?checked=${item.show_calendar_export !== false}>${this.s("Show Export .ics button", "Toon Exporteer .ics-knop")}</label>
       ${this.select("Week starts", "week_start", item.week_start || (this.firstDay === 0 ? "sunday" : "monday"), [["monday", "Monday"], ["sunday", "Sunday"]])}
       ${this.select("Time format", "time_format", item.time_format || "24", [["24", "24 hour"], ["12", "12 hour"]])}
       ${this.select("List view days", "calendar_list_mode", item.calendar_list_mode || "planned", [["planned", "Only days with planned events"], ["all", "Every day (also empty days)"]])}
-      ${this.select("Default calendar view", "default_calendar_view", (item.default_calendar_view === "day" ? "list" : (item.default_calendar_view || "list")), [["list", "List"], ["week", "Week"], ["month", "Month"]])}
+      ${this.select("Default calendar view", "default_calendar_view", this.normalizedCalendarView(item.default_calendar_view || "list", item), this.availableCalendarViews(item))}
       ${this.select("Grocery default", "default_grocery_list_id", item.default_grocery_list_id || this.listId, [["weekly", "Weekly groceries"], ["daily", "Daily groceries"], ["random", "Random list"], ...(this.data.groceries.lists || []).map((x: Item): [string, string] => [x.id, x.name])])}
       <fieldset class="full permissions"><legend>${this.x("Meal slots")}</legend>${["breakfast", "lunch", "dinner"].map(slot => html`<label class="check"><input name="meal_slots" type="checkbox" value=${slot} ?checked=${(item.meal_slots || ["breakfast", "lunch", "dinner"]).includes(slot)}>${this.x(slot[0].toUpperCase() + slot.slice(1))}</label>`)}</fieldset>
       ${this.field("Stores (comma separated)", "stores", (item.stores || []).join(", "))}

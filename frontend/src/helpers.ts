@@ -72,7 +72,7 @@ export function mergeIngredients(text: string, original: Item[] = []) {
   });
 }
 export function presetCapability(role: string, capability: string) {
-  return role === "parent_admin" || (role === "parent" && !["manage_people", "manage_settings", "manage_calendar_sync"].includes(capability))
+  return role === "parent_admin" || role === "parent"
     || (role === "child" && ["manage_calendar_own", "manage_groceries", "manage_todos", "manage_meal_plan", "complete_own_chores", "manage_recipes", "manage_journal"].includes(capability));
 }
 export function calendarPayload(item: Item) {
