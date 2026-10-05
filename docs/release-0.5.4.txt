@@ -1,0 +1,15 @@
+Family Organizer 0.5.4
+
+Fixes
+- Panel was unclickable in Chrome: the mobile navigation bar was left unclosed in
+  the template and overlaid the whole page, intercepting all clicks and blocking
+  dialogs. The navigation and notice banner templates are restored.
+
+Validation
+- Frontend typecheck passed.
+- Frontend tests passed.
+- Frontend bundle rebuilt and committed.
+
+Upgrade
+- Existing data is preserved.
+- Restart Home Assistant and hard-refresh the browser after updating.
