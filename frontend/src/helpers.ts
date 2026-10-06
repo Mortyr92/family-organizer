@@ -103,7 +103,7 @@ export function nextBirthday(birthday: string | undefined | null, today: string)
   return { date: next, days, age: year ? Number(next.slice(0, 4)) - Number(year) : undefined };
 }
 export function organizerRoute(hash: string) {
-  const match = hash.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|contacts|settings)(?:\/(.+))?$/);
+  const match = hash.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|settings)(?:\/(.+))?$/);
   if (!match) return undefined;
   try { return { page: match[1], recipeId: match[1] === "recipes" ? decodeURIComponent(match[2] || "") : "", malformed: false }; }
   catch { return { page: match[1], recipeId: "", malformed: true }; }
