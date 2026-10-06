@@ -1,8 +1,8 @@
 # Family Organizer
 
 A local-first Home Assistant integration and touch-friendly family dashboard.
-It provides ten pages modeled on a Cozi-style family organizer: Today, Calendar,
-Shopping, To Do, Meals, Chores, Journal, Contacts, Birthdays, and Settings.
+It provides nine pages modeled on a Cozi-style family organizer: Today, Calendar,
+Shopping, To Do, Meals, Chores, Journal, Birthdays, and Settings.
 
 ## Highlights
 

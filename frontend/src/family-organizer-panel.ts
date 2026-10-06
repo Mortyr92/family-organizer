@@ -24,7 +24,6 @@ const pages = [
   { id: "chores", name: "Chores", icon: "✓", subtitle: "Small contributions. A happier home." },
   { id: "journal", name: "Journal", icon: "✎", subtitle: "Capture the little moments worth remembering." },
   { id: "birthdays", name: "Birthdays", icon: "♡", subtitle: "Never miss a chance to celebrate." },
-  { id: "contacts", name: "Contacts", icon: "☎", subtitle: "The people who keep your family running." },
   { id: "settings", name: "Settings", icon: "⚙", subtitle: "Make your organizer feel like home." },
 ];
 const i18n: Record<string, Record<string, string>> = {
@@ -491,12 +490,12 @@ export class FamilyOrganizerPanel extends LitElement {
     const navSections = [
       { label: this.x("Plan"), description: this.s("Calendar, daily planning and meals.", "Agenda, dagplanning en maaltijden."), pages: ["today", "calendar", "recipes"] },
       { label: this.x("Household"), description: this.s("Groceries, todos and chores.", "Boodschappen, taken en klussen."), pages: ["groceries", "todos", "chores"] },
-      { label: this.x("Keep in touch"), description: this.s("Journal, birthdays, contacts and settings.", "Dagboek, verjaardagen, contacten en instellingen."), pages: ["journal", "birthdays", "contacts", "settings"] },
+      { label: this.x("Keep in touch"), description: this.s("Journal, birthdays and settings.", "Dagboek, verjaardagen en instellingen."), pages: ["journal", "birthdays", "settings"] },
     ] as const;
     const promoLinks = [
       { label: this.x("App only"), description: this.s("Use the organizer on your own tablet or phone.", "Gebruik de organizer op je eigen tablet of telefoon."), page: "today" },
       { label: this.x("Premium"), description: this.s("Tidy extras and calmer defaults.", "Handige extra's en rustiger standaardinstellingen."), page: "settings" },
-      { label: this.x("Help & contact"), description: this.s("Questions, manuals and support.", "Vragen, handleidingen en support."), page: "contacts" },
+      { label: this.x("Help"), description: this.s("Questions, manuals and support.", "Vragen, handleidingen en support."), page: "settings" },
     ] as const;
     return html`<div class="app" data-theme=${effective}>
       <a class="skip-link" href="#main" @click=${(e: Event) => { e.preventDefault(); (this.renderRoot.querySelector("main") as HTMLElement).focus(); }}>${this.t("skip_content")}</a>
@@ -545,7 +544,6 @@ export class FamilyOrganizerPanel extends LitElement {
       case "chores": return this.chores();
       case "recipes": return this.recipes();
       case "journal": return this.journal();
-      case "contacts": return this.contacts();
       case "birthdays": return this.birthdays();
       default: return this.settingsUnlocked ? this.settings() : this.settingsPinGate();
     }
