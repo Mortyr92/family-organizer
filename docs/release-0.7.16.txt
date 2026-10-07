@@ -1,0 +1,1 @@
+Fix day/week calendar layout: the time grid was nested inside the all-day row due to a missing closing tag, which prevented the Google Calendar style grid from rendering. All-day events are shown per day again.
