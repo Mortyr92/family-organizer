@@ -105,7 +105,7 @@ test("chore schedules use full weekdays and safe custom intervals", () => {
 test("permissions match backend role presets", () => {
   assert.equal(presetCapability("child", "manage_settings"), false);
   assert.equal(presetCapability("child", "manage_calendar_own"), true);
-  assert.equal(presetCapability("parent", "manage_people"), false);
+  assert.equal(presetCapability("parent", "manage_people"), true);
   assert.equal(presetCapability("parent", "manage_chores"), true);
   assert.equal(presetCapability("parent_admin", "manage_calendar_sync"), true);
 });

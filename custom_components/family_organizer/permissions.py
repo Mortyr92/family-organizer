@@ -24,10 +24,7 @@ CAPABILITIES = (
 ROLES = ("parent_admin", "parent", "child")
 ROLE_CAPABILITIES: dict[str, dict[str, bool]] = {
     "parent_admin": {capability: True for capability in CAPABILITIES},
-    "parent": {
-        capability: capability not in {"manage_people", "manage_settings", "manage_calendar_sync"}
-        for capability in CAPABILITIES
-    },
+    "parent": {capability: True for capability in CAPABILITIES},
     "child": {
         capability: capability in {
             "manage_calendar_own", "manage_groceries", "manage_todos", "manage_meal_plan",
@@ -49,9 +46,15 @@ def person_for(user, settings: dict, people: Any = None) -> dict | None:
     if not user:
         return None
     user_id = getattr(user, "id", None)
+    pin_person_id = getattr(user, "pin_person_id", None)
+    members = _people(settings, people)
+    if pin_person_id:
+        person = next((p for p in members if p.get("id") == pin_person_id), None)
+        if person:
+            return person
     return next(
         (
-            person for person in _people(settings, people)
+            person for person in members
             if (person.get("user_id") or person.get("ha_user_id")) == user_id
         ),
         None,
@@ -130,8 +133,8 @@ def check_capability(
 
 
 def can_view(user, settings: dict, people: Any = None) -> bool:
-    """Only linked users and Home Assistant administrators can open the panel."""
-    return role_for(user, settings, people) is not None
+    """Every authenticated Home Assistant user can open the panel; editing needs a role."""
+    return user is not None
 
 
 # Compatibility API for older callers. New code must use exact capabilities.

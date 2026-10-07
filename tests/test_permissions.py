@@ -29,6 +29,11 @@ def test_exact_roles_capabilities_and_admin():
     assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_todos"]
     assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_journal"]
     assert capabilities_for(user("parent-user"), {}, PEOPLE)["manage_journal"]
+    assert all(capabilities_for(user("parent-user"), {}, PEOPLE).values())
+    assert not any(capabilities_for(user("unknown"), {}, PEOPLE).values())
+    pin_user = SimpleNamespace(id="tablet", is_admin=False, pin_person_id="p1")
+    assert role_for(pin_user, {}, PEOPLE) == "parent"
+    assert all(capabilities_for(pin_user, {}, PEOPLE).values())
 
 
 def test_unlinked_denied_and_person_override_authoritative():

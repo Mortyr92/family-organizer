@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import secrets
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from uuid import uuid4
 
@@ -54,6 +55,21 @@ def _people(manager):
 
 def _person(manager, user):
     return person_for(user, _settings(manager), _people(manager))
+
+
+# Verified PIN sessions per websocket connection; cleared when the connection closes.
+_PIN_SESSIONS: dict[int, str] = {}
+
+
+def _user(connection):
+    """Effective user: the HA user, elevated to a family member after a verified PIN."""
+    user = connection.user
+    pin_person_id = _PIN_SESSIONS.get(id(connection))
+    if not pin_person_id or user is None:
+        return user
+    return SimpleNamespace(
+        id=user.id, is_admin=getattr(user, "is_admin", False), pin_person_id=pin_person_id
+    )
 
 
 def _collection(resource: str, requested: str | None) -> str | None:
@@ -203,13 +219,13 @@ def _can_view(user, resource: str, settings: dict, item: dict, people=None) -> b
 async def ws_list(hass, connection, msg):
     manager = _manager(hass)
     resource = msg["resource"]
-    if not can_view(connection.user, _settings(manager), _people(manager)):
+    if not can_view(_user(connection), _settings(manager), _people(manager)):
         raise vol.Invalid("User is not linked to a family person")
     if resource == "people" and _sync_pictures(hass, _people(manager).get("items", [])):
         await manager["people"].async_save()
     connection.send_result(
         msg["id"],
-        _public_payload(resource, manager[resource].data, connection.user, {
+        _public_payload(resource, manager[resource].data, _user(connection), {
             **_settings(manager), "people": _people(manager).get("items", [])
         }),
     )
@@ -229,7 +245,7 @@ async def _mutate(hass, connection, msg, operation):
     if resource == "groceries" and collection == "meal_plans":
         collection = "meal_slots"
     items = manager[resource].data.setdefault(collection, [])
-    user = connection.user
+    user = _user(connection)
     settings = _settings(manager)
     people = _people(manager)
     person = _person(manager, user)
@@ -422,14 +438,14 @@ async def ws_recipe_to_groceries(hass, connection, msg):
     manager = _manager(hass)
     settings = _settings(manager)
     check_capability(
-        connection.user, "groceries", "manage_groceries", settings,
+        _user(connection), "groceries", "manage_groceries", settings,
         people=_people(manager),
     )
     recipe = next(
         (item for item in manager["recipes"].data["items"] if item.get("id") == msg["recipe_id"]),
         None,
     )
-    if recipe is None or not _can_view(connection.user, "recipes", settings, recipe, _people(manager)):
+    if recipe is None or not _can_view(_user(connection), "recipes", settings, recipe, _people(manager)):
         connection.send_error(msg["id"], "not_found", "Recipe not found")
         return
     destination = next(
@@ -447,7 +463,7 @@ async def ws_recipe_to_groceries(hass, connection, msg):
     )
     for generated_index, item in enumerate(recipe_items(
         recipe, msg["servings"], msg.get("selected"), msg["list_id"],
-        (_person(manager, connection.user) or {}).get("id"),
+        (_person(manager, _user(connection)) or {}).get("id"),
     )):
         original_index = original_indices[generated_index]
         routed_list = routes.get(
@@ -486,12 +502,12 @@ async def ws_complete_chore(hass, connection, msg):
         connection.send_error(msg["id"], "not_found", "Chore not found")
         return
     settings, people = _settings(manager), _people(manager)
-    person = _person(manager, connection.user)
-    caps = capabilities_for(connection.user, settings, people)
+    person = _person(manager, _user(connection))
+    caps = capabilities_for(_user(connection), settings, people)
     completion_person = msg.get("person_id") or (person or {}).get("id")
     if not caps["complete_any_chore"]:
         check_capability(
-            connection.user, "chores", "complete_own_chores", settings, chore, people
+            _user(connection), "chores", "complete_own_chores", settings, chore, people
         )
         if completion_person != person["id"]:
             raise vol.Invalid("Cannot complete a chore for another person")
@@ -526,7 +542,7 @@ async def ws_complete_chore(hass, connection, msg):
 async def ws_adjust_points(hass, connection, msg):
     manager = _manager(hass)
     check_capability(
-        connection.user, "chores", "manage_chores", _settings(manager),
+        _user(connection), "chores", "manage_chores", _settings(manager),
         people=_people(manager),
     )
     adjustment = {
@@ -547,7 +563,7 @@ async def ws_adjust_points(hass, connection, msg):
 @callback
 def ws_subscribe(hass, connection, msg):
     manager = _manager(hass)
-    if not can_view(connection.user, _settings(manager), _people(manager)):
+    if not can_view(_user(connection), _settings(manager), _people(manager)):
         raise vol.Invalid("User is not linked to a family person")
 
     @callback
@@ -565,14 +581,14 @@ def ws_subscribe(hass, connection, msg):
 async def ws_settings(hass, connection, msg):
     manager = _manager(hass)
     check_capability(
-        connection.user, "settings", "manage_settings", _settings(manager),
+        _user(connection), "settings", "manage_settings", _settings(manager),
         people=_people(manager),
     )
     manager["settings"].data.update(_validate_settings(msg["settings"]))
     await manager["settings"].async_save()
     hass.bus.async_fire(EVENT_UPDATED, {"resource": "settings", "operation": "update"})
     connection.send_result(
-        msg["id"], _public_payload("settings", manager["settings"].data, connection.user, {
+        msg["id"], _public_payload("settings", manager["settings"].data, _user(connection), {
             **_settings(manager), "people": _people(manager).get("items", [])
         })
     )
@@ -588,7 +604,7 @@ async def ws_verify_pin(hass, connection, msg):
     manager = _manager(hass)
     settings = _settings(manager)
     people = _people(manager)
-    if not can_view(connection.user, settings, people):
+    if not can_view(_user(connection), settings, people):
         raise vol.Invalid("User is not linked to a family person")
     person = next((item for item in people.get("items", []) if item.get("id") == msg["person_id"]), None)
     if person is None:
@@ -601,6 +617,14 @@ async def ws_verify_pin(hass, connection, msg):
     if not _verify_pin(pin_hash, msg["pin"]):
         connection.send_error(msg["id"], "invalid_pin", "Incorrect PIN")
         return
+    key = id(connection)
+    _PIN_SESSIONS[key] = person["id"]
+
+    @callback
+    def forget():
+        _PIN_SESSIONS.pop(key, None)
+
+    connection.subscriptions[msg["id"]] = forget
     connection.send_result(msg["id"], {
         "person_id": person["id"],
         "name": person.get("name", ""),
@@ -617,7 +641,7 @@ async def ws_verify_pin(hass, connection, msg):
 async def ws_import_recipe(hass, connection, msg):
     manager = _manager(hass)
     check_capability(
-        connection.user, "recipes", "manage_recipes", _settings(manager),
+        _user(connection), "recipes", "manage_recipes", _settings(manager),
         people=_people(manager),
     )
     try:
@@ -645,7 +669,7 @@ async def ws_ha_users(hass, connection, msg):
     """List Home Assistant users that can be copied into a family member."""
     manager = _manager(hass)
     check_capability(
-        connection.user, "people", "manage_people", _settings(manager),
+        _user(connection), "people", "manage_people", _settings(manager),
         people=_people(manager),
     )
     linked = {

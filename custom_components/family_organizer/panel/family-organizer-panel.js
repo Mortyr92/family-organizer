@@ -639,11 +639,7 @@ function Pe(e, t = []) {
 	});
 }
 function Fe(e, t) {
-	return e === "parent_admin" || e === "parent" && ![
-		"manage_people",
-		"manage_settings",
-		"manage_calendar_sync"
-	].includes(t) || e === "child" && [
+	return e === "parent_admin" || e === "parent" || e === "child" && [
 		"manage_calendar_own",
 		"manage_groceries",
 		"manage_todos",
@@ -702,7 +698,7 @@ function ze(e, t) {
 	};
 }
 function Be(e) {
-	let t = e.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|contacts|settings)(?:\/(.+))?$/);
+	let t = e.match(/^#fo\/(today|calendar|groceries|todos|chores|recipes|journal|birthdays|settings)(?:\/(.+))?$/);
 	if (t) try {
 		return {
 			page: t[1],
@@ -1361,12 +1357,6 @@ var Ge = [
 		name: "Birthdays",
 		icon: "♡",
 		subtitle: "Never miss a chance to celebrate."
-	},
-	{
-		id: "contacts",
-		name: "Contacts",
-		icon: "☎",
-		subtitle: "The people who keep your family running."
 	},
 	{
 		id: "settings",
@@ -2433,11 +2423,10 @@ var Ge = [
 			},
 			{
 				label: this.x("Keep in touch"),
-				description: this.s("Journal, birthdays, contacts and settings.", "Dagboek, verjaardagen, contacten en instellingen."),
+				description: this.s("Journal, birthdays and settings.", "Dagboek, verjaardagen en instellingen."),
 				pages: [
 					"journal",
 					"birthdays",
-					"contacts",
 					"settings"
 				]
 			}
@@ -2453,9 +2442,9 @@ var Ge = [
 				page: "settings"
 			},
 			{
-				label: this.x("Help & contact"),
+				label: this.x("Help"),
 				description: this.s("Questions, manuals and support.", "Vragen, handleidingen en support."),
-				page: "contacts"
+				page: "settings"
 			}
 		];
 		return j`<div class="app" data-theme=${t}>
@@ -2516,7 +2505,6 @@ var Ge = [
 			case "chores": return this.chores();
 			case "recipes": return this.recipes();
 			case "journal": return this.journal();
-			case "contacts": return this.contacts();
 			case "birthdays": return this.birthdays();
 			default: return this.settingsUnlocked ? this.settings() : this.settingsPinGate();
 		}
