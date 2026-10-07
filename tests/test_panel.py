@@ -13,8 +13,9 @@ import pytest
 ROOT = Path(__file__).parents[1]
 INTEGRATION = ROOT / "custom_components" / "family_organizer"
 VERSION = json.loads((INTEGRATION / "manifest.json").read_text())["version"]
-URL = f"/family_organizer/{VERSION}/family-organizer-panel.js"
-BUNDLE = str(INTEGRATION / "panel" / "family-organizer-panel.js")
+BASE_URL = f"/family_organizer/{VERSION}"
+URL = f"{BASE_URL}/family-organizer-panel.js"
+PANEL_DIR = str(INTEGRATION / "panel")
 
 
 def load_function(name, **namespace):
@@ -72,7 +73,7 @@ def test_registration_compatibility_and_reload(monkeypatch, modern):
     )
     asyncio.run(register(hass))
     asyncio.run(register(hass))
-    assert registered == [(URL, BUNDLE, True)]
+    assert registered == [(BASE_URL, PANEL_DIR, True)]
     assert len(panel.calls) == 1
     assert panel.calls[0]["module_url"] == URL
     assert panel.calls[0]["frontend_url_path"] == "family-organizer"
