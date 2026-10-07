@@ -1,0 +1,1 @@
+Month overview now has previous/next/today navigation in the header, same as the day and week views.
