@@ -920,16 +920,21 @@ var We = o`
   .chip.active { color:var(--orange); border-color:var(--orange); background:var(--orange-soft); }
   .avatar { display:inline-grid; place-items:center; width:29px; height:29px; min-width:29px; border-radius:50%; object-fit:cover; vertical-align:middle; box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--person-color,#64748b); }
   .avatar-stack .avatar,.agenda-event .avatar,.chip .avatar { box-shadow:0 0 0 1.5px var(--surface), 0 0 0 3px var(--person-color,#64748b); }
-  .calendar-header { display:grid; grid-template-columns:minmax(160px,1.2fr) minmax(0,1fr) auto; gap:12px; align-items:center; margin:0 0 16px; padding:16px 18px; border:1px solid var(--line); border-radius:24px; background:linear-gradient(180deg,var(--surface),color-mix(in srgb,var(--soft) 52%,var(--surface))); box-shadow:var(--shadow); }
-  .calendar-header-day { display:flex; flex-direction:column; align-items:flex-start; gap:2px; border:0; background:none; padding:0; text-align:left; box-shadow:none; }
+  .calendar-header { display:grid; grid-template-columns:minmax(160px,1.2fr) minmax(0,1fr) auto; gap:12px; align-items:center; margin:0 0 16px; padding:16px 18px; border:0; border-radius:24px; color:#fff; background:linear-gradient(135deg,#5e7fc6 0%,#8ca5d6 100%); box-shadow:var(--shadow); }
+  .calendar-header-day { display:flex; flex-direction:column; align-items:flex-start; gap:2px; border:0; background:none; padding:0; color:inherit; text-align:left; box-shadow:none; }
   .calendar-header-day strong { font-size:19px; line-height:1.2; }
-  .calendar-header-day small { color:var(--muted); font-size:12px; font-weight:500; }
-  .calendar-header-kicker { font-size:10px; text-transform:uppercase; letter-spacing:1.9px; color:var(--muted); font-weight:760; }
+  .calendar-header-day small { color:inherit; opacity:.85; font-size:12px; font-weight:500; }
+  .calendar-header-kicker { font-size:10px; text-transform:uppercase; letter-spacing:1.9px; color:inherit; opacity:.75; font-weight:760; }
   .calendar-header-people { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-  .calendar-person { width:38px; height:38px; min-width:38px; padding:0; border-radius:50%; border:2px solid transparent; box-shadow:none; background:var(--surface); }
-  .calendar-person.active { border-color:var(--person-color,var(--orange)); box-shadow:0 0 0 3px color-mix(in srgb,var(--person-color,var(--orange)) 18%,transparent); }
-  .calendar-header-filter { justify-self:end; }
+  .calendar-person { width:38px; height:38px; min-width:38px; padding:0; border-radius:50%; border:2px solid transparent; box-shadow:none; background:none; }
+  .calendar-person.active { border-color:#fff; }
+  .calendar-header-actions { display:flex; flex-direction:column; align-items:flex-end; gap:8px; justify-self:end; }
+  .calendar-header-filter { display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border:1px solid rgba(255,255,255,.55); border-radius:999px; background:rgba(255,255,255,.18); color:#fff; font-weight:600; cursor:pointer; box-shadow:none; }
+  .calendar-header-add { display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border:1px solid rgba(255,255,255,.55); border-radius:999px; background:rgba(255,255,255,.18); color:#fff; font-weight:600; cursor:pointer; box-shadow:none; }
+  .calendar-header-add:disabled { opacity:.5; cursor:not-allowed; }
   .calendar-header-nav { display:flex; align-items:center; gap:8px; justify-self:end; }
+  .calendar-header-nav button { background:rgba(255,255,255,.18); color:#fff; border:1px solid rgba(255,255,255,.4); }
+  .calendar-header-nav button.icon-button { background:rgba(255,255,255,.18); }
   .calendar-popup-backdrop { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgba(23,18,14,.32); backdrop-filter:blur(5px); }
   .calendar-popup { width:min(920px,100%); max-height:min(88vh,920px); overflow:auto; background:var(--surface); border:1px solid var(--line); border-radius:28px; box-shadow:var(--shadow); padding:18px; }
   .calendar-popup-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
@@ -948,7 +953,7 @@ var We = o`
   .calendar-search { display:flex; align-items:center; gap:8px; }
   .calendar-search input { min-width:180px; border-radius:999px; padding:8px 14px; }
   .list-view { display:flex; flex-direction:column; gap:0; padding:0; border:1px solid var(--line); border-radius:24px; overflow:hidden; background:var(--surface); }
-  .list-hero { display:grid; grid-template-columns:auto 1fr auto; grid-template-areas:"date people filter" "weather weather weather"; gap:12px 20px; align-items:center; padding:22px 22px 18px; color:#fff; background:linear-gradient(135deg,#5e7fc6 0%,#8ca5d6 100%); }
+  .list-hero { display:grid; grid-template-columns:auto 1fr auto; grid-template-areas:"date people actions" "weather weather weather"; gap:12px 20px; align-items:center; padding:22px 22px 18px; color:#fff; background:linear-gradient(135deg,#5e7fc6 0%,#8ca5d6 100%); }
   .list-hero-date { grid-area:date; display:flex; flex-direction:column; align-items:flex-start; gap:2px; border:0; background:none; padding:0; color:inherit; text-align:left; cursor:pointer; box-shadow:none; }
   .list-hero-date p { margin:0; font-size:18px; opacity:.95; text-transform:capitalize; }
   .list-hero-date strong { display:block; font-size:48px; line-height:1; font-weight:700; margin-top:2px; }
@@ -958,7 +963,9 @@ var We = o`
   .list-hero-person { display:inline-flex; padding:0; border:2px solid transparent; border-radius:50%; background:none; cursor:pointer; box-shadow:none; }
   .list-hero-person .avatar { width:44px; height:44px; min-width:44px; font-size:15px; }
   .list-hero-person.active { border-color:#fff; }
-  .list-hero-filter { grid-area:filter; justify-self:end; display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border:1px solid rgba(255,255,255,.55); border-radius:999px; background:rgba(255,255,255,.18); color:#fff; font-weight:600; cursor:pointer; box-shadow:none; }
+  .list-hero-actions { grid-area:actions; justify-self:end; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  .list-hero-filter,.list-hero-add { display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border:1px solid rgba(255,255,255,.55); border-radius:999px; background:rgba(255,255,255,.18); color:#fff; font-weight:600; cursor:pointer; box-shadow:none; width:100%; justify-content:center; }
+  .list-hero-add:disabled { opacity:.5; cursor:not-allowed; }
   .list-hero-weather { grid-area:weather; display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-top:4px; }
   .list-hero-weather strong { font-size:44px; line-height:1; margin:0; }
   .list-hero-weather span { font-size:22px; }
@@ -1309,7 +1316,7 @@ var We = o`
     .app input[type=checkbox]:disabled { opacity:.5; }
   }
   @media(max-width:700px) {
-    .qudoo-list .list-hero { padding:14px; grid-template-columns:1fr auto; grid-template-areas:"date filter" "people people" "weather weather"; }
+    .qudoo-list .list-hero { padding:14px; grid-template-columns:1fr auto; grid-template-areas:"date actions" "people people" "weather weather"; }
     .qudoo-list .list-hero-date p { font-size:14px; }
     .qudoo-list .list-hero-date strong { font-size:34px; }
     .qudoo-list .list-hero-date span { font-size:20px; }
@@ -2687,7 +2694,7 @@ var qe = [
 		}), r = this.personFilter.size === 1 ? this.person([...this.personFilter][0]) : void 0;
 		return M`<div class="calendar-header"><button class="calendar-header-day" @click=${() => this.openDatePicker()}><span class="calendar-header-kicker">${this.s("Day", "Dag")}</span><strong>${n}</strong><small>${t}</small></button><div class="calendar-header-people">${this.people.map((e) => M`<button class=${this.personFilter.has(e.id) && r ? "calendar-person active" : "calendar-person"} style=${`--person-color:${this.color(e.color)}`} @click=${() => {
 			this.selectTodayPerson(e.id), this.page = "today", this.navigate("today");
-		}} title=${e.name}>${this.avatar(e.id)}</button>`)}</div><button class="calendar-header-filter" @click=${() => this.openCalendarFilters()} aria-label=${this.s("Open filters", "Open filters")}><span aria-hidden="true">⚙</span><span>${this.s("Filters", "Filters")}</span></button>${e === "month" ? P : M`<div class="calendar-header-nav"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = K(this.selectedDay, e, -1)}>‹</button><button @click=${() => this.selectedDay = U(/* @__PURE__ */ new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = K(this.selectedDay, e, 1)}>›</button></div>`}</div>`;
+		}} title=${e.name}>${this.avatar(e.id)}</button>`)}</div><div class="calendar-header-actions"><button class="calendar-header-filter" @click=${() => this.openCalendarFilters()} aria-label=${this.s("Open filters", "Open filters")}><span aria-hidden="true">⚙</span><span>${this.s("Filters", "Filters")}</span></button><button class="calendar-header-add" ?disabled=${!this.canEvent()} @click=${() => this.openEditor("event", { day: this.selectedDay })} aria-label=${this.s("Add appointment", "Afspraak toevoegen")}><span aria-hidden="true">+</span><span>${this.s("Add appointment", "Afspraak toevoegen")}</span></button>${e === "month" ? P : M`<div class="calendar-header-nav"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = K(this.selectedDay, e, -1)}>‹</button><button @click=${() => this.selectedDay = U(/* @__PURE__ */ new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = K(this.selectedDay, e, 1)}>›</button></div>`}</div></div>`;
 	}
 	calendarFilterPanel(e) {
 		let t = this.calendarFilterSummary(), n = (e) => this.togglePersonFilter(e);
@@ -2750,7 +2757,10 @@ var qe = [
         <div class="list-hero-people">${this.people.map((e) => M`<button class="list-hero-person" style=${`--person-color:${this.color(e.color)}`} @click=${() => {
 			this.selectTodayPerson(e.id), this.page = "today", this.navigate("today");
 		}} title=${e.name}>${this.avatar(e.id)}</button>`)}</div>
-        <button class="list-hero-filter" @click=${() => this.openCalendarFilters()} aria-label=${this.s("Open filters", "Open filters")}><span aria-hidden="true">⚙</span><span>${this.s("Filters", "Filters")}</span></button>
+        <div class="list-hero-actions">
+          <button class="list-hero-filter" @click=${() => this.openCalendarFilters()} aria-label=${this.s("Open filters", "Open filters")}><span aria-hidden="true">⚙</span><span>${this.s("Filters", "Filters")}</span></button>
+          <button class="list-hero-add" ?disabled=${!this.canEvent()} @click=${() => this.openEditor("event", { day: this.selectedDay })} aria-label=${this.s("Add appointment", "Afspraak toevoegen")}><span aria-hidden="true">+</span><span>${this.s("Add appointment", "Afspraak toevoegen")}</span></button>
+        </div>
         <div class="list-hero-weather">${i.temperature ? M`<strong>${i.temperature}</strong>` : P}<span>${i.condition}</span>${i.detail ? M`<small>${i.detail}</small>` : P}</div>
       </header>`;
 		return s.length ? M`<div class="list-view qudoo-list">

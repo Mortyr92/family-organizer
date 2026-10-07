@@ -1,0 +1,1 @@
+Day, week and month calendar headers now use the same blue banner as the list view. Added an Add appointment (+) button below the filter button in all calendar views.
