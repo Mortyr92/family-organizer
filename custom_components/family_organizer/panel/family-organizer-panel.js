@@ -881,7 +881,7 @@ var We = o`
   .sidebar-ha-menu { margin:12px 0 0; min-height:44px; justify-content:flex-start; font-size:12px; color:var(--muted); border:1px solid var(--line); background:var(--surface); border-radius:16px; box-shadow:var(--shadow); }
   .ha-menu-icon { display:inline-block; position:relative; width:20px; height:16px; border-top:2px solid currentColor; border-bottom:2px solid currentColor; }
   .ha-menu-icon:after { content:""; position:absolute; left:0; right:0; top:5px; height:2px; background:currentColor; }
-  .workspace { width:calc(100% - 280px); min-width:0; overflow-x:hidden; position:relative; z-index:1; }
+  .workspace { width:calc(100% - 280px); min-width:0; overflow-x:hidden; position:relative; }
   .app[data-bottom-nav=true] .sidebar { display:none; }
   .app[data-bottom-nav=true] .workspace { width:100%; }
   .topbar { padding:28px 32px 18px; display:flex; align-items:center; justify-content:space-between; gap:20px; max-width:1400px; margin:0 auto; }
@@ -930,7 +930,7 @@ var We = o`
   .calendar-person.active { border-color:var(--person-color,var(--orange)); box-shadow:0 0 0 3px color-mix(in srgb,var(--person-color,var(--orange)) 18%,transparent); }
   .calendar-header-filter { justify-self:end; }
   .calendar-header-nav { display:flex; align-items:center; gap:8px; justify-self:end; }
-  .calendar-popup-backdrop { position:fixed; inset:0; z-index:80; display:grid; place-items:center; padding:18px; background:rgba(23,18,14,.32); backdrop-filter:blur(5px); }
+  .calendar-popup-backdrop { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgba(23,18,14,.32); backdrop-filter:blur(5px); }
   .calendar-popup { width:min(920px,100%); max-height:min(88vh,920px); overflow:auto; background:var(--surface); border:1px solid var(--line); border-radius:28px; box-shadow:var(--shadow); padding:18px; }
   .calendar-popup-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
   .calendar-popup-header p { margin-top:4px; color:var(--muted); }
@@ -1112,8 +1112,9 @@ var We = o`
   .leaderboard>.segmented { display:flex; }
   .leaderboard>.segmented button { flex:1; }
   .leaderboard>.muted { font-size:11px; margin:14px 0; }
-  .score-row { display:flex; align-items:center; gap:10px; margin:23px 0; }
-  .rank { width:15px; color:var(--orange); }
+  .score-row { display:flex; align-items:center; gap:12px; margin:23px 0; }
+  .score-row .avatar { flex:0 0 auto; }
+  .rank { width:15px; flex:0 0 auto; color:var(--orange); }
   .score-row .row-copy { font-size:12px; }
   .score-row progress { width:100%; height:6px; accent-color:var(--orange); border:0; overflow:hidden; border-radius:5px; }
   progress::-webkit-progress-bar { background:var(--soft); }

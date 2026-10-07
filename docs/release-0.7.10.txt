@@ -1,0 +1,8 @@
+Family Organizer 0.7.10
+
+Fixes
+- The calendar filters/settings pop-up now appears above the bottom navigation bar instead of partly disappearing behind it. (The workspace no longer creates a stacking context that trapped the overlay.)
+- In "Klussen" the family leaderboard avatars no longer overlap the member names; the avatars keep a fixed size and spacing.
+
+Upgrade notes
+- After updating, restart Home Assistant and hard-refresh your browser (Ctrl+F5) so the new panel URL (/family_organizer/0.7.10/) is loaded.
