@@ -487,12 +487,13 @@ export class FamilyOrganizerPanel extends LitElement {
   render() {
     const current = pages.find(p => p.id === this.page)!;
     const effective = this.theme === "auto" ? (this._hass?.themes?.darkMode ? "dark" : "auto") : this.theme;
+    const bottomNavigation = this.settingsData.overview_position === "bottom";
     const navSections = [
       { label: this.x("Plan"), description: this.s("Calendar, daily planning and meals.", "Agenda, dagplanning en maaltijden."), pages: ["today", "calendar", "recipes"] },
       { label: this.x("Household"), description: this.s("Groceries, todos and chores.", "Boodschappen, taken en klussen."), pages: ["groceries", "todos", "chores"] },
       { label: this.x("Keep in touch"), description: this.s("Journal, birthdays and settings.", "Dagboek, verjaardagen en instellingen."), pages: ["journal", "birthdays", "settings"] },
     ] as const;
-    return html`<div class="app" data-theme=${effective}>
+    return html`<div class="app" data-theme=${effective} data-bottom-nav=${bottomNavigation}>
       <a class="skip-link" href="#main" @click=${(e: Event) => { e.preventDefault(); (this.renderRoot.querySelector("main") as HTMLElement).focus(); }}>${this.t("skip_content")}</a>
       <aside class="sidebar"><a class="brand" href="#fo/today" @click=${() => this.navigate("today")}><span class="brand-symbol">⌂</span><span>Family<br><strong>Planner</strong></span></a><p class="eyebrow">${this.x("Daily planning made calm")}</p>
         <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> ${this.t("quick_add")}</button>
@@ -506,7 +507,7 @@ export class FamilyOrganizerPanel extends LitElement {
           ${this.loading ? html`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : !this.data.people ? html`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>` : this.renderPage()}
         </main>
       </div>
-      <nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span>${this.pageName(page.id, page.name)}</button>`)}${this.haMenuButton(true)}</nav>
+      ${bottomNavigation ? this.floatingNavigationBar() : html`<nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span>${this.pageName(page.id, page.name)}</button>`)}${this.haMenuButton(true)}</nav>`}
       ${this.editor ? this.dialog() : nothing}
     </div>`;
   }
@@ -524,6 +525,9 @@ export class FamilyOrganizerPanel extends LitElement {
   }
   private haMenuButton(mobile = false) {
     return html`<button type="button" class=${`ha-shell-menu ${mobile ? "" : "sidebar-ha-menu"}`} aria-label=${this.t("open_ha_navigation")} @click=${() => this.dispatchEvent(new CustomEvent("hass-toggle-menu", { bubbles: true, composed: true, detail: {} }))}><span class="ha-menu-icon" aria-hidden="true"></span><span>${mobile ? this.t("ha_menu") : this.t("home_assistant")}</span></button>`;
+  }
+  private floatingNavigationBar() {
+    return html`<nav class="floating-nav" aria-label=${this.x("Navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span><span>${this.pageName(page.id, page.name)}</span></button>`)}${this.haMenuButton()}</nav>`;
   }
   private settingsPinGate() {
     const admins = this.people.filter((p: Item) => ["parent", "parent_admin"].includes(p.role));

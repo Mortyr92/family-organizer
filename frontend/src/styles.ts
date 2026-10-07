@@ -70,6 +70,14 @@ export const panelStyles = css`
   .quick-add { position:sticky; top:10px; left:auto; width:100%; z-index:3; flex-shrink:0; border-radius:999px; padding:10px 17px; margin:10px 8px 14px; }
   .quick-add>span { font-size:24px; font-weight:400; line-height:1; }
   main { padding:0 32px 40px; outline:none; max-width:1400px; margin:auto; }
+  .app[data-bottom-nav=true] main { padding-bottom:132px; }
+  .floating-nav { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:8px; padding:10px; max-width:min(calc(100vw - 32px), 920px); overflow-x:auto; scrollbar-width:none; border:1px solid color-mix(in srgb,var(--line) 75%,transparent); border-radius:999px; background:color-mix(in srgb,var(--surface) 92%,transparent); box-shadow:0 18px 42px rgba(33,23,13,.18); backdrop-filter:blur(18px); -webkit-overflow-scrolling:touch; }
+  .floating-nav::-webkit-scrollbar { display:none; }
+  .floating-nav button { border-radius:999px; min-height:54px; padding:10px 14px; gap:4px; flex-direction:column; font-size:11px; line-height:1.05; white-space:nowrap; background:transparent; border-color:transparent; box-shadow:none; }
+  .floating-nav button>span:first-child { font-size:24px; line-height:1; }
+  .floating-nav button.active { color:var(--orange); background:var(--orange-soft); border-color:color-mix(in srgb,var(--orange) 18%,var(--line)); box-shadow:0 10px 20px rgba(200,90,35,.12); }
+  .floating-nav .ha-shell-menu { gap:5px; }
+  .floating-nav .ha-shell-menu>span:last-child { font-size:11px; line-height:1.05; }
   .mobile-nav { display:none; }
   .banner { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 18px; border-radius:18px; margin-bottom:18px; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); }
   .banner.error { color:var(--error-color,#bc302b); background:color-mix(in srgb,var(--error-color,#bc302b) 10%,var(--surface)); overflow-wrap:anywhere; }

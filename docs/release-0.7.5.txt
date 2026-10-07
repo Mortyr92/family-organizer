@@ -1,0 +1,13 @@
+Family Organizer 0.7.5
+
+Release notes
+- The floating bottom navigation bar now shows in the browser as well as on mobile.
+- The bar uses the centered pill-style layout with rounded ends and the Home Assistant button.
+- The existing day overview setting continues to control the bottom layout.
+
+Validation
+- Backend and frontend tests passed.
+- Frontend bundle rebuilt.
+
+Upgrade
+- Restart Home Assistant and hard-refresh the browser after updating.

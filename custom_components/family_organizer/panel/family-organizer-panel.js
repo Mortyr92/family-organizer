@@ -888,6 +888,14 @@ var We = o`
   .quick-add { position:sticky; top:10px; left:auto; width:100%; z-index:3; flex-shrink:0; border-radius:999px; padding:10px 17px; margin:10px 8px 14px; }
   .quick-add>span { font-size:24px; font-weight:400; line-height:1; }
   main { padding:0 32px 40px; outline:none; max-width:1400px; margin:auto; }
+  .app[data-bottom-nav=true] main { padding-bottom:132px; }
+  .floating-nav { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:8px; padding:10px; max-width:min(calc(100vw - 32px), 920px); overflow-x:auto; scrollbar-width:none; border:1px solid color-mix(in srgb,var(--line) 75%,transparent); border-radius:999px; background:color-mix(in srgb,var(--surface) 92%,transparent); box-shadow:0 18px 42px rgba(33,23,13,.18); backdrop-filter:blur(18px); -webkit-overflow-scrolling:touch; }
+  .floating-nav::-webkit-scrollbar { display:none; }
+  .floating-nav button { border-radius:999px; min-height:54px; padding:10px 14px; gap:4px; flex-direction:column; font-size:11px; line-height:1.05; white-space:nowrap; background:transparent; border-color:transparent; box-shadow:none; }
+  .floating-nav button>span:first-child { font-size:24px; line-height:1; }
+  .floating-nav button.active { color:var(--orange); background:var(--orange-soft); border-color:color-mix(in srgb,var(--orange) 18%,var(--line)); box-shadow:0 10px 20px rgba(200,90,35,.12); }
+  .floating-nav .ha-shell-menu { gap:5px; }
+  .floating-nav .ha-shell-menu>span:last-child { font-size:11px; line-height:1.05; }
   .mobile-nav { display:none; }
   .banner { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 18px; border-radius:18px; margin-bottom:18px; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); }
   .banner.error { color:var(--error-color,#bc302b); background:color-mix(in srgb,var(--error-color,#bc302b) 10%,var(--surface)); overflow-wrap:anywhere; }
@@ -2404,7 +2412,7 @@ var Ge = [
 		}), await this.action(() => this.mutate(o, c, s), a.id ? this.languageCode === "nl" ? "Wijzigingen opgeslagen" : "Changes saved" : this.languageCode === "nl" ? "Toegevoegd aan je gezinsorganizer" : "Added to your family organizer", !0));
 	}
 	render() {
-		let e = Q.find((e) => e.id === this.page), t = this.theme === "auto" ? this._hass?.themes?.darkMode ? "dark" : "auto" : this.theme, n = [
+		let e = Q.find((e) => e.id === this.page), t = this.theme === "auto" ? this._hass?.themes?.darkMode ? "dark" : "auto" : this.theme, n = this.settingsData.overview_position === "bottom", r = [
 			{
 				label: this.x("Plan"),
 				description: this.s("Calendar, daily planning and meals.", "Agenda, dagplanning en maaltijden."),
@@ -2433,13 +2441,13 @@ var Ge = [
 				]
 			}
 		];
-		return j`<div class="app" data-theme=${t}>
+		return j`<div class="app" data-theme=${t} data-bottom-nav=${n}>
       <a class="skip-link" href="#main" @click=${(e) => {
 			e.preventDefault(), this.renderRoot.querySelector("main").focus();
 		}}>${this.t("skip_content")}</a>
       <aside class="sidebar"><a class="brand" href="#fo/today" @click=${() => this.navigate("today")}><span class="brand-symbol">⌂</span><span>Family<br><strong>Planner</strong></span></a><p class="eyebrow">${this.x("Daily planning made calm")}</p>
         <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> ${this.t("quick_add")}</button>
-        ${n.map((e) => j`<div class="sidebar-family"><span class="eyebrow">${e.label}</span><nav aria-label=${e.label}>${e.pages.map((e) => {
+        ${r.map((e) => j`<div class="sidebar-family"><span class="eyebrow">${e.label}</span><nav aria-label=${e.label}>${e.pages.map((e) => {
 			let t = Q.find((t) => t.id === e);
 			return j`<button class=${this.page === t.id ? "active" : ""} aria-current=${this.page === t.id ? "page" : N} @click=${() => this.navigate(t.id)}><span class="nav-icon" aria-hidden="true">${t.icon}</span>${this.pageName(t.id, t.name)}</button>`;
 		})}</nav><p>${e.description}</p></div>`)}
@@ -2456,7 +2464,7 @@ var Ge = [
           ${this.loading ? j`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : this.data.people ? this.renderPage() : j`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>`}
         </main>
       </div>
-      <nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${Q.map((e) => j`<button class=${this.page === e.id ? "active" : ""} aria-current=${this.page === e.id ? "page" : N} @click=${() => this.navigate(e.id)}><span aria-hidden="true">${e.icon}</span>${this.pageName(e.id, e.name)}</button>`)}${this.haMenuButton(!0)}</nav>
+      ${n ? this.floatingNavigationBar() : j`<nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${Q.map((e) => j`<button class=${this.page === e.id ? "active" : ""} aria-current=${this.page === e.id ? "page" : N} @click=${() => this.navigate(e.id)}><span aria-hidden="true">${e.icon}</span>${this.pageName(e.id, e.name)}</button>`)}${this.haMenuButton(!0)}</nav>`}
       ${this.editor ? this.dialog() : N}
     </div>`;
 	}
@@ -2476,6 +2484,9 @@ var Ge = [
 			composed: !0,
 			detail: {}
 		}))}><span class="ha-menu-icon" aria-hidden="true"></span><span>${e ? this.t("ha_menu") : this.t("home_assistant")}</span></button>`;
+	}
+	floatingNavigationBar() {
+		return j`<nav class="floating-nav" aria-label=${this.x("Navigation")}>${Q.map((e) => j`<button class=${this.page === e.id ? "active" : ""} aria-current=${this.page === e.id ? "page" : N} @click=${() => this.navigate(e.id)}><span aria-hidden="true">${e.icon}</span><span>${this.pageName(e.id, e.name)}</span></button>`)}${this.haMenuButton()}</nav>`;
 	}
 	settingsPinGate() {
 		let e = this.people.filter((e) => ["parent", "parent_admin"].includes(e.role));
