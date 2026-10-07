@@ -142,7 +142,7 @@ def _validate_settings(values: dict) -> dict:
     result = {key: value for key, value in values.items() if key in SETTING_KEYS}
     enums = {
         "theme": {"auto", "light", "dark"},
-        "overview_position": {"left", "right"},
+        "overview_position": {"left", "right", "bottom"},
         "week_start": {"monday", "sunday"},
         "time_format": {"12", "24"},
         "default_calendar_view": {"list", "week", "month"},

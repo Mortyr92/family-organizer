@@ -1,0 +1,13 @@
+Family Organizer 0.7.4
+
+Release notes
+- The calendar day overview can now be shown at the bottom from the existing Settings dropdown.
+- Selecting Bottom hides the side agenda layout and stacks the overview under the calendar.
+- The separate navigation toggle was removed so the existing layout setting is the single control.
+
+Validation
+- Backend and frontend tests passed.
+- Frontend bundle rebuilt.
+
+Upgrade
+- Restart Home Assistant and hard-refresh the browser after updating.
