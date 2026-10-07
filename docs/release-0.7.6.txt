@@ -1,0 +1,7 @@
+Family Organizer 0.7.6
+
+- Removed Today from the bottom navigation bar.
+- Child family members no longer keep or receive a PIN code.
+- Reworked the calendar into a reusable header with family avatars and date navigation.
+- Added a filter/settings popup for agendas, categories, family members, and view options.
+- Calendar events now reflect category colors and icons in the list and calendar chips.

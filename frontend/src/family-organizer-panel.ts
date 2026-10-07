@@ -13,6 +13,13 @@ type Hass = {
 };
 type Editor = { kind: string; item: Item; resource?: string; collection?: string };
 type BirthdayRow = { person: Item; next: ReturnType<typeof nextBirthday> };
+function storedSet(key: string) {
+  try { return new Set<string>(JSON.parse(localStorage.getItem(key) || "[]")); }
+  catch { return new Set<string>(); }
+}
+function saveSet(key: string, value: Set<string>) {
+  localStorage.setItem(key, JSON.stringify([...value]));
+}
 const resources = ["people", "calendar", "groceries", "todos", "chores", "recipes", "journal", "contacts", "settings"];
 const capabilities = ["manage_people", "manage_calendar_all", "manage_calendar_own", "manage_groceries", "manage_todos", "manage_meal_plan", "manage_chores", "complete_own_chores", "complete_any_chore", "manage_recipes", "manage_journal", "manage_contacts", "manage_settings", "manage_calendar_sync"];
 const pages = [
@@ -143,6 +150,9 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private routes: Record<string, Record<string, string>> = {};
   @state() private theme = localStorage.getItem("family-organizer-theme") || "auto";
   @state() private error = "";
+  @state() private calendarOverlay: "date" | "filters" | "views" | null = null;
+  @state() private hiddenCalendarSources = storedSet("family-organizer-hidden-calendar-sources");
+  @state() private hiddenCalendarCategories = storedSet("family-organizer-hidden-calendar-categories");
   @state() private notice = "";
   @state() private pinPersonId = localStorage.getItem("family-organizer-person-id") || "";
   @state() private todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "";
@@ -450,8 +460,10 @@ export class FamilyOrganizerPanel extends LitElement {
     } else if (kind === "person") {
       resource = "people";
       const permissions: Item = {};
+      const role = text("role");
+      const allowPin = role === "parent" || role === "parent_admin";
       capabilities.forEach(cap => { const value = text(cap); if (value !== "default") permissions[cap] = value === "allow"; });
-      patch = { ...patch, name: text("name"), initials: text("name").split(/\s+/).map(x => x[0]).join("").slice(0, 2).toUpperCase(), color: text("color"), profile_picture: text("profile_picture") || null, user_id: text("user_id") || null, sync_picture: checked("sync_picture"), birthday: text("birthday") || null, role: text("role"), permissions, pin: text("pin"), clear_pin: checked("clear_pin"), shared: true };
+      patch = { ...patch, name: text("name"), initials: text("name").split(/\s+/).map(x => x[0]).join("").slice(0, 2).toUpperCase(), color: text("color"), profile_picture: text("profile_picture") || null, user_id: text("user_id") || null, sync_picture: checked("sync_picture"), birthday: text("birthday") || null, role, permissions, pin: allowPin ? text("pin") : "", clear_pin: allowPin ? checked("clear_pin") : true, shared: true };
     } else if (kind === "preferences") {
       const settings: Item = {};
       ["overview_position", "week_start", "time_format", "default_calendar_view", "calendar_list_mode", "default_grocery_list_id", "competition_default", "language", "theme"].forEach(key => settings[key] = text(key));
@@ -488,6 +500,7 @@ export class FamilyOrganizerPanel extends LitElement {
     const current = pages.find(p => p.id === this.page)!;
     const effective = this.theme === "auto" ? (this._hass?.themes?.darkMode ? "dark" : "auto") : this.theme;
     const bottomNavigation = this.settingsData.overview_position === "bottom";
+    const bottomNavPages = pages.filter(page => page.id !== "today");
     const navSections = [
       { label: this.x("Plan"), description: this.s("Calendar, daily planning and meals.", "Agenda, dagplanning en maaltijden."), pages: ["today", "calendar", "recipes"] },
       { label: this.x("Household"), description: this.s("Groceries, todos and chores.", "Boodschappen, taken en klussen."), pages: ["groceries", "todos", "chores"] },
@@ -507,7 +520,7 @@ export class FamilyOrganizerPanel extends LitElement {
           ${this.loading ? html`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : !this.data.people ? html`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>` : this.renderPage()}
         </main>
       </div>
-      ${bottomNavigation ? this.floatingNavigationBar() : html`<nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span>${this.pageName(page.id, page.name)}</button>`)}${this.haMenuButton(true)}</nav>`}
+      ${bottomNavigation ? this.floatingNavigationBar(bottomNavPages) : html`<nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span>${this.pageName(page.id, page.name)}</button>`)}${this.haMenuButton(true)}</nav>`}
       ${this.editor ? this.dialog() : nothing}
     </div>`;
   }
@@ -526,8 +539,8 @@ export class FamilyOrganizerPanel extends LitElement {
   private haMenuButton(mobile = false) {
     return html`<button type="button" class=${`ha-shell-menu ${mobile ? "" : "sidebar-ha-menu"}`} aria-label=${this.t("open_ha_navigation")} @click=${() => this.dispatchEvent(new CustomEvent("hass-toggle-menu", { bubbles: true, composed: true, detail: {} }))}><span class="ha-menu-icon" aria-hidden="true"></span><span>${mobile ? this.t("ha_menu") : this.t("home_assistant")}</span></button>`;
   }
-  private floatingNavigationBar() {
-    return html`<nav class="floating-nav" aria-label=${this.x("Navigation")}>${pages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span><span>${this.pageName(page.id, page.name)}</span></button>`)}${this.haMenuButton()}</nav>`;
+  private floatingNavigationBar(navPages = pages) {
+    return html`<nav class="floating-nav" aria-label=${this.x("Navigation")}>${navPages.map(page => html`<button class=${this.page === page.id ? "active" : ""} aria-current=${this.page === page.id ? "page" : nothing} @click=${() => this.navigate(page.id)}><span aria-hidden="true">${page.icon}</span><span>${this.pageName(page.id, page.name)}</span></button>`)}${this.haMenuButton()}</nav>`;
   }
   private settingsPinGate() {
     const admins = this.people.filter((p: Item) => ["parent", "parent_admin"].includes(p.role));
@@ -548,10 +561,24 @@ export class FamilyOrganizerPanel extends LitElement {
   }
   private empty(title: string, description: string, button?: TemplateResult | typeof nothing) { return html`<div class="empty"><span class="empty-icon" aria-hidden="true">✧</span><h3>${this.x(title)}</h3><p>${this.x(description)}</p>${button || nothing}</div>`; }
   private addButton(label: string, kind: string, enabled: boolean, item: Item = {}) { return enabled ? html`<button class="primary" @click=${() => this.openEditor(kind, item)}>+ ${this.x(label)}</button>` : nothing; }
-  private filters() {
-    const toggle = (id: string) => { const next = new Set(this.personFilter); next.has(id) ? next.delete(id) : next.add(id); this.personFilter = next; };
-    return html`<div class="person-strip" role="group" aria-label=${this.s("Filter calendar by family member", "Filter agenda op familielid")}><button class=${!this.personFilter.size ? "person-pick everyone active" : "person-pick everyone"} aria-pressed=${!this.personFilter.size} @click=${() => this.personFilter = new Set()}><span class="avatar fallback" aria-hidden="true">⌂</span><span>${this.s("Everyone", "Iedereen")}</span></button>${this.people.map((p: Item) => html`<button class=${this.personFilter.has(p.id) ? "person-pick active" : "person-pick"} style=${`--person-color:${this.color(p.color)}`} aria-pressed=${this.personFilter.has(p.id)} @click=${() => toggle(p.id)}>${this.avatar(p.id)}<span>${p.name}</span></button>`)}</div>`;
+  private calendarCategories() {
+    return [
+      { id: "work", label: this.s("Work", "Werk"), icon: "💼", color: "#f59e0b" },
+      { id: "school", label: this.s("School", "School"), icon: "🎒", color: "#3b82f6" },
+      { id: "sport", label: this.s("Sport", "Sport"), icon: "🏋", color: "#10b981" },
+      { id: "family", label: this.s("Family", "Gezin"), icon: "👪", color: "#ec4899" },
+      { id: "home", label: this.s("Home", "Thuis"), icon: "🏠", color: "#8b5cf6" },
+      { id: "other", label: this.s("Other", "Overig"), icon: "🗒", color: "#64748b" },
+    ];
   }
+  private calendarCategory(category?: string) { return this.calendarCategories().find((entry) => entry.id === (category || "other")) || this.calendarCategories().at(-1)!; }
+  private calendarSourceSource(source?: Item) { return source?.source_type === "ics" ? "ics" : source?.source_type || "calendar"; }
+  private toggleCalendarSource(id: string) { const next = new Set(this.hiddenCalendarSources); next.has(id) ? next.delete(id) : next.add(id); this.hiddenCalendarSources = next; saveSet("family-organizer-hidden-calendar-sources", next); }
+  private toggleCalendarCategory(id: string) { const next = new Set(this.hiddenCalendarCategories); next.has(id) ? next.delete(id) : next.add(id); this.hiddenCalendarCategories = next; saveSet("family-organizer-hidden-calendar-categories", next); }
+  private togglePersonFilter(id: string) { const next = new Set(this.personFilter); next.has(id) ? next.delete(id) : next.add(id); this.personFilter = next; }
+  private openDatePicker() { this.calendarOverlay = this.calendarOverlay === "date" ? null : "date"; }
+  private openCalendarFilters() { this.calendarOverlay = this.calendarOverlay === "filters" ? null : "filters"; }
+  private openCalendarViews() { this.calendarOverlay = this.calendarOverlay === "views" ? null : "views"; }
   private showCalendarDayView(settings: Item = this.settingsData) { return settings.show_calendar_day_view !== false; }
   private showCalendarWeekView(settings: Item = this.settingsData) { return settings.show_calendar_week_view !== false; }
   private showCalendarExport(settings: Item = this.settingsData) { return settings.show_calendar_export !== false; }
@@ -565,20 +592,43 @@ export class FamilyOrganizerPanel extends LitElement {
     const allowed = new Set(this.availableCalendarViews(settings).map(([id]) => id));
     return allowed.has(view) ? view : "list";
   }
+  private activeCalendarSources() { return (this.data.calendar.sources || []).filter((source: Item) => !this.hiddenCalendarSources.has(source.id)); }
+  private activeCalendarCategories() { return this.calendarCategories().filter((category) => !this.hiddenCalendarCategories.has(category.id)); }
+  private filteredCalendarEvents(events: Item[]) {
+    return events.filter((event: Item) => {
+      const source = this.data.calendar.sources?.find((entry: Item) => entry.id === event.source_id);
+      const category = this.calendarCategory(event.category);
+      return (!this.personFilter.size || (event.person_ids || []).some((id: string) => this.personFilter.has(id))) && !this.hiddenCalendarSources.has(source?.id || "") && !this.hiddenCalendarCategories.has(category.id);
+    });
+  }
+  private calendarFilterSummary() {
+    const chips: string[] = [];
+    for (const id of this.hiddenCalendarSources) chips.push(`${this.s("Hidden", "Verborgen")} ${this.data.calendar.sources?.find((source: Item) => source.id === id)?.name || id}`);
+    for (const id of this.hiddenCalendarCategories) chips.push(`${this.s("Hidden", "Verborgen")} ${this.calendarCategory(id).label}`);
+    if (this.personFilter.size) chips.push(`${this.s("Members", "Leden")} ${[...this.personFilter].map((id) => this.person(id)?.name || id).join(", ")}`);
+    return chips;
+  }
+  private calendarHeader(calendarView: string, title: string) {
+    const day = this.date(this.selectedDay, { weekday: "long", month: "short", day: "numeric" });
+    const selectedPerson = this.personFilter.size === 1 ? this.person([...this.personFilter][0]) : undefined;
+    return html`<div class="calendar-header"><button class="calendar-header-day" @click=${() => this.openDatePicker()}><span class="calendar-header-kicker">${this.s("Day", "Dag")}</span><strong>${day}</strong><small>${title}</small></button><div class="calendar-header-people">${this.people.map((person: Item) => html`<button class=${this.personFilter.has(person.id) && selectedPerson ? "calendar-person active" : "calendar-person"} style=${`--person-color:${this.color(person.color)}`} @click=${() => { this.personFilter = new Set([person.id]); this.calendarView = "day"; }} title=${person.name}>${this.avatar(person.id)}</button>`)}</div><button class="calendar-header-filter" @click=${() => this.openCalendarFilters()} aria-label=${this.s("Open filters", "Open filters")}><span aria-hidden="true">⚙</span><span>${this.s("Filters", "Filters")}</span></button>${calendarView !== "month" ? html`<div class="calendar-header-nav"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, calendarView, -1)}>‹</button><button @click=${() => this.selectedDay = iso(new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, calendarView, 1)}>›</button></div>` : nothing}</div>`;
+  }
+  private calendarFilterPanel(calendarView: string) {
+    const summary = this.calendarFilterSummary();
+    const togglePerson = (id: string) => this.togglePersonFilter(id);
+    return this.calendarOverlay ? html`<div class="calendar-popup-backdrop" @click=${() => this.calendarOverlay = null}><section class="calendar-popup" role="dialog" aria-modal="true" @click=${(e: Event) => e.stopPropagation()}><header class="calendar-popup-header"><div><span class="eyebrow">${this.s("Applied filters", "Toegepaste filters")}</span><p>${summary.length ? summary.join(" · ") : this.s("No filters applied", "Geen filters toegepast")}</p></div><button class="icon-button" @click=${() => this.calendarOverlay = null}>×</button></header><div class="segmented popup-tabs" role="tablist"><button class=${this.calendarOverlay === "filters" ? "active" : ""} aria-selected=${this.calendarOverlay === "filters"} @click=${() => this.openCalendarFilters()}>${this.s("Filters", "Filters")}</button><button class=${this.calendarOverlay === "views" ? "active" : ""} aria-selected=${this.calendarOverlay === "views"} @click=${() => this.openCalendarViews()}>${this.s("View options", "Weergave opties")}</button><button class=${this.calendarOverlay === "date" ? "active" : ""} aria-selected=${this.calendarOverlay === "date"} @click=${() => this.openDatePicker()}>${this.s("Date", "Datum")}</button></div>${this.calendarOverlay === "date" ? html`<div class="popup-section"><label>${this.s("Go to date", "Ga naar datum")}<input type="date" .value=${this.selectedDay} @change=${(e: Event) => { const value = (e.target as HTMLInputElement).value; if (value) this.selectedDay = value; }}></label></div>` : this.calendarOverlay === "views" ? html`<div class="popup-section"><div class="view-option-list">${this.availableCalendarViews().map(([view, label]) => html`<button class=${calendarView === view ? "active" : ""} aria-pressed=${calendarView === view} @click=${() => { this.calendarView = String(view); this.calendarOverlay = null; }}>${label}</button>`)}</div></div>` : html`<div class="popup-section"><label class="full-search">${this.s("Search events", "Zoek afspraken")}<input class="calendar-search" type="search" placeholder=${this.s("Search events…", "Zoek afspraken…")} .value=${this.calendarSearch} @input=${(e: Event) => this.calendarSearch = (e.target as HTMLInputElement).value}></label><div class="popup-columns"><section><h4>${this.s("Agendas", "Agenda's")}</h4>${(this.data.calendar.sources || []).map((source: Item) => html`<button class=${this.hiddenCalendarSources.has(source.id) ? "toggle-row hidden" : "toggle-row"} @click=${() => this.toggleCalendarSource(source.id)}><span><strong>${source.name}</strong><small>${this.calendarSourceSource(source)}</small></span><span aria-hidden="true">${this.hiddenCalendarSources.has(source.id) ? this.s("Hidden", "Verborgen") : this.s("Shown", "Zichtbaar")}</span></button>`)}<h4>${this.s("Categories", "Categorieën")}</h4>${this.activeCalendarCategories().map((category) => html`<button class=${this.hiddenCalendarCategories.has(category.id) ? "toggle-row hidden" : "toggle-row"} @click=${() => this.toggleCalendarCategory(category.id)} style=${`--event-color:${category.color}`}><span><strong><span class="category-emoji" aria-hidden="true">${category.icon}</span>${category.label}</strong><small>${this.s("Use this color", "Gebruik deze kleur")}</small></span><span aria-hidden="true">${this.hiddenCalendarCategories.has(category.id) ? this.s("Hidden", "Verborgen") : this.s("Shown", "Zichtbaar")}</span></button>`)}</section><section><h4>${this.s("Family members", "Gezinsleden")}</h4><button class=${!this.personFilter.size ? "toggle-row active" : "toggle-row"} @click=${() => this.personFilter = new Set()}><span><strong>${this.s("Everyone", "Iedereen")}</strong><small>${this.s("Show all appointments", "Toon alle afspraken")}</small></span><span aria-hidden="true">✓</span></button>${this.people.map((person: Item) => html`<button class=${this.personFilter.has(person.id) ? "toggle-row active" : "toggle-row"} @click=${() => togglePerson(person.id)}><span><strong>${person.name}</strong><small>${this.personFilter.has(person.id) ? this.s("Visible", "Zichtbaar") : this.s("Hidden", "Verborgen")}</small></span>${this.avatar(person.id)}</button>`)}</section></div></div>`}</section></div>` : nothing;
+  }
   private calendar() {
     const calendarView = this.normalizedCalendarView(this.calendarView);
     const dates = calendarDates(this.selectedDay, calendarView, this.firstDay);
     const all = occurrences(this.data.calendar.items || [], dates[0], dates.at(-1)!);
     const query = this.calendarSearch.trim().toLowerCase();
-    const events = all.filter(e => (!this.personFilter.size || (e.person_ids || []).some((id: string) => this.personFilter.has(id))) && (!query || [e.title, e.location, e.description].some(v => String(v || "").toLowerCase().includes(query))));
+    const events = this.filteredCalendarEvents(all).filter(e => !query || [e.title, e.location, e.description].some(v => String(v || "").toLowerCase().includes(query)));
     const selected = eventsOnDay(events, this.selectedDay);
     const unsupported = (this.data.calendar.items || []).filter((event: Item) => unsupportedRecurrence(event.recurrence) && (!this.personFilter.size || (event.person_ids || []).some((id: string) => this.personFilter.has(id))));
     const collapsed = this.localOverview ?? this.settingsData.overview_collapsed;
     const title = calendarView === "month" ? this.date(this.selectedDay, { month: "long", year: "numeric" }) : calendarView === "day" ? this.date(this.selectedDay) : `${this.date(dates[0], { month: "short", day: "numeric" })} – ${this.date(dates.at(-1)!, { month: "short", day: "numeric", year: "numeric" })}`;
-    return html`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}><div class="section-toolbar"><div class="date-navigation"><button class="icon-button" aria-label=${this.s("Previous period", "Vorige periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, calendarView, -1)}>‹</button><button @click=${() => this.selectedDay = iso(new Date())}>${this.s("Today", "Vandaag")}</button><button class="icon-button" aria-label=${this.s("Next period", "Volgende periode")} @click=${() => this.selectedDay = moveDate(this.selectedDay, calendarView, 1)}>›</button><h2>${title}</h2></div><div class="toolbar-actions"><div class="segmented" role="group" aria-label=${this.s("Calendar view", "Agendaweergave")}>${this.availableCalendarViews().map(([view, label]) => html`<button class=${calendarView === view ? "active" : ""} aria-pressed=${calendarView === view} @click=${() => this.calendarView = String(view)}>${label}</button>`)}</div><label class="sr-only" for="calendar-search">${this.s("Search events", "Zoek afspraken")}</label><input id="calendar-search" class="calendar-search" type="search" placeholder=${this.s("Search events…", "Zoek afspraken…")} .value=${this.calendarSearch} @input=${(e: Event) => this.calendarSearch = (e.target as HTMLInputElement).value}><label class="sr-only" for="calendar-date">${this.s("Go to date", "Ga naar datum")}</label><input id="calendar-date" type="date" .value=${this.selectedDay} @change=${(e: Event) => { const value = (e.target as HTMLInputElement).value; if (value) this.selectedDay = value; }}>${this.showCalendarExport() ? html`<button type="button" title=${this.s("Download the family calendar as an .ics file for Google, Apple or Outlook", "Download de gezinsagenda als .ics-bestand voor Google, Apple of Outlook")} @click=${() => void this.exportCalendar()}>${this.s("Export .ics", "Exporteer .ics")}</button>` : nothing}</div></div>
-      ${this.filters()}
-      <div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${collapsed ? "overview-closed" : ""}`}><div class="calendar-surface">
-        ${this.calendarView === "month" ? html`<div class="weekday-row">${dates.slice(0, 7).map(day => html`<span>${this.date(day, { weekday: "short" })}</span>`)}</div><div class="month-grid">${dates.map(day => {
+    return html`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}>${this.calendarHeader(calendarView, title)}${this.calendarFilterPanel(calendarView)}<div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${collapsed ? "overview-closed" : ""}`}><div class="calendar-surface">${this.calendarView === "month" ? html`<div class="weekday-row">${dates.slice(0, 7).map(day => html`<span>${this.date(day, { weekday: "short" })}</span>`)}</div><div class="month-grid">${dates.map(day => {
           const items = eventsOnDay(events, day);
           return html`<div class=${`month-cell ${day.slice(0, 7) !== this.selectedDay.slice(0, 7) ? "outside" : ""} ${day === this.selectedDay ? "selected" : ""}`}>
             <div class="cell-heading"><button class=${day === iso(new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(day)}`} aria-pressed=${day === this.selectedDay} @click=${() => this.selectedDay = day}>${dayDate(day).getDate()}</button>${this.canEvent() ? html`<button class="date-add" aria-label=${`${this.s("Add event on", "Afspraak toevoegen op")} ${this.date(day)}`} @click=${() => { this.selectedDay = day; this.openEditor("event", { day }); }}>+</button>` : nothing}</div>
@@ -609,16 +659,16 @@ export class FamilyOrganizerPanel extends LitElement {
       </section>`)}</div>`;
   }
   private listEvent(event: Item) {
-    const icon = event.category === "meal" ? "🍽" : event.category === "sport" ? "⚽" : "🗒";
+    const category = this.calendarCategory(event.category);
     return html`<button class="list-event" style=${`--event-color:${this.eventColor(event)}`} @click=${() => this.openEditor("event-detail", event)}>
       <span class="event-time">${event.all_day ? this.s("All day", "Hele dag") : `${this.time(event.occurrence_start)} - ${this.time(event.occurrence_end)}`}</span>
-      <span class="event-type" aria-hidden="true">${icon}</span>
+      <span class="event-type" aria-hidden="true">${html`<span class="event-category-icon">${category.icon}</span>`}</span>
       <span class="event-copy"><strong>${event.title}</strong>${event.location ? html`<small class="muted">${event.location}</small>` : nothing}</span>
       <span class="event-people">${(event.person_ids || []).map((id: string) => this.avatar(id))}</span>
     </button>`;
   }
-  private eventColor(event: Item) { return this.color(this.person(event.person_ids?.[0])?.color || (this.data.calendar.sources || []).find((s: Item) => s.id === event.source_id)?.color); }
-  private eventChip(event: Item, style = "") { return html`<button class=${`event-chip ${event.all_day ? "all-day-event" : ""}`} style=${`--event-color:${this.eventColor(event)};${style}`} @click=${() => this.openEditor("event-detail", event)} title=${`${event.all_day ? this.s("All day", "Hele dag") : this.time(event.occurrence_start)} · ${event.title}`}><span class="event-dot" aria-hidden="true"></span><span>${event.all_day ? nothing : html`<time class="event-start" datetime=${event.occurrence_start}>${this.time(event.occurrence_start)}</time> `}<strong>${event.title}</strong></span>${event.recurrence ? html`<span aria-label=${this.s("Repeating event", "Herhalende afspraak")}>↻</span>` : nothing}</button>`; }
+  private eventColor(event: Item) { return this.calendarCategory(event.category).color || this.color(this.person(event.person_ids?.[0])?.color || (this.data.calendar.sources || []).find((s: Item) => s.id === event.source_id)?.color); }
+  private eventChip(event: Item, style = "") { const category = this.calendarCategory(event.category); return html`<button class=${`event-chip ${event.all_day ? "all-day-event" : ""}`} style=${`--event-color:${this.eventColor(event)};${style}`} @click=${() => this.openEditor("event-detail", event)} title=${`${event.all_day ? this.s("All day", "Hele dag") : this.time(event.occurrence_start)} · ${event.title}`}><span class="event-dot" aria-hidden="true"></span><span class="event-chip-icon" aria-hidden="true">${category.icon}</span><span>${event.all_day ? nothing : html`<time class="event-start" datetime=${event.occurrence_start}>${this.time(event.occurrence_start)}</time> `}<strong>${event.title}</strong></span>${event.recurrence ? html`<span aria-label=${this.s("Repeating event", "Herhalende afspraak")}>↻</span>` : nothing}</button>`; }
   private timeGrid(dates: string[], events: Item[]) {
     const hours = Array.from({ length: 24 }, (_, i) => i), now = new Date();
     return html`<div class="time-scroll"><div class="time-calendar" style=${`--days:${dates.length}`}><div class="time-header"><span></span>${dates.map(day => html`<button class=${day === this.selectedDay ? "active" : ""} @click=${() => this.selectedDay = day}><small>${this.date(day, { weekday: "short" })}</small><strong class=${day === iso(now) ? "today" : ""}>${dayDate(day).getDate()}</strong></button>`)}</div><div class="all-day-row"><span>${this.x("All day")}</span>
@@ -859,8 +909,8 @@ export class FamilyOrganizerPanel extends LitElement {
     if (kind === "person") return html`${this.haUserPicker(item)}${this.field("Name", "name", item.name, "text", true, { autofocus: true })}${this.field("Family color", "color", this.color(item.color), "color")}${this.field("Home Assistant user ID", "user_id", item.user_id || item.ha_user_id)}
       ${this.field("Profile picture URL", "profile_picture", item.profile_picture || item.avatar_url, "url")}${this.field("Birthday", "birthday", item.birthday, "date")}
       ${this.select("Role preset", "role", item.role || "child", [["parent", "Parent (all rights)"], ["child", "Child (limited rights)"]])}
-      ${this.field("PIN code (4-8 digits)", "pin", "", "password", !item.id, { inputmode: "numeric", minlength: 4, maxlength: 8, pattern: "[0-9]*", placeholder: item.has_pin ? "Enter new PIN to change" : "Set a PIN" })}
-      ${item.id && item.has_pin ? html`<label class="check full"><input name="clear_pin" type="checkbox">${this.x("Remove existing PIN for this family member")}</label>` : nothing}
+      ${item.role === "parent" ? html`${this.field("PIN code (4-8 digits)", "pin", "", "password", !item.id, { inputmode: "numeric", minlength: 4, maxlength: 8, pattern: "[0-9]*", placeholder: item.has_pin ? "Enter new PIN to change" : "Set a PIN" })}
+      ${item.id && item.has_pin ? html`<label class="check full"><input name="clear_pin" type="checkbox">${this.x("Remove existing PIN for this family member")}</label>` : nothing}` : nothing}
       <p class="muted full">${this.x("The user ID links this person’s Home Assistant account. Permission overrides take priority over their role preset.")}</p>
       <fieldset class="full permissions"><legend>${this.x("Permission overrides")}</legend>${capabilities.map(capability => this.select(this.x(capability.replaceAll("_", " ")), capability, typeof item.permissions?.[capability] === "boolean" ? item.permissions[capability] ? "allow" : "deny" : "default", [["default", "Use role preset"], ["allow", "Allow"], ["deny", "Deny"]]))}</fieldset>`;
     if (kind === "preferences") return html`${this.select("Appearance default", "theme", item.theme || "auto", [["auto", "Follow Home Assistant"], ["light", "Light"], ["dark", "Dark"]])}

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import test from "node:test";
 import assert from "node:assert/strict";
 import { calendarDates, calendarPayload, choreDue, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
@@ -82,7 +83,7 @@ test("overnight and multi-day all-day events remain visible in week and day rang
   ];
   for (const view of ["week", "day"]) {
     const dates = calendarDates("2026-06-02", view);
-    const events = occurrences(source, dates[0], dates.at(-1));
+    const events = occurrences(source, dates[0], dates[dates.length - 1]);
     assert.deepEqual(eventsOnDay(events, "2026-06-02").map(event => event.id), ["night", "holiday"]);
   }
   const events = occurrences(source, "2026-06-01", "2026-06-07");
@@ -90,8 +91,12 @@ test("overnight and multi-day all-day events remain visible in week and day rang
   assert.deepEqual(eventsOnDay(events, "2026-06-04"), []);
 });
 test("overlapping event chains use stable lanes and nonoverlapping groups reset", () => {
-  const make = (id, start, end) => ({ id, occurrence_start: `2026-06-01T${start}:00`, occurrence_end: `2026-06-01T${end}:00` });
-  const layout = eventLayout([make("a", "09:00", "10:00"), make("b", "09:30", "10:30"), make("c", "10:00", "11:00"), make("d", "12:00", "13:00")]);
+  const layout = eventLayout([
+    { id: "a", occurrence_start: "2026-06-01T09:00:00", occurrence_end: "2026-06-01T10:00:00" },
+    { id: "b", occurrence_start: "2026-06-01T09:30:00", occurrence_end: "2026-06-01T10:30:00" },
+    { id: "c", occurrence_start: "2026-06-01T10:00:00", occurrence_end: "2026-06-01T11:00:00" },
+    { id: "d", occurrence_start: "2026-06-01T12:00:00", occurrence_end: "2026-06-01T13:00:00" },
+  ]);
   assert.deepEqual(layout.map(({ lane, columns }) => [lane, columns]), [[0, 2], [1, 2], [0, 2], [0, 1]]);
 });
 test("chore schedules use full weekdays and safe custom intervals", () => {
@@ -148,14 +153,22 @@ test("recipe routes safely decode valid IDs and handle malformed escapes", () =>
   assert.deepEqual(organizerRoute("#fo/calendar"), { page: "calendar", recipeId: "", malformed: false });
   assert.equal(organizerRoute("#unrelated-home-assistant-route"), undefined);
   assert.deepEqual(organizerRoute("#fo/today"), { page: "today", recipeId: "", malformed: false });
-  assert.equal(organizerRoute("#fo/journal").page, "journal");
-  assert.equal(organizerRoute("#fo/birthdays").page, "birthdays");
-  assert.equal(organizerRoute("#fo/todos").page, "todos");
+  const journal = organizerRoute("#fo/journal");
+  const birthdays = organizerRoute("#fo/birthdays");
+  const todos = organizerRoute("#fo/todos");
+  assert.ok(journal);
+  assert.ok(birthdays);
+  assert.ok(todos);
+  assert.equal(journal.page, "journal");
+  assert.equal(birthdays.page, "birthdays");
+  assert.equal(todos.page, "todos");
 });
 test("nextBirthday counts down and computes the age being turned", () => {
   assert.deepEqual(nextBirthday("2015-03-10", "2026-03-01"), { date: "2026-03-10", days: 9, age: 11 });
   assert.deepEqual(nextBirthday("03-10", "2026-03-11"), { date: "2027-03-10", days: 364, age: undefined });
-  assert.equal(nextBirthday("2015-03-10", "2026-03-10").days, 0);
+  const birthday = nextBirthday("2015-03-10", "2026-03-10");
+  assert.ok(birthday);
+  assert.equal(birthday.days, 0);
   assert.equal(nextBirthday("", "2026-03-10"), undefined);
   assert.equal(nextBirthday("not a date", "2026-03-10"), undefined);
 });

@@ -882,6 +882,8 @@ var We = o`
   .ha-menu-icon { display:inline-block; position:relative; width:20px; height:16px; border-top:2px solid currentColor; border-bottom:2px solid currentColor; }
   .ha-menu-icon:after { content:""; position:absolute; left:0; right:0; top:5px; height:2px; background:currentColor; }
   .workspace { width:calc(100% - 280px); min-width:0; overflow-x:hidden; position:relative; z-index:1; }
+  .app[data-bottom-nav=true] .sidebar { display:none; }
+  .app[data-bottom-nav=true] .workspace { width:100%; }
   .topbar { padding:28px 32px 18px; display:flex; align-items:center; justify-content:space-between; gap:20px; max-width:1400px; margin:0 auto; }
   .topbar h1 { margin-top:4px; }
   .topbar p { color:var(--muted); margin-bottom:0; font-size:13px; }
@@ -889,7 +891,7 @@ var We = o`
   .quick-add>span { font-size:24px; font-weight:400; line-height:1; }
   main { padding:0 32px 40px; outline:none; max-width:1400px; margin:auto; }
   .app[data-bottom-nav=true] main { padding-bottom:132px; }
-  .floating-nav { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:8px; padding:10px; max-width:min(calc(100vw - 32px), 920px); overflow-x:auto; scrollbar-width:none; border:1px solid color-mix(in srgb,var(--line) 75%,transparent); border-radius:999px; background:color-mix(in srgb,var(--surface) 92%,transparent); box-shadow:0 18px 42px rgba(33,23,13,.18); backdrop-filter:blur(18px); -webkit-overflow-scrolling:touch; }
+  .floating-nav { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; width:fit-content; max-width:min(calc(100vw - 32px), 920px); overflow-x:auto; scrollbar-width:none; border:1px solid color-mix(in srgb,var(--line) 75%,transparent); border-radius:999px; background:color-mix(in srgb,var(--surface) 92%,transparent); box-shadow:0 18px 42px rgba(33,23,13,.18); backdrop-filter:blur(18px); -webkit-overflow-scrolling:touch; }
   .floating-nav::-webkit-scrollbar { display:none; }
   .floating-nav button { border-radius:999px; min-height:54px; padding:10px 14px; gap:4px; flex-direction:column; font-size:11px; line-height:1.05; white-space:nowrap; background:transparent; border-color:transparent; box-shadow:none; }
   .floating-nav button>span:first-child { font-size:24px; line-height:1; }
