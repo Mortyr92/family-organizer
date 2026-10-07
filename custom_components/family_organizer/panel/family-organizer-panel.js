@@ -2734,9 +2734,9 @@ var qe = [
         <button class="list-hero-date" @click=${() => this.openDatePicker()} aria-label=${this.s("Select a date", "Kies een datum")}>
           <p>${this.date(this.selectedDay, { weekday: "long" })}</p><strong>${this.date(this.selectedDay, { day: "numeric" })}</strong><span>${this.date(this.selectedDay, { month: "long" })}</span>
         </button>
-        @click=${() => {
-			this.selectTodayPerson(person.id), this.page = "today", this.navigate("today");
-		}} title=${person.name}>
+        <div class="list-hero-people">${this.people.map((e) => M`<button class="list-hero-person" style=${`--person-color:${this.color(e.color)}`} @click=${() => {
+			this.selectTodayPerson(e.id), this.page = "today", this.navigate("today");
+		}} title=${e.name}>${this.avatar(e.id)}</button>`)}</div>
         <button class="list-hero-filter" @click=${() => this.openCalendarFilters()} aria-label=${this.s("Open filters", "Open filters")}><span aria-hidden="true">⚙</span><span>${this.s("Filters", "Filters")}</span></button>
         <div class="list-hero-weather">${i.temperature ? M`<strong>${i.temperature}</strong>` : P}<span>${i.condition}</span>${i.detail ? M`<small>${i.detail}</small>` : P}</div>
       </header>`;
