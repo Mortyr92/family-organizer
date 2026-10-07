@@ -1,0 +1,13 @@
+Family Organizer 0.7.2
+
+Release notes
+- Opening the organizer no longer requires a family login: every authenticated Home Assistant user can view the panel.
+- A parent PIN is now only needed to enter the Settings menu, and that PIN also elevates the connection server-side.
+- Parents now have the same full administrator rights as family administrators; only children stay restricted.
+
+Validation
+- Python test suite: 38 passed.
+- Frontend test suite: 20 passed, panel bundle rebuilt.
+
+Upgrade
+- Restart Home Assistant and hard-refresh the browser after updating.
