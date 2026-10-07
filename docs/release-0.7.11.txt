@@ -1,0 +1,7 @@
+Family Organizer 0.7.11
+
+Fixes
+- The calendar page no longer shows the page header (date, "Agenda" title and subtitle) at the top. The calendar now fills the whole screen.
+
+Upgrade notes
+- After updating, restart Home Assistant and hard-refresh your browser (Ctrl+F5) so the new panel URL (/family_organizer/0.7.11/) is loaded.

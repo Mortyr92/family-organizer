@@ -514,7 +514,7 @@ export class FamilyOrganizerPanel extends LitElement {
         ${this.haMenuButton()}
         <small class="sidebar-note">${this.t("made_together")}</small>
       </aside>
-      <div class="workspace"><header class="topbar"><div><span class="eyebrow">${this.date(iso(new Date()), { weekday: "long", month: "short", day: "numeric" })}</span><h1>${this.pageName(current.id, current.name)}</h1><p>${this.pageSubtitle(current.id, current.subtitle)}</p></div></header>
+      <div class="workspace">${this.page === "calendar" ? nothing : html`<header class="topbar"><div><span class="eyebrow">${this.date(iso(new Date()), { weekday: "long", month: "short", day: "numeric" })}</span><h1>${this.pageName(current.id, current.name)}</h1><p>${this.pageSubtitle(current.id, current.subtitle)}</p></div></header>`}
         <main id="main" tabindex="-1" aria-busy=${this.loading || this.saving}>
           ${this.error && !this.editor ? html`<div class="banner error" role="alert"><span>${this.error}</span><button @click=${() => void this.load()}>${this.t("retry")}</button></div>` : nothing}
           ${this.loading ? html`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : !this.data.people ? html`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>` : this.renderPage()}

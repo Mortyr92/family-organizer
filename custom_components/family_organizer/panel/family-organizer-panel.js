@@ -2494,11 +2494,11 @@ var qe = [
         ${this.haMenuButton()}
         <small class="sidebar-note">${this.t("made_together")}</small>
       </aside>
-      <div class="workspace"><header class="topbar"><div><span class="eyebrow">${this.date(H(/* @__PURE__ */ new Date()), {
+      <div class="workspace">${this.page === "calendar" ? N : j`<header class="topbar"><div><span class="eyebrow">${this.date(H(/* @__PURE__ */ new Date()), {
 			weekday: "long",
 			month: "short",
 			day: "numeric"
-		})}</span><h1>${this.pageName(e.id, e.name)}</h1><p>${this.pageSubtitle(e.id, e.subtitle)}</p></div></header>
+		})}</span><h1>${this.pageName(e.id, e.name)}</h1><p>${this.pageSubtitle(e.id, e.subtitle)}</p></div></header>`}
         <main id="main" tabindex="-1" aria-busy=${this.loading || this.saving}>
           ${this.error && !this.editor ? j`<div class="banner error" role="alert"><span>${this.error}</span><button @click=${() => void this.load()}>${this.t("retry")}</button></div>` : N}
           ${this.loading ? j`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : this.data.people ? this.renderPage() : j`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>`}
