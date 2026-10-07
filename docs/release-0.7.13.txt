@@ -1,0 +1,1 @@
+Family member avatars in the agenda header now open that person's day screen instead of filtering.
