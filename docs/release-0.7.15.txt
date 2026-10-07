@@ -1,0 +1,1 @@
+Day and week views now use a Google Calendar style time grid: 60px hour rows, sticky time gutter, solid colored event blocks, auto scroll to the morning.

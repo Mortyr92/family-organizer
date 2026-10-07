@@ -184,6 +184,10 @@ export class FamilyOrganizerPanel extends LitElement {
     this.readRoute();
     if (this._hass) void this.load();
   }
+  protected updated() {
+    const scroll = this.renderRoot.querySelector(".time-scroll") as HTMLElement | null;
+    if (scroll && !scroll.dataset.scrolled) { scroll.dataset.scrolled = "1"; scroll.scrollTop = 7 * 60; }
+  }
   disconnectedCallback() {
     this.unsubscribe?.();
     this.unsubscribe = undefined;
@@ -684,12 +688,12 @@ export class FamilyOrganizerPanel extends LitElement {
   private eventColor(event: Item) { return this.calendarCategory(event.category).color || this.color(this.person(event.person_ids?.[0])?.color || (this.data.calendar.sources || []).find((s: Item) => s.id === event.source_id)?.color); }
   private eventChip(event: Item, style = "") { const category = this.calendarCategory(event.category); return html`<button class=${`event-chip ${event.all_day ? "all-day-event" : ""}`} style=${`--event-color:${this.eventColor(event)};${style}`} @click=${() => this.openEditor("event-detail", event)} title=${`${event.all_day ? this.s("All day", "Hele dag") : this.time(event.occurrence_start)} · ${event.title}`}><span class="event-dot" aria-hidden="true"></span><span class="event-chip-icon" aria-hidden="true">${category.icon}</span><span>${event.all_day ? nothing : html`<time class="event-start" datetime=${event.occurrence_start}>${this.time(event.occurrence_start)}</time> `}<strong>${event.title}</strong></span>${event.recurrence ? html`<span aria-label=${this.s("Repeating event", "Herhalende afspraak")}>↻</span>` : nothing}</button>`; }
   private timeGrid(dates: string[], events: Item[]) {
-    const hours = Array.from({ length: 24 }, (_, i) => i), now = new Date();
+    const hours = Array.from({ length: 24 }, (_, i) => i), now = new Date(), hourHeight = 60;
     return html`<div class="time-scroll"><div class="time-calendar" style=${`--days:${dates.length}`}><div class="time-header"><span></span>${dates.map(day => html`<button class=${day === this.selectedDay ? "active" : ""} @click=${() => this.selectedDay = day}><small>${this.date(day, { weekday: "short" })}</small><strong class=${day === iso(now) ? "today" : ""}>${dayDate(day).getDate()}</strong></button>`)}</div><div class="all-day-row"><span>${this.x("All day")}</span>
       <div class="time-body"><div class="time-labels">${hours.map(hour => html`<span>${this.time(`${dates[0]}T${String(hour).padStart(2, "0")}:00:00`)}</span>`)}</div>${dates.map(day => html`<div class="time-column">${hours.map(hour => html`<button class="hour-slot" aria-label=${`${this.s("Add event", "Afspraak toevoegen")} ${this.date(day)} ${this.s("at", "om")} ${hour}:00`} ?disabled=${!this.canEvent()} @click=${() => this.openEditor("event", { day, start_time: `${String(hour).padStart(2, "0")}:00`, end_time: `${String(Math.min(hour + 1, 23)).padStart(2, "0")}:${hour === 23 ? "59" : "00"}` })}></button>`)}<div class="positioned-events">${eventLayout(eventsOnDay(events, day).filter(e => !e.all_day)).map(({ event, lane, columns }, i) => {
         const start = new Date(event.occurrence_start), end = new Date(event.occurrence_end), a = iso(start) < day ? 0 : start.getHours() * 60 + start.getMinutes(), b = iso(end) > day ? 1440 : end.getHours() * 60 + end.getMinutes();
-        return this.eventChip(event, `top:${a / 60 * 52}px;height:${Math.max(26, (b - a) / 60 * 52)}px;left:${lane / columns * 100}%;width:${100 / columns}%;z-index:${i + 1}`);
-      })}</div>${day === iso(now) ? html`<div class="now-line" style=${`top:${(now.getHours() + now.getMinutes() / 60) * 52}px`} aria-label=${this.s("Current time", "Huidige tijd")}></div>` : nothing}</div>`)}</div></div></div>`;
+        return this.eventChip(event, `top:${a / 60 * hourHeight}px;height:${Math.max(22, (b - a) / 60 * hourHeight - 2)}px;left:calc(${lane / columns * 100}% + 2px);width:calc(${100 / columns}% - 4px);z-index:${i + 1}`);
+      })}</div>${day === iso(now) ? html`<div class="now-line" style=${`top:${(now.getHours() + now.getMinutes() / 60) * hourHeight}px`} aria-label=${this.s("Current time", "Huidige tijd")}></div>` : nothing}</div>`)}</div></div></div>`;
   }
 
   private groceries() {

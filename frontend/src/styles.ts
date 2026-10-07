@@ -213,7 +213,7 @@ export const panelStyles = css`
   .recurrence-warning ul { margin:10px 0 0; padding-left:20px; }
   .time-scroll { overflow:auto; max-height:calc(100vh - 190px); min-height:480px; }
   .time-calendar { min-width:calc(56px + var(--days) * 110px); }
-  .time-header,.all-day-row { display:grid; grid-template-columns:55px repeat(var(--days),minmax(0,1fr)); }
+  .time-header,.all-day-row { display:grid; grid-template-columns:56px repeat(var(--days),minmax(0,1fr)); }
   .time-header { background:var(--surface); position:sticky; top:0; z-index:30; border-bottom:1px solid var(--line); }
   .time-header button { border:0; border-right:1px solid var(--line); border-radius:0; flex-direction:column; padding:8px; font-weight:400; }
   .time-header button.active { background:var(--orange-soft); }
@@ -222,21 +222,21 @@ export const panelStyles = css`
   .all-day-row>span { font-size:9px; color:var(--muted); padding:9px 4px; }
   .all-day-row>div { padding:5px; border-left:1px solid var(--line); }
   .all-day-row .subtle { padding:0 6px; min-height:24px; }
-  .time-body { display:grid; grid-template-columns:55px repeat(var(--days),minmax(0,1fr)); }
-  .time-labels span { display:block; height:52px; padding:0 4px; font-size:9px; color:var(--muted); }
+  .time-body { display:grid; grid-template-columns:56px repeat(var(--days),minmax(0,1fr)); }
+  .time-labels { position:sticky; left:0; z-index:20; background:var(--surface); }
+  .time-labels span { display:block; height:60px; padding:0 8px 0 0; text-align:right; font-size:11px; color:var(--muted); transform:translateY(-7px); }
+  .time-labels span:first-child { visibility:hidden; }
   .time-column { position:relative; border-left:1px solid var(--line); }
-  .hour-slot { display:block; width:100%; height:52px; min-height:52px; border:0; border-bottom:1px solid var(--line); border-radius:0; background:none; padding:0; }
+  .hour-slot { display:block; width:100%; height:60px; min-height:60px; border:0; border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent); border-radius:0; background:none; padding:0; }
+  .hour-slot:hover:not(:disabled) { background:color-mix(in srgb,var(--orange) 8%,transparent); }
   .positioned-events { position:absolute; inset:0; pointer-events:none; }
-  .positioned-events { right:3px; }
-  .positioned-events .event-chip { position:absolute; display:block; margin:0; padding:3px 6px; pointer-events:auto; font-size:12px; line-height:1.3; border:0; border-left:4px solid var(--event-color); border-radius:6px; box-shadow:0 0 0 1px var(--surface); background:color-mix(in srgb,var(--event-color) 20%,var(--surface)); box-sizing:border-box; overflow:hidden; }
+  .positioned-events .event-chip { position:absolute; display:block; box-sizing:border-box; margin:0; padding:2px 6px; pointer-events:auto; font-size:12px; line-height:1.25; border:0; border-radius:5px; box-shadow:0 0 0 1px var(--surface); background:var(--event-color); color:#fff; overflow:hidden; }
+  .positioned-events .event-chip:hover:not(:disabled) { filter:brightness(.92); background:var(--event-color); }
   .positioned-events .event-chip>span { display:block; overflow:hidden; text-overflow:ellipsis; }
   .positioned-events .event-chip .event-chip-icon { display:none; }
-  .positioned-events .event-chip strong { display:block; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .positioned-events .event-chip .event-start { display:block; font-size:11px; font-weight:400; opacity:.8; }
-  .time-labels span { text-align:right; padding:0 8px 0 0; font-size:11px; transform:translateY(-7px); }
-  .time-labels span:first-child { visibility:hidden; }
-  .hour-slot { border-bottom-color:color-mix(in srgb,var(--line) 70%,transparent); }
-  .time-header button strong.today { background:var(--orange); color:#fff; border-radius:50%; display:inline-grid; place-items:center; width:32px; height:32px; }
+  .positioned-events .event-chip strong { display:block; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .positioned-events .event-chip .event-start { display:block; font-size:11px; font-weight:400; opacity:.9; }
+  .time-header button strong.today { display:inline-grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--orange); color:#fff; }
   .now-line { position:absolute; left:0; right:0; height:1px; background:#d64238; z-index:25; pointer-events:none; }
   .now-line:before { content:""; position:absolute; left:-3px; top:-3px; width:7px; height:7px; border-radius:50%; background:#d64238; }
   .empty { padding:35px 20px; text-align:center; color:var(--muted); }
