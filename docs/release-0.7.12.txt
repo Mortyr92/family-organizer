@@ -1,0 +1,9 @@
+Family Organizer 0.7.12
+
+Fixes
+- Person photos in the calendar now open the dedicated family member day screen.
+- The person day screen shows appointments, open to-dos, and chores for the selected family member.
+- The top-left avatar strip now includes left/right navigation to scroll through family members.
+
+Upgrade notes
+- After updating, restart Home Assistant and hard-refresh your browser (Ctrl+F5) so the new panel URL (/family_organizer/0.7.12/) is loaded.
