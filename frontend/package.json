@@ -1,12 +1,12 @@
 {
   "name": "family-organizer-frontend",
   "private": true,
-  "version": "0.7.16",
+  "version": "0.7.17",
   "type": "module",
   "scripts": {
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/helpers.test.mjs",
+    "test": "node --experimental-strip-types --test tests/helpers.test.mjs tests/styles.test.mjs",
     "test:browser": "node --test tests/browser.test.mjs tests/playwright.test.mjs"
   },
   "dependencies": {

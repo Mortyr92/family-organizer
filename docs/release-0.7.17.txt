@@ -1,0 +1,1 @@
+Fix: an unclosed CSS rule (.month-cell) made the browser ignore all calendar styling after it, so none of the day/week/month changes since 0.7.7 were visible. The Google Calendar style day/week grid and the month grid now render correctly. Added a test guarding against unbalanced stylesheet braces.

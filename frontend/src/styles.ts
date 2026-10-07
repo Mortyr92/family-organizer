@@ -171,7 +171,7 @@ export const panelStyles = css`
   .calendar-surface { overflow:hidden; }
   .weekday-row { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); background:var(--soft); border-bottom:1px solid var(--line); }  .weekday-row span { padding:13px 7px; text-align:center; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.7px; font-weight:700; }
   .month-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); }
-  .month-cell { position:relative; min-height:120px; 
+  .month-cell { position:relative; min-height:120px; padding:6px 6px 8px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--surface); }
   .month-cell:nth-child(7n) { border-right:0; }
   .month-cell:nth-last-child(-n+7) { border-bottom:0; }
   .month-cell.outside { background:color-mix(in srgb,var(--soft) 70%,var(--surface)); }
