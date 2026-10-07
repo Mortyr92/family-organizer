@@ -1,0 +1,8 @@
+Family Organizer 0.7.8
+
+Fixes
+- Rebuilt the compiled frontend panel bundle so it includes the new calendar header, filter/settings popup, category colors/icons and family member filtering. Previous releases shipped a stale bundle, causing "Unable to load custom panel" errors.
+- Panel assets are now served from a versioned directory mount (introduced in 0.7.7), ensuring the panel JavaScript loads correctly.
+
+Upgrade notes
+- After updating, restart Home Assistant and hard-refresh your browser (Ctrl+F5) so the new panel URL (/family_organizer/0.7.8/) is loaded.
