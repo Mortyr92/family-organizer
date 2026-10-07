@@ -1,0 +1,1 @@
+Day and week calendar redesigned with an Outlook-style vertical time grid; overlapping appointments are shown side by side.
