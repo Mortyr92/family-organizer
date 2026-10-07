@@ -74,21 +74,22 @@ async def _async_register_panel(hass):
     bundle = Path(__file__).parent / "panel" / "family-organizer-panel.js"
     manifest = bundle.parent.parent / "manifest.json"
     version = json.loads(await hass.async_add_executor_job(manifest.read_text))["version"]
-    url = f"/family_organizer/{version}/family-organizer-panel.js"
+    base_url = f"/family_organizer/{version}"
+    module_url = f"{base_url}/family-organizer-panel.js"
     try:
         from homeassistant.components.http import StaticPathConfig
     except ImportError:
         # Home Assistant 2024.6 predates the asynchronous static path API.
-        hass.http.register_static_path(url, str(bundle), True)
+        hass.http.register_static_path(base_url, str(bundle.parent), True)
     else:
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(url, str(bundle), True)]
+            [StaticPathConfig(base_url, str(bundle.parent), True)]
         )
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="family-organizer-panel",
         frontend_url_path=PANEL_URL.strip("/"),
-        module_url=url,
+        module_url=module_url,
         sidebar_title=PANEL_TITLE,
         sidebar_icon=PANEL_ICON,
         require_admin=False,
