@@ -130,12 +130,18 @@ export const panelStyles = css`
   .calendar-search { display:flex; align-items:center; gap:8px; }
   .calendar-search input { min-width:180px; border-radius:999px; padding:8px 14px; }
   .list-view { display:flex; flex-direction:column; gap:0; padding:0; border:1px solid var(--line); border-radius:24px; overflow:hidden; background:var(--surface); }
-  .list-hero { display:grid; grid-template-columns:auto 1fr auto; gap:10px 20px; align-items:start; padding:22px 22px 18px; color:#fff; background:linear-gradient(135deg,#5e7fc6 0%,#8ca5d6 100%); }
-  .list-hero p { margin:0; font-size:18px; opacity:.95; text-transform:capitalize; }
-  .list-hero strong { display:block; font-size:48px; line-height:1; font-weight:700; margin-top:2px; }
-  .list-hero span { font-size:28px; text-transform:capitalize; }
-  .list-hero time { justify-self:end; font-size:36px; font-weight:650; letter-spacing:.5px; }
-  .list-hero-weather { grid-column:1/-1; display:flex; flex-direction:column; gap:2px; margin-top:4px; }
+  .list-hero { display:grid; grid-template-columns:auto 1fr auto; grid-template-areas:"date people filter" "weather weather weather"; gap:12px 20px; align-items:center; padding:22px 22px 18px; color:#fff; background:linear-gradient(135deg,#5e7fc6 0%,#8ca5d6 100%); }
+  .list-hero-date { grid-area:date; display:flex; flex-direction:column; align-items:flex-start; gap:2px; border:0; background:none; padding:0; color:inherit; text-align:left; cursor:pointer; box-shadow:none; }
+  .list-hero-date p { margin:0; font-size:18px; opacity:.95; text-transform:capitalize; }
+  .list-hero-date strong { display:block; font-size:48px; line-height:1; font-weight:700; margin-top:2px; }
+  .list-hero-date span { font-size:28px; text-transform:capitalize; }
+  .list-hero-date:hover strong { text-decoration:underline; }
+  .list-hero-people { grid-area:people; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .list-hero-person { display:inline-flex; padding:0; border:2px solid transparent; border-radius:50%; background:none; cursor:pointer; box-shadow:none; }
+  .list-hero-person .avatar { width:44px; height:44px; min-width:44px; font-size:15px; }
+  .list-hero-person.active { border-color:#fff; }
+  .list-hero-filter { grid-area:filter; justify-self:end; display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border:1px solid rgba(255,255,255,.55); border-radius:999px; background:rgba(255,255,255,.18); color:#fff; font-weight:600; cursor:pointer; box-shadow:none; }
+  .list-hero-weather { grid-area:weather; display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 12px; margin-top:4px; }
   .list-hero-weather strong { font-size:44px; line-height:1; margin:0; }
   .list-hero-weather span { font-size:22px; }
   .list-hero-weather small { font-size:16px; opacity:.9; }
@@ -471,11 +477,12 @@ export const panelStyles = css`
     .app input[type=checkbox]:disabled { opacity:.5; }
   }
   @media(max-width:700px) {
-    .qudoo-list .list-hero { padding:14px; grid-template-columns:1fr auto; }
-    .qudoo-list .list-hero p { font-size:14px; }
-    .qudoo-list .list-hero strong { font-size:34px; }
-    .qudoo-list .list-hero span { font-size:20px; }
-    .qudoo-list .list-hero time { font-size:24px; }
+    .qudoo-list .list-hero { padding:14px; grid-template-columns:1fr auto; grid-template-areas:"date filter" "people people" "weather weather"; }
+    .qudoo-list .list-hero-date p { font-size:14px; }
+    .qudoo-list .list-hero-date strong { font-size:34px; }
+    .qudoo-list .list-hero-date span { font-size:20px; }
+    .qudoo-list .list-hero-people { justify-content:flex-start; }
+    .qudoo-list .list-hero-person .avatar { width:38px; height:38px; min-width:38px; }
     .qudoo-list .list-hero-weather strong { font-size:30px; }
     .qudoo-list .list-hero-weather span { font-size:16px; }
     .qudoo-list .list-day h3 { font-size:22px; padding:8px 10px; }

@@ -1,0 +1,10 @@
+Family Organizer 0.7.9
+
+Calendar list (agenda) redesign
+- The agenda list view is now full screen. The grey header above the blue field has been removed.
+- The blue field now sits at the very top and contains everything: the date, the family member profile photos, the filter/settings button and the weather.
+- The date shown in the blue field comes from the Family Organizer integration (the selected day), not from the weather integration. Clicking the date opens a pop-up to jump to a specific date.
+- Tapping a family member photo filters the agenda to that person; tap again to clear.
+
+Upgrade notes
+- After updating, restart Home Assistant and hard-refresh your browser (Ctrl+F5) so the new panel URL (/family_organizer/0.7.9/) is loaded.

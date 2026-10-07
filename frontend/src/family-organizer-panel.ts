@@ -628,7 +628,7 @@ export class FamilyOrganizerPanel extends LitElement {
     const unsupported = (this.data.calendar.items || []).filter((event: Item) => unsupportedRecurrence(event.recurrence) && (!this.personFilter.size || (event.person_ids || []).some((id: string) => this.personFilter.has(id))));
     const collapsed = this.localOverview ?? this.settingsData.overview_collapsed;
     const title = calendarView === "month" ? this.date(this.selectedDay, { month: "long", year: "numeric" }) : calendarView === "day" ? this.date(this.selectedDay) : `${this.date(dates[0], { month: "short", day: "numeric" })} – ${this.date(dates.at(-1)!, { month: "short", day: "numeric", year: "numeric" })}`;
-    return html`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}>${this.calendarHeader(calendarView, title)}${this.calendarFilterPanel(calendarView)}<div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${collapsed ? "overview-closed" : ""}`}><div class="calendar-surface">${this.calendarView === "month" ? html`<div class="weekday-row">${dates.slice(0, 7).map(day => html`<span>${this.date(day, { weekday: "short" })}</span>`)}</div><div class="month-grid">${dates.map(day => {
+    return html`<section aria-label=${this.s("Family calendar", "Gezinsagenda")}>${calendarView !== "list" ? this.calendarHeader(calendarView, title) : nothing}${this.calendarFilterPanel(calendarView)}<div class=${`calendar-shell overview-${this.settingsData.overview_position || "right"} ${collapsed ? "overview-closed" : ""}`}><div class="calendar-surface">${this.calendarView === "month" ? html`<div class="weekday-row">${dates.slice(0, 7).map(day => html`<span>${this.date(day, { weekday: "short" })}</span>`)}</div><div class="month-grid">${dates.map(day => {
           const items = eventsOnDay(events, day);
           return html`<div class=${`month-cell ${day.slice(0, 7) !== this.selectedDay.slice(0, 7) ? "outside" : ""} ${day === this.selectedDay ? "selected" : ""}`}>
             <div class="cell-heading"><button class=${day === iso(new Date()) ? "day-number today" : "day-number"} aria-label=${`${this.s("Agenda for", "Agenda voor")} ${this.date(day)}`} aria-pressed=${day === this.selectedDay} @click=${() => this.selectedDay = day}>${dayDate(day).getDate()}</button>${this.canEvent() ? html`<button class="date-add" aria-label=${`${this.s("Add event on", "Afspraak toevoegen op")} ${this.date(day)}`} @click=${() => { this.selectedDay = day; this.openEditor("event", { day }); }}>+</button>` : nothing}</div>
@@ -646,13 +646,17 @@ export class FamilyOrganizerPanel extends LitElement {
     const label = (day: string) => day === today ? this.s("Today", "Vandaag") : day === tomorrow ? this.s("Tomorrow", "Morgen") : this.date(day, { weekday: "long" });
     const showAllDays = this.settingsData.calendar_list_mode === "all";
     const days = dates.map(day => ({ day, items: eventsOnDay(events, day) })).filter(({ day, items }) => showAllDays || items.length || day === today);
-    if (!days.length) return html`<div class="list-view">${this.empty(this.s("Room to breathe", "Even rust"), this.calendarSearch ? this.s("No events match your search.", "Geen afspraken gevonden voor je zoekopdracht.") : this.s("Nothing planned in this period.", "Niets gepland in deze periode."))}</div>`;
+    const heroHeader = html`<header class="list-hero" aria-label=${this.s("Agenda overview", "Agenda-overzicht")}>
+        <button class="list-hero-date" @click=${() => this.openDatePicker()} aria-label=${this.s("Select a date", "Kies een datum")}>
+          <p>${this.date(this.selectedDay, { weekday: "long" })}</p><strong>${this.date(this.selectedDay, { day: "numeric" })}</strong><span>${this.date(this.selectedDay, { month: "long" })}</span>
+        </button>
+        <div class="list-hero-people">${this.people.map((person: Item) => html`<button class=${this.personFilter.has(person.id) ? "list-hero-person active" : "list-hero-person"} style=${`--person-color:${this.color(person.color)}`} @click=${() => { this.personFilter = this.personFilter.has(person.id) && this.personFilter.size === 1 ? new Set() : new Set([person.id]); }} title=${person.name}>${this.avatar(person.id)}</button>`)}</div>
+        <button class="list-hero-filter" @click=${() => this.openCalendarFilters()} aria-label=${this.s("Open filters", "Open filters")}><span aria-hidden="true">⚙</span><span>${this.s("Filters", "Filters")}</span></button>
+        <div class="list-hero-weather">${hero.temperature ? html`<strong>${hero.temperature}</strong>` : nothing}<span>${hero.condition}</span>${hero.detail ? html`<small>${hero.detail}</small>` : nothing}</div>
+      </header>`;
+    if (!days.length) return html`<div class="list-view qudoo-list">${heroHeader}${this.empty(this.s("Room to breathe", "Even rust"), this.calendarSearch ? this.s("No events match your search.", "Geen afspraken gevonden voor je zoekopdracht.") : this.s("Nothing planned in this period.", "Niets gepland in deze periode."))}</div>`;
     return html`<div class="list-view qudoo-list">
-      <header class="list-hero" aria-label=${this.s("Today overview", "Overzicht van vandaag")}>
-        <div><p>${hero.weekday}</p><strong>${hero.day}</strong><span>${hero.month}</span></div>
-        <time datetime=${new Date().toISOString()}>${hero.clock}</time>
-        <div class="list-hero-weather"><strong>${hero.temperature || ""}</strong><span>${hero.condition}</span>${hero.detail ? html`<small>${hero.detail}</small>` : nothing}</div>
-      </header>
+      ${heroHeader}
       ${days.map(({ day, items }) => html`<section class=${`list-day ${day === today ? "is-today" : ""}`}>
         <h3><span>${label(day)}</span><small>${this.date(day, { day: "numeric", month: "long" })}</small><span class="list-day-icon" aria-hidden="true">🗓</span></h3>
         ${items.length ? items.map(event => this.listEvent(event)) : html`<p class="muted empty-day">${this.s("Nothing on the calendar for this day.", "Geen afspraken op deze dag.")}</p>`}
