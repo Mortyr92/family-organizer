@@ -888,6 +888,8 @@ var We = o`
   .quick-add { position:sticky; top:10px; left:auto; width:100%; z-index:3; flex-shrink:0; border-radius:999px; padding:10px 17px; margin:10px 8px 14px; }
   .quick-add>span { font-size:24px; font-weight:400; line-height:1; }
   main { padding:0 32px 40px; outline:none; max-width:1400px; margin:auto; }
+  .app[data-floating-nav=true] main { padding-bottom:120px; }
+  .floating-nav { display:none; }
   .mobile-nav { display:none; }
   .banner { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 18px; border-radius:18px; margin-bottom:18px; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); }
   .banner.error { color:var(--error-color,#bc302b); background:color-mix(in srgb,var(--error-color,#bc302b) 10%,var(--surface)); overflow-wrap:anywhere; }
@@ -1224,7 +1226,9 @@ var We = o`
     .mobile-nav { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(62px,1fr); overflow-x:auto; scrollbar-width:none; position:fixed; bottom:0; left:0; right:0; padding:6px 4px max(6px,env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--line); z-index:40; box-shadow:0 -3px 15px #00000014; -webkit-overflow-scrolling:touch; }
     .mobile-nav::-webkit-scrollbar { display:none; }
     .mobile-nav button { background:none; border:0; border-radius:8px; padding:4px 2px; flex-direction:column; gap:1px; color:var(--muted); font-size:9px; font-weight:500; min-height:50px; white-space:nowrap; } .mobile-nav button>span { font-size:21px; line-height:1.2; } .mobile-nav button.active { color:var(--orange); background:var(--orange-soft); }
-    main { padding:0 14px calc(90px + env(safe-area-inset-bottom)); }
+    .floating-nav { left:12px; right:12px; transform:none; bottom:10px; padding:8px 10px; max-width:none; }
+    .floating-nav button { min-height:48px; padding:9px 11px; font-size:10px; }
+    main { padding:0 14px calc(132px + env(safe-area-inset-bottom)); }
     .today-grid,.contact-grid,.recipe-grid,.people-grid,.settings-grid { grid-template-columns:minmax(0,1fr); }
     .lock-screen { margin:0; }
     .surface,.section-toolbar,.toolbar-actions,.recipe-toolbar,.list-tools,.compact-row,.chore-card,.grocery-row { min-width:0; max-width:100%; }
@@ -1232,6 +1236,13 @@ var We = o`
     .topbar h1,.topbar p,.surface h2,.surface h3,.row-copy,.row-copy * { overflow-wrap:anywhere; }
     img { max-width:100%; }
     .mobile-nav .ha-shell-menu { gap:6px; } .mobile-nav .ha-shell-menu>span:last-child { font-size:9px; line-height:1.2; }
+    .floating-nav { position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:50; display:flex; align-items:center; gap:6px; padding:8px; max-width:min(calc(100vw - 24px), 980px); overflow-x:auto; scrollbar-width:none; border:1px solid var(--line); border-radius:999px; background:color-mix(in srgb,var(--surface) 90%,transparent); box-shadow:0 20px 48px rgba(33,23,13,.18); backdrop-filter:blur(18px); -webkit-overflow-scrolling:touch; }
+    .floating-nav::-webkit-scrollbar { display:none; }
+    .floating-nav button { border-radius:999px; min-height:52px; padding:10px 14px; gap:4px; flex-direction:column; font-size:11px; line-height:1.1; white-space:nowrap; background:transparent; border-color:transparent; box-shadow:none; }
+    .floating-nav button>span:first-child { font-size:22px; line-height:1; }
+    .floating-nav button.active { color:var(--orange); background:var(--orange-soft); border-color:color-mix(in srgb,var(--orange) 18%,var(--line)); box-shadow:0 10px 20px rgba(200,90,35,.12); }
+    .floating-nav .ha-shell-menu { gap:5px; }
+    .floating-nav .ha-shell-menu>span:last-child { font-size:11px; line-height:1.1; }
     .skip-link { left:10px; } .family-filters { gap:6px; margin-bottom:14px; } .chip { font-size:11px; min-height:33px; padding-right:9px; } .chip .avatar { width:24px; height:24px; min-width:24px; font-size:9px; } .section-toolbar { margin-bottom:15px; } .date-navigation h2 { width:100%; margin:7px 0 0; font-size:22px; order:2; } .toolbar-actions { width:100%; justify-content:space-between; } .segmented button { padding:5px 11px; } .calendar-shell { gap:15px; } .calendar-surface { border-radius:11px; } .month-cell { min-height:101px; padding:4px 2px; } .weekday-row span { padding:10px 2px; font-size:9px; letter-spacing:0; } .day-number { width:25px; min-height:25px; font-size:10px; } .date-add { display:none; } .event-chip { padding:2px 3px; font-size:8px; min-height:21px; gap:2px; border-left-width:2px; } .event-chip>span:nth-child(2) { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-clamp:2; } .event-chip>span:last-child:not(:nth-child(2)) { display:none; } .more-events { font-size:8px; padding:1px 2px; } .agenda { padding:18px; } .agenda>.primary { width:100%; } .agenda .muted { font-size:12px; } .agenda-events { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); } .calendar-hint { font-size:10px; } .time-scroll { max-height:650px; } .time-calendar { min-width:calc(50px + var(--days) * 95px); }
     .surface { padding:18px; border-radius:12px; } .surface-heading { flex-wrap:wrap; margin-bottom:17px; } .surface-heading .primary { font-size:12px; } .surface-heading h2 { font-size:21px; } .list-tabs { gap:5px; } .list-tabs button { padding:7px 10px; font-size:11px; } .grocery-row { gap:8px; } .grocery-row .avatar { width:23px; height:23px; min-width:23px; font-size:8px; } .grocery-row .row-copy strong { font-size:13px; } .grocery-row .row-copy>.muted { font-size:10px; } .grocery-row .icon-button { min-width:28px; padding:4px; font-size:18px; } .list-tools { gap:12px; } .list-tools>.check { font-size:11px; } .list-tools>button { margin-left:0; } .meal-heading h2 { font-size:22px; } .meal-grid { gap:8px; grid-template-columns:repeat(7,145px); } .meal-slot { min-height:120px; }
     .chore-card { gap:9px; } .chore-card>.row-copy { min-width:140px; } .chore-symbol { width:34px; height:34px; } .chore-card>.primary { margin-left:43px; } .chore-card>.points-badge { margin-left:auto; } .compact-row { flex-wrap:wrap; } .compact-row>time { font-size:10px; } .history .compact-row>.row-copy { min-width:170px; } .recipe-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; } .recipe-card>img,.recipe-placeholder { height:130px; } .recipe-placeholder { font-size:45px; } .recipe-placeholder>span { font-size:7px; letter-spacing:1px; } .recipe-card-copy { padding:14px; } .recipe-card h3 { font-size:17px; } .recipe-card .eyebrow { font-size:8px; letter-spacing:1px; } .recipe-card .muted { font-size:10px; } .recipe-card .tags>span { font-size:9px; } .recipe-toolbar { gap:10px; } .recipe-toolbar>label:not(.search-label) { min-width:150px; } .recipe-toolbar>button { font-size:11px; } .search-label { width:100%; max-width:none; min-width:100%; } .recipe-hero { grid-template-columns:1fr; gap:18px; } .recipe-hero>img,.recipe-hero-art { height:230px; } .recipe-hero h2 { font-size:29px; } .ingredient-row { gap:10px; } .ingredient-row select { width:110px; } .people-grid { grid-template-columns:minmax(0,1fr); } .person-card { padding:15px; gap:10px; } .person-card>.avatar { width:37px; height:37px; min-width:37px; } .person-card>.icon-button { padding:2px; min-width:25px; } .settings-grid { gap:16px; } .theme-options { gap:8px; } dl>div { font-size:11px; } dt { min-width:90px; }
@@ -2373,7 +2384,7 @@ var Ge = [
 				"competition_default",
 				"language",
 				"theme"
-			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.show_calendar_day_view = d("show_calendar_day_view"), e.show_calendar_week_view = d("show_calendar_week_view"), e.show_calendar_export = d("show_calendar_export"), e.sync_interval = l("sync_interval"), e.reminders_enabled = d("reminders_enabled"), e.default_reminder_minutes = l("default_reminder_minutes"), e.notify_service = u("notify_service"), e.daily_agenda_time = u("daily_agenda_time"), e.meal_slots = n.getAll("meal_slots").map((e) => String(e)), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), !e.meal_slots.length) {
+			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.show_calendar_day_view = d("show_calendar_day_view"), e.show_calendar_week_view = d("show_calendar_week_view"), e.show_calendar_export = d("show_calendar_export"), e.sync_interval = l("sync_interval"), e.reminders_enabled = d("reminders_enabled"), e.default_reminder_minutes = l("default_reminder_minutes"), e.notify_service = u("notify_service"), e.daily_agenda_time = u("daily_agenda_time"), e.floating_navigation = d("floating_navigation"), e.meal_slots = n.getAll("meal_slots").map((e) => String(e)), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), !e.meal_slots.length) {
 				this.error = this.tm("Enter at least one meal slot.");
 				return;
 			}
@@ -2402,7 +2413,7 @@ var Ge = [
 		}), await this.action(() => this.mutate(o, c, s), a.id ? this.languageCode === "nl" ? "Wijzigingen opgeslagen" : "Changes saved" : this.languageCode === "nl" ? "Toegevoegd aan je gezinsorganizer" : "Added to your family organizer", !0));
 	}
 	render() {
-		let e = Q.find((e) => e.id === this.page), t = this.theme === "auto" ? this._hass?.themes?.darkMode ? "dark" : "auto" : this.theme, n = [
+		let e = Q.find((e) => e.id === this.page), t = this.theme === "auto" ? this._hass?.themes?.darkMode ? "dark" : "auto" : this.theme, n = !!this.settingsData.floating_navigation, r = [
 			{
 				label: this.x("Plan"),
 				description: this.s("Calendar, daily planning and meals.", "Agenda, dagplanning en maaltijden."),
@@ -2430,34 +2441,17 @@ var Ge = [
 					"settings"
 				]
 			}
-		], r = [
-			{
-				label: this.x("App only"),
-				description: this.s("Use the organizer on your own tablet or phone.", "Gebruik de organizer op je eigen tablet of telefoon."),
-				page: "today"
-			},
-			{
-				label: this.x("Premium"),
-				description: this.s("Tidy extras and calmer defaults.", "Handige extra's en rustiger standaardinstellingen."),
-				page: "settings"
-			},
-			{
-				label: this.x("Help"),
-				description: this.s("Questions, manuals and support.", "Vragen, handleidingen en support."),
-				page: "settings"
-			}
 		];
-		return j`<div class="app" data-theme=${t}>
+		return j`<div class="app" data-theme=${t} data-floating-nav=${n}>
       <a class="skip-link" href="#main" @click=${(e) => {
 			e.preventDefault(), this.renderRoot.querySelector("main").focus();
 		}}>${this.t("skip_content")}</a>
       <aside class="sidebar"><a class="brand" href="#fo/today" @click=${() => this.navigate("today")}><span class="brand-symbol">⌂</span><span>Family<br><strong>Planner</strong></span></a><p class="eyebrow">${this.x("Daily planning made calm")}</p>
         <button class="quick-add" @click=${() => this.openEditor("quick")} ?disabled=${this.loading || this.saving || !this.data.people}><span aria-hidden="true">+</span> ${this.t("quick_add")}</button>
-        ${n.map((e) => j`<div class="sidebar-family"><span class="eyebrow">${e.label}</span><nav aria-label=${e.label}>${e.pages.map((e) => {
+        ${r.map((e) => j`<div class="sidebar-family"><span class="eyebrow">${e.label}</span><nav aria-label=${e.label}>${e.pages.map((e) => {
 			let t = Q.find((t) => t.id === e);
 			return j`<button class=${this.page === t.id ? "active" : ""} aria-current=${this.page === t.id ? "page" : N} @click=${() => this.navigate(t.id)}><span class="nav-icon" aria-hidden="true">${t.icon}</span>${this.pageName(t.id, t.name)}</button>`;
 		})}</nav><p>${e.description}</p></div>`)}
-        <div class="sidebar-family"><span class="eyebrow">${this.x("Discover")}</span><p>${this.s("A calm, editorial home for everything your family needs.", "Een rustige, redactionele start voor alles wat je gezin nodig heeft.")}</p><div class="sidebar-feature-links">${r.map((e) => j`<button class="wide" style="flex-direction:column;align-items:flex-start;text-align:left;" @click=${() => this.navigate(e.page)}><strong>${e.label}</strong><small class="muted">${e.description}</small></button>`)}</div></div>
         ${this.haMenuButton()}
         <small class="sidebar-note">${this.t("made_together")}</small>
       </aside>
@@ -2471,7 +2465,7 @@ var Ge = [
           ${this.loading ? j`<div class="empty loading" role="status"><span class="spinner"></span><h2>${this.t("getting_together")}</h2><p>${this.t("loading_copy")}</p></div>` : this.data.people ? this.renderPage() : j`<div class="empty"><h2>${this.t("could_not_load")}</h2><p>${this.t("check_connection_permissions")}</p><button class="primary" @click=${() => void this.load()}>${this.t("try_again")}</button></div>`}
         </main>
       </div>
-      <nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${Q.map((e) => j`<button class=${this.page === e.id ? "active" : ""} aria-current=${this.page === e.id ? "page" : N} @click=${() => this.navigate(e.id)}><span aria-hidden="true">${e.icon}</span>${this.pageName(e.id, e.name)}</button>`)}${this.haMenuButton(!0)}</nav>
+      ${n ? this.floatingNavigationBar() : j`<nav class="mobile-nav" aria-label=${this.x("Mobile navigation")}>${Q.map((e) => j`<button class=${this.page === e.id ? "active" : ""} aria-current=${this.page === e.id ? "page" : N} @click=${() => this.navigate(e.id)}><span aria-hidden="true">${e.icon}</span>${this.pageName(e.id, e.name)}</button>`)}${this.haMenuButton(!0)}</nav>`}
       ${this.editor ? this.dialog() : N}
     </div>`;
 	}
@@ -2491,6 +2485,9 @@ var Ge = [
 			composed: !0,
 			detail: {}
 		}))}><span class="ha-menu-icon" aria-hidden="true"></span><span>${e ? this.t("ha_menu") : this.t("home_assistant")}</span></button>`;
+	}
+	floatingNavigationBar() {
+		return j`<nav class="floating-nav" aria-label=${this.x("Navigation")}>${Q.map((e) => j`<button class=${this.page === e.id ? "active" : ""} aria-current=${this.page === e.id ? "page" : N} @click=${() => this.navigate(e.id)}><span aria-hidden="true">${e.icon}</span><span>${this.pageName(e.id, e.name)}</span></button>`)}${this.haMenuButton()}</nav>`;
 	}
 	settingsPinGate() {
 		let e = this.people.filter((e) => ["parent", "parent_admin"].includes(e.role));
@@ -2888,7 +2885,7 @@ var Ge = [
 	settings() {
 		let e = this.settingsData;
 		return j`<section><div class="settings-intro"><span class="eyebrow">${this.languageCode === "nl" ? "JULLIE THUIS, JULLIE MANIER" : "YOUR HOME, YOUR WAY"}</span><h2>${this.languageCode === "nl" ? "Een plek voor iedereen" : "A place for everyone"}</h2><p class="muted">${this.languageCode === "nl" ? "Koppel familieleden aan Home Assistant-gebruikers, kies kleuren en bepaal wie wat mag beheren." : "Link family members to Home Assistant users, choose their colors and set what they can manage."}</p></div><div class="section-toolbar"><h3>${this.t("family_member")}${this.languageCode === "nl" ? "en" : "s"}</h3>${this.addButton(this.languageCode === "nl" ? "Persoon toevoegen" : "Add a person", "person", this.can("manage_people"))}</div><div class="people-grid">${this.people.length ? this.people.map((e) => j`<article class="surface person-card">${this.avatar(e.id)}<div class="row-copy"><h3>${e.name}</h3><p class="muted">${e.role === "parent_admin" ? this.t("role_admin") : e.role === "parent" ? this.t("role_parent") : this.t("role_child")} · ${e.user_id || e.ha_user_id ? this.t("ha_linked") : this.t("ha_not_linked")}</p><small class="muted">${Object.keys(e.permissions || {}).length} ${this.t("permission_overrides")}</small></div>${this.can("manage_people") ? j`<button @click=${() => this.openEditor("person", e)}>${this.languageCode === "nl" ? "Bewerken" : "Edit"}</button><button class="icon-button danger" aria-label=${`${this.languageCode === "nl" ? "Verwijder" : "Remove"} ${e.name}`} @click=${() => this.confirmDelete("people", e)}>×</button>` : N}</article>`) : this.empty(this.languageCode === "nl" ? "Welkom in je gezinsomgeving" : "Welcome to your family space", this.languageCode === "nl" ? "Voeg je eerste familielid toe en koppel het Home Assistant-account." : "Add your first family member and link their Home Assistant user ID.", this.addButton(this.languageCode === "nl" ? "Persoon toevoegen" : "Add a person", "person", this.can("manage_people")))}</div>
-      <div class="settings-grid"><article class="surface"><span class="eyebrow">${this.languageCode === "nl" ? "WEERGAVE & STANDAARDEN" : "DISPLAY & DEFAULTS"}</span><h3>${this.languageCode === "nl" ? "Stel jullie dagritme in" : "Set your everyday rhythm"}</h3><dl><div><dt>${this.languageCode === "nl" ? "Agenda" : "Calendar"}</dt><dd>${e.default_calendar_view || "list"} ${this.languageCode === "nl" ? "weergave" : "view"} · ${this.languageCode === "nl" ? "week start" : "week starts"} ${e.week_start || (this.languageCode === "nl" ? "volgens taal" : "by locale")}</dd></div><div><dt>${this.languageCode === "nl" ? "Dagoverzicht" : "Day overview"}</dt><dd>${e.overview_position || "right"} · ${e.overview_collapsed ? this.languageCode === "nl" ? "ingeklapt" : "collapsed" : this.languageCode === "nl" ? "uitgeklapt" : "expanded"}</dd></div><div><dt>${this.languageCode === "nl" ? "Tijd & taal" : "Time & language"}</dt><dd>${e.time_format || "24"} ${this.languageCode === "nl" ? "uur" : "hour"} · ${e.language || this.locale}</dd></div><div><dt>${this.languageCode === "nl" ? "Maaltijdvakken" : "Meal slots"}</dt><dd>${(e.meal_slots || []).join(", ")}</dd></div><div><dt>${this.languageCode === "nl" ? "Winkels" : "Stores"}</dt><dd>${(e.stores || []).join(", ") || (this.languageCode === "nl" ? "Nog geen winkels" : "No stores yet")}</dd></div><div><dt>${this.languageCode === "nl" ? "Boodschappen standaard" : "Grocery default"}</dt><dd>${this.groceryDefaultLabel(e.default_grocery_list_id)}</dd></div><div><dt>${this.languageCode === "nl" ? "Competitie" : "Competition"}</dt><dd>${e.competition_default || "week"}</dd></div><div><dt>${this.languageCode === "nl" ? "Sync-interval" : "Sync interval"}</dt><dd>${e.sync_interval || 30} ${this.languageCode === "nl" ? "minuten" : "minutes"}</dd></div><div><dt>${this.languageCode === "nl" ? "Herinneringen" : "Reminders"}</dt><dd>${e.reminders_enabled === !1 ? this.languageCode === "nl" ? "Uit" : "Off" : `${e.default_reminder_minutes ?? 15} min ${this.languageCode === "nl" ? "vooraf" : "before"} · ${e.notify_service ? `notify.${e.notify_service}` : this.languageCode === "nl" ? "HA-meldingen" : "HA notifications"}${e.daily_agenda_time ? ` · ${this.languageCode === "nl" ? "agenda om" : "agenda at"} ${e.daily_agenda_time}` : ""}`}</dd></div></dl>${this.addButton(this.languageCode === "nl" ? "Voorkeuren bewerken" : "Edit preferences", "preferences", this.can("manage_settings"), {
+      <div class="settings-grid"><article class="surface"><span class="eyebrow">${this.languageCode === "nl" ? "WEERGAVE & STANDAARDEN" : "DISPLAY & DEFAULTS"}</span><h3>${this.languageCode === "nl" ? "Stel jullie dagritme in" : "Set your everyday rhythm"}</h3><dl><div><dt>${this.languageCode === "nl" ? "Agenda" : "Calendar"}</dt><dd>${e.default_calendar_view || "list"} ${this.languageCode === "nl" ? "weergave" : "view"} · ${this.languageCode === "nl" ? "week start" : "week starts"} ${e.week_start || (this.languageCode === "nl" ? "volgens taal" : "by locale")}</dd></div><div><dt>${this.languageCode === "nl" ? "Dagoverzicht" : "Day overview"}</dt><dd>${e.overview_position || "right"} · ${e.overview_collapsed ? this.languageCode === "nl" ? "ingeklapt" : "collapsed" : this.languageCode === "nl" ? "uitgeklapt" : "expanded"}</dd></div><div><dt>${this.languageCode === "nl" ? "Tijd & taal" : "Time & language"}</dt><dd>${e.time_format || "24"} ${this.languageCode === "nl" ? "uur" : "hour"} · ${e.language || this.locale}</dd></div><div><dt>${this.languageCode === "nl" ? "Maaltijdvakken" : "Meal slots"}</dt><dd>${(e.meal_slots || []).join(", ")}</dd></div><div><dt>${this.languageCode === "nl" ? "Winkels" : "Stores"}</dt><dd>${(e.stores || []).join(", ") || (this.languageCode === "nl" ? "Nog geen winkels" : "No stores yet")}</dd></div><div><dt>${this.languageCode === "nl" ? "Boodschappen standaard" : "Grocery default"}</dt><dd>${this.groceryDefaultLabel(e.default_grocery_list_id)}</dd></div><div><dt>${this.languageCode === "nl" ? "Navigatie" : "Navigation"}</dt><dd>${e.floating_navigation ? this.languageCode === "nl" ? "Onderin als zwevende balk" : "Floating bottom bar" : this.languageCode === "nl" ? "Zijbalk" : "Sidebar"}</dd></div><div><dt>${this.languageCode === "nl" ? "Competitie" : "Competition"}</dt><dd>${e.competition_default || "week"}</dd></div><div><dt>${this.languageCode === "nl" ? "Sync-interval" : "Sync interval"}</dt><dd>${e.sync_interval || 30} ${this.languageCode === "nl" ? "minuten" : "minutes"}</dd></div><div><dt>${this.languageCode === "nl" ? "Herinneringen" : "Reminders"}</dt><dd>${e.reminders_enabled === !1 ? this.languageCode === "nl" ? "Uit" : "Off" : `${e.default_reminder_minutes ?? 15} min ${this.languageCode === "nl" ? "vooraf" : "before"} · ${e.notify_service ? `notify.${e.notify_service}` : this.languageCode === "nl" ? "HA-meldingen" : "HA notifications"}${e.daily_agenda_time ? ` · ${this.languageCode === "nl" ? "agenda om" : "agenda at"} ${e.daily_agenda_time}` : ""}`}</dd></div></dl>${this.addButton(this.languageCode === "nl" ? "Voorkeuren bewerken" : "Edit preferences", "preferences", this.can("manage_settings"), {
 			...e,
 			theme: this.theme
 		})}</article>
@@ -3183,6 +3180,7 @@ var Ge = [
 		])}
       ${this.select("Day overview position", "overview_position", t.overview_position || "right", [["left", "Left"], ["right", "Right"]])}
       <label class="check full"><input name="overview_collapsed" type="checkbox" ?checked=${!!t.overview_collapsed}>${this.x("Collapse day overview by default")}</label>
+      <label class="check full"><input name="floating_navigation" type="checkbox" ?checked=${!!t.floating_navigation}>${this.languageCode === "nl" ? "Navigatie onderin als zwevende balk" : "Show navigation as a floating bottom bar"}</label>
       <label class="check full"><input name="show_calendar_day_view" type="checkbox" ?checked=${t.show_calendar_day_view !== !1}>${this.s("Show day view option in Calendar", "Toon dagweergave-optie in agenda")}</label>
       <label class="check full"><input name="show_calendar_week_view" type="checkbox" ?checked=${t.show_calendar_week_view !== !1}>${this.s("Show week view option in Calendar", "Toon weekweergave-optie in agenda")}</label>
       <label class="check full"><input name="show_calendar_export" type="checkbox" ?checked=${t.show_calendar_export !== !1}>${this.s("Show Export .ics button", "Toon Exporteer .ics-knop")}</label>

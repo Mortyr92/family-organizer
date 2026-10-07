@@ -172,6 +172,8 @@ def _validate_settings(values: dict) -> dict:
         if value and not vol.Match(r"^([01]\d|2[0-3]):[0-5]\d$")(value):
             raise vol.Invalid("Invalid daily agenda time")
         result["daily_agenda_time"] = value
+    if "floating_navigation" in result:
+        result["floating_navigation"] = bool(result["floating_navigation"])
     for key in ("meal_slots", "stores"):
         if key in result:
             result[key] = [str(value).strip() for value in result[key] if str(value).strip()]

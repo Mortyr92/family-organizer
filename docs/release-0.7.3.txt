@@ -1,0 +1,13 @@
+Family Organizer 0.7.3
+
+Release notes
+- Removed the Discover/Ontdekken promo block from the sidebar menu.
+- Added an optional floating bottom navigation bar with rounded buttons and the Home Assistant button.
+- Added a Settings toggle to switch between sidebar navigation and the floating bar.
+
+Validation
+- Python test suite: 38 passed.
+- Frontend test suite: 20 passed, panel bundle rebuilt.
+
+Upgrade
+- Restart Home Assistant and hard-refresh the browser after updating.

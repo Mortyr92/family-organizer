@@ -24,6 +24,7 @@ DEFAULT_SETTINGS = {
     "default_reminder_minutes": 15,
     "notify_service": "",
     "daily_agenda_time": "",
+    "floating_navigation": False,
 }
 PERMISSION_LEVELS = {"view": 1, "edit": 2, "admin": 3}
 EVENT_UPDATED = f"{DOMAIN}_updated"
@@ -33,5 +34,5 @@ SETTING_KEYS = (
     "week_start", "time_format", "default_calendar_view", "calendar_list_mode",
     "default_grocery_list_id", "meal_slots", "competition_default",
     "language", "stores", "reminders_enabled", "default_reminder_minutes",
-    "notify_service", "daily_agenda_time",
+    "notify_service", "daily_agenda_time", "floating_navigation",
 )
