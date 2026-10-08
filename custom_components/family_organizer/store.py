@@ -35,6 +35,15 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
                 )[:2].upper()
     if name == "calendar":
         result.setdefault("sources", [])
+        if not result.get("categories"):
+            result["categories"] = [
+                {"id": "work", "name": "Work", "icon": "💼", "color": "#f59e0b"},
+                {"id": "school", "name": "School", "icon": "🎒", "color": "#3b82f6"},
+                {"id": "sport", "name": "Sport", "icon": "🏋", "color": "#10b981"},
+                {"id": "family", "name": "Family", "icon": "👪", "color": "#ec4899"},
+                {"id": "home", "name": "Home", "icon": "🏠", "color": "#8b5cf6"},
+                {"id": "other", "name": "Other", "icon": "🗒", "color": "#64748b"},
+            ]
     if name == "groceries":
         result.setdefault("lists", [{"id": "default", "name": "Groceries", "store": "", "shared": True}])
         for item in result["items"]:

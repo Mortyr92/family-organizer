@@ -2293,6 +2293,7 @@ var qe = [
 				description: u("description"),
 				location: u("location"),
 				recurrence: u("recurrence") || null,
+				category: u("category") || null,
 				person_ids: n.getAll("person_ids"),
 				shared: d("shared"),
 				reminder_minutes: r.reminder === "" || r.reminder === void 0 ? null : Number(r.reminder)
@@ -2423,6 +2424,12 @@ var qe = [
 			...c,
 			name: u("name"),
 			parent_id: u("parent_id") || null
+		};
+		else if (i === "calendar-category") o = "calendar", s = "categories", c = {
+			...c,
+			name: u("name"),
+			icon: u("icon") || "🗒",
+			color: u("color") || "#64748b"
 		};
 		else if (i === "person") {
 			o = "people";
@@ -2586,7 +2593,13 @@ var qe = [
 		return n ? M`<button class="primary" @click=${() => this.openEditor(t, r)}>+ ${this.x(e)}</button>` : P;
 	}
 	calendarCategories() {
-		return [
+		let e = this.data.calendar.categories || [];
+		return e.length ? e.map((e) => ({
+			id: e.id,
+			label: e.name,
+			icon: e.icon || "🗒",
+			color: e.color || "#64748b"
+		})) : [
 			{
 				id: "work",
 				label: this.s("Work", "Werk"),
@@ -2703,7 +2716,7 @@ var qe = [
 			t && (this.selectedDay = t);
 		}}></label></div>` : this.calendarOverlay === "views" ? M`<div class="popup-section"><div class="view-option-list">${this.availableCalendarViews().map(([t, n]) => M`<button class=${e === t ? "active" : ""} aria-pressed=${e === t} @click=${() => {
 			this.calendarView = String(t), this.calendarOverlay = null;
-		}}>${n}</button>`)}</div></div>` : M`<div class="popup-section"><label class="full-search">${this.s("Search events", "Zoek afspraken")}<input class="calendar-search" type="search" placeholder=${this.s("Search events…", "Zoek afspraken…")} .value=${this.calendarSearch} @input=${(e) => this.calendarSearch = e.target.value}></label><div class="popup-columns"><section><h4>${this.s("Agendas", "Agenda's")}</h4>${(this.data.calendar.sources || []).map((e) => M`<button class=${this.hiddenCalendarSources.has(e.id) ? "toggle-row hidden" : "toggle-row"} @click=${() => this.toggleCalendarSource(e.id)}><span><strong>${e.name}</strong><small>${this.calendarSourceSource(e)}</small></span><span aria-hidden="true">${this.hiddenCalendarSources.has(e.id) ? this.s("Hidden", "Verborgen") : this.s("Shown", "Zichtbaar")}</span></button>`)}<h4>${this.s("Categories", "Categorieën")}</h4>${this.activeCalendarCategories().map((e) => M`<button class=${this.hiddenCalendarCategories.has(e.id) ? "toggle-row hidden" : "toggle-row"} @click=${() => this.toggleCalendarCategory(e.id)} style=${`--event-color:${e.color}`}><span><strong><span class="category-emoji" aria-hidden="true">${e.icon}</span>${e.label}</strong><small>${this.s("Use this color", "Gebruik deze kleur")}</small></span><span aria-hidden="true">${this.hiddenCalendarCategories.has(e.id) ? this.s("Hidden", "Verborgen") : this.s("Shown", "Zichtbaar")}</span></button>`)}</section><section><h4>${this.s("Family members", "Gezinsleden")}</h4><button class=${this.personFilter.size ? "toggle-row" : "toggle-row active"} @click=${() => this.personFilter = /* @__PURE__ */ new Set()}><span><strong>${this.s("Everyone", "Iedereen")}</strong><small>${this.s("Show all appointments", "Toon alle afspraken")}</small></span><span aria-hidden="true">✓</span></button>${this.people.map((e) => M`<button class=${this.personFilter.has(e.id) ? "toggle-row active" : "toggle-row"} @click=${() => n(e.id)}><span><strong>${e.name}</strong><small>${this.personFilter.has(e.id) ? this.s("Visible", "Zichtbaar") : this.s("Hidden", "Verborgen")}</small></span>${this.avatar(e.id)}</button>`)}</section></div></div>`}</section></div>` : P;
+		}}>${n}</button>`)}</div></div>` : M`<div class="popup-section"><label class="full-search">${this.s("Search events", "Zoek afspraken")}<input class="calendar-search" type="search" placeholder=${this.s("Search events…", "Zoek afspraken…")} .value=${this.calendarSearch} @input=${(e) => this.calendarSearch = e.target.value}></label><div class="popup-columns"><section><h4>${this.s("Agendas", "Agenda's")}</h4>${(this.data.calendar.sources || []).map((e) => M`<button class=${this.hiddenCalendarSources.has(e.id) ? "toggle-row hidden" : "toggle-row"} @click=${() => this.toggleCalendarSource(e.id)}><span><strong>${e.name}</strong><small>${this.calendarSourceSource(e)}</small></span><span aria-hidden="true">${this.hiddenCalendarSources.has(e.id) ? this.s("Hidden", "Verborgen") : this.s("Shown", "Zichtbaar")}</span></button>`)}<h4>${this.s("Categories", "Categorieën")}</h4>${this.calendarCategories().map((e) => M`<button class=${this.hiddenCalendarCategories.has(e.id) ? "toggle-row hidden" : "toggle-row"} @click=${() => this.toggleCalendarCategory(e.id)} style=${`--event-color:${e.color}`}><span><strong><span class="category-emoji" aria-hidden="true">${e.icon}</span>${e.label}</strong><small>${this.s("Use this color", "Gebruik deze kleur")}</small></span><span aria-hidden="true">${this.hiddenCalendarCategories.has(e.id) ? this.s("Hidden", "Verborgen") : this.s("Shown", "Zichtbaar")}</span></button>`)}${this.can("manage_calendar_all") ? M`<button class="text-button" @click=${() => this.openEditor("calendar-categories", {})}>${this.s("Manage categories", "Categorieën beheren")}</button>` : P}</section><section><h4>${this.s("Family members", "Gezinsleden")}</h4><button class=${this.personFilter.size ? "toggle-row" : "toggle-row active"} @click=${() => this.personFilter = /* @__PURE__ */ new Set()}><span><strong>${this.s("Everyone", "Iedereen")}</strong><small>${this.s("Show all appointments", "Toon alle afspraken")}</small></span><span aria-hidden="true">✓</span></button>${this.people.map((e) => M`<button class=${this.personFilter.has(e.id) ? "toggle-row active" : "toggle-row"} @click=${() => n(e.id)}><span><strong>${e.name}</strong><small>${this.personFilter.has(e.id) ? this.s("Visible", "Zichtbaar") : this.s("Hidden", "Verborgen")}</small></span>${this.avatar(e.id)}</button>`)}</section></div></div>`}</section></div>` : P;
 	}
 	calendar() {
 		let e = this.normalizedCalendarView(this.calendarView), t = Ae(this.selectedDay, e, this.firstDay), n = He(this.data.calendar.items || [], t[0], t.at(-1)), r = this.calendarSearch.trim().toLowerCase(), i = this.filteredCalendarEvents(n).filter((e) => !r || [
@@ -3108,6 +3121,8 @@ var qe = [
 			recipe: t.id ? "Recept bewerken" : "Favoriet recept opslaan",
 			categories: "Receptcategorieën",
 			category: t.id ? "Categorie bewerken" : "Categorie maken",
+			"calendar-categories": "Agendacategorieën",
+			"calendar-category": t.id ? "Agendacategorie bewerken" : "Agendacategorie maken",
 			person: t.id ? "Familielid bewerken" : "Familielid toevoegen",
 			preferences: "Weergave & standaarden",
 			delete: "Dit item verwijderen?"
@@ -3128,13 +3143,16 @@ var qe = [
 			recipe: t.id ? "Edit recipe" : "Save a favorite recipe",
 			categories: "Recipe categories",
 			category: t.id ? "Edit category" : "Create a category",
+			"calendar-categories": "Calendar categories",
+			"calendar-category": t.id ? "Edit calendar category" : "Create a calendar category",
 			person: t.id ? "Edit family member" : "Add a family member",
 			preferences: "Display & defaults",
 			delete: "Delete this item?"
 		}, r = ![
 			"quick",
 			"event-detail",
-			"categories"
+			"categories",
+			"calendar-categories"
 		].includes(e);
 		return M`<dialog class=${`editor-dialog ${e === "event-detail" ? "detail-dialog" : ""}`} aria-labelledby="dialog-title" @cancel=${(e) => {
 			e.preventDefault(), this.closeEditor();
@@ -3146,7 +3164,7 @@ var qe = [
 		}}>
       <header class="dialog-heading"><div><span class="eyebrow">FAMILY ORGANIZER</span><h2 id="dialog-title">${n[e]}</h2></div><button type="button" class="icon-button" aria-label=${this.t("close_dialog")} ?disabled=${this.saving} @click=${() => this.closeEditor()}>×</button></header>
       ${this.error ? M`<div class="banner error" role="alert">${this.error}</div>` : P}
-      ${r ? M`<form @submit=${(e) => void this.saveEditor(e)}><fieldset class="form-fields" ?disabled=${this.saving}>${this.editorFields(e, t)}</fieldset><footer class="dialog-footer"><span class="muted" role="status">${this.saving ? this.t("saving") : e === "event" && t.recurrence ? this.languageCode === "nl" ? "Wijzigingen gelden voor de hele reeks." : "Changes apply to the entire series." : ""}</span><button type="button" ?disabled=${this.saving} @click=${() => this.closeEditor()}>${this.t("cancel")}</button><button class=${e === "delete" ? "danger-primary" : "primary"} ?disabled=${this.saving}>${this.saving ? this.t("saving") : e === "delete" ? this.t("delete") : this.t("save")}</button></footer></form>` : M`<div class="dialog-content">${e === "quick" ? this.quickMenu() : e === "event-detail" ? this.eventDetail(t) : this.categoryManager()}</div>`}
+      ${r ? M`<form @submit=${(e) => void this.saveEditor(e)}><fieldset class="form-fields" ?disabled=${this.saving}>${this.editorFields(e, t)}</fieldset><footer class="dialog-footer"><span class="muted" role="status">${this.saving ? this.t("saving") : e === "event" && t.recurrence ? this.languageCode === "nl" ? "Wijzigingen gelden voor de hele reeks." : "Changes apply to the entire series." : ""}</span><button type="button" ?disabled=${this.saving} @click=${() => this.closeEditor()}>${this.t("cancel")}</button><button class=${e === "delete" ? "danger-primary" : "primary"} ?disabled=${this.saving}>${this.saving ? this.t("saving") : e === "delete" ? this.t("delete") : this.t("save")}</button></footer></form>` : M`<div class="dialog-content">${e === "quick" ? this.quickMenu() : e === "event-detail" ? this.eventDetail(t) : e === "calendar-categories" ? this.calendarCategoryManager() : this.categoryManager()}</div>`}
     </dialog>`;
 	}
 	quickMenu() {
@@ -3232,6 +3250,17 @@ var qe = [
 	categoryManager() {
 		return M`${this.addButton("New category", "category", this.can("manage_recipes"))}<div class="category-list">${(this.data.recipes.categories || []).map((e) => M`<div class="compact-row"><strong class="row-copy">${this.categoryPath(e)}</strong><button @click=${() => this.openEditor("category", e)}>${this.x("Edit")}</button><button class="danger" @click=${() => this.confirmDelete("recipes", e, "categories")}>${this.t("delete")}</button></div>`)}</div>`;
 	}
+	calendarCategoryManager() {
+		return M`${this.addButton(this.s("New category", "Nieuwe categorie"), "calendar-category", this.can("manage_calendar_all"))}<div class="category-list">${this.calendarCategories().map((e) => M`<div class="compact-row" style=${`--event-color:${e.color}`}><span class="event-dot" aria-hidden="true"></span><strong class="row-copy">${e.icon} ${e.label}</strong><button @click=${() => this.openEditor("calendar-category", {
+			id: e.id,
+			name: e.label,
+			icon: e.icon,
+			color: e.color
+		})}>${this.x("Edit")}</button><button class="danger" @click=${() => this.confirmDelete("calendar", {
+			id: e.id,
+			title: e.label
+		}, "categories")}>${this.t("delete")}</button></div>`)}</div>`;
+	}
 	editorFields(e, t) {
 		if (e === "delete") {
 			let e = this.editor?.collection === "lists" ? this.x(this.editor.resource === "todos" ? "All to-dos on this list will also be removed." : "All grocery items on this list will also be removed.") : this.editor?.collection === "categories" ? this.x("Recipes are kept. Child categories move to the parent.") : t.recurrence ? this.x("This removes the entire repeating event series.") : this.x("This cannot be undone.");
@@ -3249,7 +3278,7 @@ var qe = [
 				["FREQ=MONTHLY", "Every month"],
 				["FREQ=YEARLY", "Every year"]
 			];
-			return t.recurrence && !a.some(([e]) => e === t.recurrence) && a.push([t.recurrence, `${this.x("Keep existing:")} ${t.recurrence}`]), M`${this.field("Event title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Location", "location", t.location)}${this.field("Starts on", "day", i, "date", !0)}${this.field("Ends on (inclusive for all-day)", "end_day", t.all_day && r ? G(r.slice(0, 10), -1) : r.slice(0, 10) || i, "date", !0)}${this.field("Start time", "start", t.start_time || n.slice(11, 16) || "18:00", "time", !0)}${this.field("End time", "end", t.end_time || r.slice(11, 16) || "19:00", "time", !0)}<label class="check full"><input name="all_day" type="checkbox" ?checked=${!!t.all_day}>${this.x("All-day event (time fields are ignored)")}</label>${this.select("Repeat", "recurrence", t.recurrence || "", a)}${this.select("Reminder", "reminder", t.reminder_minutes === null || t.reminder_minutes === void 0 ? "" : String(t.reminder_minutes), [
+			return t.recurrence && !a.some(([e]) => e === t.recurrence) && a.push([t.recurrence, `${this.x("Keep existing:")} ${t.recurrence}`]), M`${this.field("Event title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Location", "location", t.location)}${this.field("Starts on", "day", i, "date", !0)}${this.field("Ends on (inclusive for all-day)", "end_day", t.all_day && r ? G(r.slice(0, 10), -1) : r.slice(0, 10) || i, "date", !0)}${this.field("Start time", "start", t.start_time || n.slice(11, 16) || "18:00", "time", !0)}${this.field("End time", "end", t.end_time || r.slice(11, 16) || "19:00", "time", !0)}<label class="check full"><input name="all_day" type="checkbox" ?checked=${!!t.all_day}>${this.x("All-day event (time fields are ignored)")}</label>${this.select("Category", "category", t.category || "other", this.calendarCategories().map((e) => [e.id, e.label]))}${this.select("Repeat", "recurrence", t.recurrence || "", a)}${this.select("Reminder", "reminder", t.reminder_minutes === null || t.reminder_minutes === void 0 ? "" : String(t.reminder_minutes), [
 				["", `${this.x("Family default")} (${this.settingsData.default_reminder_minutes ?? 15} min)`],
 				["-1", "No reminder"],
 				["0", "At start"],
@@ -3324,7 +3353,7 @@ var qe = [
 			};
 			return M`${this.field("Category name", "name", t.name, "text", !0, { autofocus: !0 })}${this.select("Parent category", "parent_id", t.parent_id || "", [["", "Root category"], ...(this.data.recipes.categories || []).filter((t) => !e(t)).map((e) => [e.id, this.categoryPath(e)])])}`;
 		}
-		return e === "person" ? M`${this.haUserPicker(t)}${this.field("Name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Family color", "color", this.color(t.color), "color")}${this.field("Home Assistant user ID", "user_id", t.user_id || t.ha_user_id)}
+		return e === "calendar-category" ? M`${this.field("Category name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Icon (emoji)", "icon", t.icon || "🗒")}<label>${this.x("Color")}<input name="color" type="color" .value=${t.color || "#64748b"}></label>` : e === "person" ? M`${this.haUserPicker(t)}${this.field("Name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Family color", "color", this.color(t.color), "color")}${this.field("Home Assistant user ID", "user_id", t.user_id || t.ha_user_id)}
       ${this.field("Profile picture URL", "profile_picture", t.profile_picture || t.avatar_url, "url")}${this.field("Birthday", "birthday", t.birthday, "date")}
       ${this.select("Role preset", "role", t.role || "child", [["parent", "Parent (all rights)"], ["child", "Child (limited rights)"]])}
       ${t.role === "parent" ? M`${this.field("PIN code (4-8 digits)", "pin", "", "password", !t.id, {

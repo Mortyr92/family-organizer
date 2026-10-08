@@ -30,7 +30,7 @@ from .permissions import (
 _RESOURCE = vol.In(STORES)
 _COLLECTIONS = {
     "people": {"items"},
-    "calendar": {"items", "sources"},
+    "calendar": {"items", "sources", "categories"},
     "groceries": {"items", "lists", "meal_slots", "meal_plans"},
     "todos": {"items", "lists"},
     "chores": {"items", "completions", "point_adjustments"},
@@ -372,6 +372,10 @@ async def _mutate(hass, connection, msg, operation):
                     recipe["category_ids"] = [
                         value for value in recipe.get("category_ids", []) if value != item["id"]
                     ]
+            if resource == "calendar" and collection == "categories":
+                for event in manager["calendar"].data.get("items", []):
+                    if event.get("category") == item["id"]:
+                        event["category"] = None
             if resource == "groceries" and collection == "lists":
                 if not items:
                     items.insert(index, item)

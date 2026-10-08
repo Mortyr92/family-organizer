@@ -73,6 +73,7 @@ class CalendarEvent(Model):
     external_id: str | None = None
     creator_id: str | None = None
     shared: bool = True
+    category: str | None = None
 
 
 CalendarItem = CalendarEvent
@@ -84,6 +85,13 @@ class CalendarSource(Model):
     name: str = ""
     source_type: str = "ics"
     enabled: bool = True
+    color: str = "#64748b"
+
+
+@dataclass
+class CalendarCategory(Model):
+    name: str = ""
+    icon: str = "🗒"
     color: str = "#64748b"
 
 
