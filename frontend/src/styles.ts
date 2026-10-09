@@ -278,6 +278,29 @@ export const panelStyles = css`
   .meal-heading h2 { margin-top:5px; }
   .meal-heading .date-navigation>span { color:var(--muted); font-size:12px; margin-left:5px; }
   .meal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; }
+  .lists-toolbar { margin-bottom:14px; }
+  .list-type-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .list-type-chips .chip { font-size:12px; padding:7px 14px; border-radius:999px; background:var(--soft); border:1px solid var(--line); color:var(--orange); }
+  .lists-overview { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; align-items:start; }
+  .list-card { padding:18px; display:flex; flex-direction:column; gap:4px; }
+  .list-card-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .list-card-heading h3 { color:var(--orange); font-size:16px; }
+  .list-card-menu { display:flex; gap:2px; }
+  .list-card-menu .icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
+  .list-card-items { display:flex; flex-direction:column; }
+  .list-card-empty { padding:8px 0; font-size:12px; }
+  .list-item-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .list-item-row:last-child { border-bottom:0; }
+  .list-item-row label.check { flex:1; min-width:0; font-weight:500; }
+  .list-item-row label.check span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .list-item-row.checked label.check span { text-decoration:line-through; color:var(--muted); }
+  .list-item-row>.icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
+  .qty-stepper { display:flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:999px; padding:2px; background:var(--surface); }
+  .qty-stepper span { min-width:22px; text-align:center; font-size:12px; font-weight:650; }
+  .qty-stepper .icon-button { min-width:26px; min-height:26px; padding:0; font-size:15px; border:0; background:transparent; line-height:1; }
+  .list-card-done { margin-top:8px; font-size:12px; color:var(--muted); }
+  .list-card-done summary { cursor:pointer; color:var(--orange); }
+  .lists-footer { margin-top:22px; }
   .meal-day { background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
   .meal-day>header { background:var(--soft); padding:13px; display:flex; flex-direction:column; border-bottom:1px solid var(--line); }
   .meal-day>header>span { font-size:11px; text-transform:uppercase; color:var(--muted); }

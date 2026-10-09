@@ -1096,6 +1096,29 @@ var We = o`
   .meal-heading h2 { margin-top:5px; }
   .meal-heading .date-navigation>span { color:var(--muted); font-size:12px; margin-left:5px; }
   .meal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; }
+  .lists-toolbar { margin-bottom:14px; }
+  .list-type-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .list-type-chips .chip { font-size:12px; padding:7px 14px; border-radius:999px; background:var(--soft); border:1px solid var(--line); color:var(--orange); }
+  .lists-overview { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; align-items:start; }
+  .list-card { padding:18px; display:flex; flex-direction:column; gap:4px; }
+  .list-card-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+  .list-card-heading h3 { color:var(--orange); font-size:16px; }
+  .list-card-menu { display:flex; gap:2px; }
+  .list-card-menu .icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
+  .list-card-items { display:flex; flex-direction:column; }
+  .list-card-empty { padding:8px 0; font-size:12px; }
+  .list-item-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .list-item-row:last-child { border-bottom:0; }
+  .list-item-row label.check { flex:1; min-width:0; font-weight:500; }
+  .list-item-row label.check span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .list-item-row.checked label.check span { text-decoration:line-through; color:var(--muted); }
+  .list-item-row>.icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
+  .qty-stepper { display:flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:999px; padding:2px; background:var(--surface); }
+  .qty-stepper span { min-width:22px; text-align:center; font-size:12px; font-weight:650; }
+  .qty-stepper .icon-button { min-width:26px; min-height:26px; padding:0; font-size:15px; border:0; background:transparent; line-height:1; }
+  .list-card-done { margin-top:8px; font-size:12px; color:var(--muted); }
+  .list-card-done summary { cursor:pointer; color:var(--orange); }
+  .lists-footer { margin-top:22px; }
   .meal-day { background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
   .meal-day>header { background:var(--soft); padding:13px; display:flex; flex-direction:column; border-bottom:1px solid var(--line); }
   .meal-day>header>span { font-size:11px; text-transform:uppercase; color:var(--muted); }
@@ -2768,40 +2791,38 @@ var qe = [
 			return this.eventChip(t, `top:${s / 60 * 60}px;height:${Math.max(22, (c - s) / 60 * 60 - 2)}px;left:calc(${n / r * 100}% + 2px);width:calc(${100 / r}% - 4px);z-index:${i + 1}`);
 		})}</div>${e === U(r) ? M`<div class="now-line" style=${`top:${(r.getHours() + r.getMinutes() / 60) * 60}px`} aria-label=${this.s("Current time", "Huidige tijd")}></div>` : P}</div>`)}</div></div></div>`;
 	}
-	lists() {
-		let e = this.data.groceries, t = e.lists || [], n = t.find((e) => e.id === this.listId) || t[0], r = n?.list_type || "groceries", i = r !== "todo", a = this.can("manage_groceries"), o = (e.items || []).filter((e) => e.list_id === this.listId && (!this.groceryAssignee || e.assignee_id === this.groceryAssignee));
-		o = [...o].sort((e, t) => (this.groupStores && i ? (e.store || "").localeCompare(t.store || "") : 0) || Number(e.checked) - Number(t.checked));
-		let s = o.filter((e) => e.checked).length, c = (e) => e === "todo" ? this.s("To-Do", "Taken") : e === "shopping" ? this.s("Shopping", "Winkelen") : this.s("Groceries", "Boodschappen");
-		return M`<section><div class="shopping-layout"><div class="surface shopping-list"><div class="surface-heading"><div><span class="eyebrow">${this.x("LISTS")}</span><h2>${n?.name || this.s("Lists", "Lijstjes")}</h2><p class="muted">${o.length - s} ${this.s("open", "open")} · ${s} ${this.s("done", "klaar")}</p></div>${this.addButton(i ? "Add item" : "Add to-do", "grocery", a, {
-			list_id: this.listId,
-			list_type: r,
-			store: n?.store || ""
-		})}</div>
-      <div class="list-tabs" role="group" aria-label=${this.s("Lists", "Lijstjes")}>${t.map((e) => M`<button class=${e.id === this.listId ? "active" : ""} aria-pressed=${e.id === this.listId} @click=${() => this.listId = e.id}>${e.name}</button>`)}</div>
-      <div class="list-tools">${i ? M`<label>${this.x("Assigned to")}<select .value=${this.groceryAssignee} @change=${(e) => this.groceryAssignee = e.target.value}><option value="">${this.x("Everyone")}</option>${this.peopleOptions()}</select></label><label class="check"><input type="checkbox" .checked=${this.groupStores} @change=${() => this.groupStores = !this.groupStores}>${this.x("Group by store")}</label>` : P}${a ? M`<button ?disabled=${!s || this.saving} @click=${() => void this.action(async () => {
-			for (let e of o.filter((e) => e.checked)) await this._hass.callWS({
-				type: "family_organizer/delete",
-				resource: "groceries",
-				item_id: e.id
-			});
-		}, this.s("Done items cleared", "Afgeronde items verwijderd"))}>${this.s("Clear done", "Verwijder afgerond")}</button>` : P}</div>
-      <div class="grocery-items">${o.length ? o.map((e, t) => M`${this.groupStores && i && (t === 0 || o[t - 1].store !== e.store) ? M`<h3 class="store-heading">${e.store || this.x("No store")}</h3>` : P}<article class=${`grocery-row ${e.checked ? "checked" : ""}`}><input type="checkbox" aria-label=${`${this.x("Mark")} ${e.name} ${this.x(e.checked ? "to buy" : "bought")}`} .checked=${!!e.checked} ?disabled=${!a || this.saving} @change=${() => void this.action(() => this.mutate("groceries", {
+	step(e, t) {
+		let n = Math.max(0, Number(e.quantity || 0) + t);
+		this.action(() => this.mutate("groceries", {
 			...e,
-			checked: !e.checked
-		}), e.checked ? "Moved back to your list" : "Added to the basket")}><div class="row-copy"><strong>${e.name}</strong><span class="muted">${i ? `${J(Number(e.quantity))} ${e.unit || ""}` : ""}${e.notes ? ` · ${e.notes}` : ""}${e.store ? ` · ${e.store}` : ""}${e.deadline ? ` · ${this.x("Due")} ${this.date(e.deadline, {
-			month: "short",
-			day: "numeric"
-		})}` : ""}</span></div><span title=${`${this.x("Created by")} ${this.person(e.creator_id)?.name || this.x("a family member")}`}>${this.avatar(e.creator_id)}</span>${e.assignee_id ? M`<span title=${`${this.x("Assigned to")} ${this.person(e.assignee_id)?.name || this.x("a family member")}`}>${this.avatar(e.assignee_id)}</span>` : P}${a ? M`<button class="icon-button" aria-label=${`${this.x("Edit")} ${e.name}`} @click=${() => this.openEditor("grocery", e)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${e.name}`} @click=${() => this.confirmDelete("groceries", e)}>×</button>` : P}</article>`) : this.empty("A fresh start", this.groceryAssignee ? "No items assigned to this person." : "Add an item or send ingredients from a recipe.", this.addButton(i ? "Add your first item" : "Add your first to-do", "grocery", a, {
-			list_id: this.listId,
-			list_type: r
-		}))}</div></div>
-      <aside class="surface shopping-aside"><span class="eyebrow">${this.x("A LITTLE ORGANIZATION")}</span><h3>${this.s("Create a new list", "Maak een nieuwe lijst")}</h3><p class="muted">${this.x("Keep the supermarket, farmers’ market and pantry runs separate. Matching items merge automatically.")}</p>
-      <div class="list-type-buttons">${[
-			"todo",
+			quantity: n
+		}));
+	}
+	lists() {
+		let e = this.data.groceries, t = e.lists || [], n = this.can("manage_groceries"), r = (e) => e === "todo" ? this.s("To-Do", "Taken") : e === "shopping" ? this.s("Shopping", "Winkelen") : this.s("Groceries", "Boodschappen"), i = (t) => (e.items || []).filter((e) => e.list_id === t && (!this.groceryAssignee || e.assignee_id === this.groceryAssignee));
+		return M`<section><div class="section-toolbar lists-toolbar"><div><span class="eyebrow">${this.x("LISTS")}</span><h2>${this.s("Lists", "Lijstjes")}</h2></div><div class="toolbar-actions"><label>${this.x("Assigned to")}<select .value=${this.groceryAssignee} @change=${(e) => this.groceryAssignee = e.target.value}><option value="">${this.x("Everyone")}</option>${this.peopleOptions()}</select></label></div></div>
+      <div class="list-type-chips" role="group" aria-label=${this.s("Create a list", "Maak een lijst")}>${[
+			"groceries",
 			"shopping",
-			"groceries"
-		].map((e) => M`<button ?disabled=${!a} @click=${() => this.openEditor("list", { list_type: e })}>${c(e)}</button>`)}</div>
-      ${a && n ? M`<button @click=${() => this.openEditor("list", n)}>${this.x("Edit list")}</button><button class="danger" ?disabled=${n?.id === "default"} @click=${() => this.confirmDelete("groceries", n, "lists")}>${this.x("Delete list")}</button><small class="muted">${this.x("Deleting a list also removes its items.")}</small>` : P}<hr><h3>${this.x("What’s cooking?")}</h3><p class="muted">${this.x("Plan the week and shop recipe ingredients straight into this list.")}</p><button @click=${() => this.navigate("recipes")}>${this.x("Meal planner & recipes →")}</button></aside></div></section>`;
+			"todo"
+		].map((e) => M`<button class="chip" ?disabled=${!n} @click=${() => this.openEditor("list", { list_type: e })}>+ ${r(e)}</button>`)}</div>
+      <div class="lists-overview">${t.map((e) => {
+			let t = e.list_type || "groceries", r = t !== "todo", a = i(e.id);
+			a = [...a].sort((e, t) => this.groupStores && r ? (e.store || "").localeCompare(t.store || "") : 0);
+			let o = a.filter((e) => !e.checked), s = a.filter((e) => e.checked), c = (e) => M`<div class=${`list-item-row ${e.checked ? "checked" : ""}`}><label class="check"><input type="checkbox" aria-label=${`${this.x("Mark")} ${e.name} ${this.x(e.checked ? "to buy" : "bought")}`} .checked=${!!e.checked} ?disabled=${!n || this.saving} @change=${() => void this.action(() => this.mutate("groceries", {
+				...e,
+				checked: !e.checked
+			}), e.checked ? "Moved back to your list" : "Added to the basket")}><span>${e.name}</span></label>${r ? M`<div class="qty-stepper"><button class="icon-button" ?disabled=${!n || this.saving} aria-label=${`${this.x("Decrease")} ${e.name}`} @click=${() => this.step(e, -1)}>−</button><span>${J(Number(e.quantity))}</span><button class="icon-button" ?disabled=${!n || this.saving} aria-label=${`${this.x("Increase")} ${e.name}`} @click=${() => this.step(e, 1)}>+</button></div>` : P}${n ? M`<button class="icon-button" aria-label=${`${this.x("Edit")} ${e.name}`} @click=${() => this.openEditor("grocery", e)}>⋮</button>` : P}</div>`;
+			return M`<article class="surface list-card"><div class="list-card-heading"><h3>${e.name}</h3>${n ? M`<div class="list-card-menu"><button class="icon-button" aria-label=${`${this.x("Edit list")} ${e.name}`} @click=${() => this.openEditor("list", e)}>✎</button><button class="icon-button" ?disabled=${e.id === "default"} aria-label=${`${this.x("Delete list")} ${e.name}`} @click=${() => this.confirmDelete("groceries", e, "lists")}>×</button></div>` : P}</div>
+          <div class="list-card-items">${o.length ? o.map(c) : M`<p class="muted list-card-empty">${this.x("Nothing here yet.")}</p>`}</div>
+          ${n ? M`<button class="text-button" @click=${() => this.openEditor("grocery", {
+				list_id: e.id,
+				list_type: t
+			})}>+ ${this.s("Add", "Toevoegen")}</button>` : P}
+          ${s.length ? M`<details class="list-card-done"><summary>${this.s("Done", "Voltooid")} (${s.length})</summary>${s.map(c)}</details>` : P}
+        </article>`;
+		})}</div>
+      <div class="lists-footer"><button @click=${() => this.navigate("recipes")}>${this.x("Meal planner & recipes →")}</button></div></section>`;
 	}
 	mealPlanner() {
 		let e = this.data.groceries, t = G(q(U(/* @__PURE__ */ new Date()), this.firstDay), this.mealWeek * 7), n = e.meal_slots || e.meal_plans || [];
