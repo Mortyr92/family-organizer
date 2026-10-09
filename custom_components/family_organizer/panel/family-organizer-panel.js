@@ -1358,10 +1358,8 @@ var qe = [
 	"people",
 	"calendar",
 	"groceries",
-	"todos",
 	"chores",
 	"recipes",
-	"journal",
 	"contacts",
 	"settings"
 ], Je = [
@@ -1375,7 +1373,6 @@ var qe = [
 	"complete_own_chores",
 	"complete_any_chore",
 	"manage_recipes",
-	"manage_journal",
 	"manage_contacts",
 	"manage_settings",
 	"manage_calendar_sync"
@@ -1393,16 +1390,10 @@ var qe = [
 		subtitle: "A little less juggling. A little more together."
 	},
 	{
-		id: "groceries",
-		name: "Shopping",
-		icon: "▤",
-		subtitle: "From the weekly plan to the shopping basket."
-	},
-	{
-		id: "todos",
-		name: "To Do",
+		id: "lists",
+		name: "Lists",
 		icon: "☑",
-		subtitle: "Lists for everything that isn’t groceries."
+		subtitle: "To-do, shopping and grocery lists, all in one place."
 	},
 	{
 		id: "recipes",
@@ -1415,12 +1406,6 @@ var qe = [
 		name: "Chores",
 		icon: "✓",
 		subtitle: "Small contributions. A happier home."
-	},
-	{
-		id: "journal",
-		name: "Journal",
-		icon: "✎",
-		subtitle: "Capture the little moments worth remembering."
 	},
 	{
 		id: "birthdays",
@@ -1968,9 +1953,9 @@ var qe = [
 		en: ["Chores", "Small contributions. A happier home."],
 		nl: ["Klussen", "Kleine bijdragen, een fijner thuis."]
 	},
-	journal: {
-		en: ["Journal", "Capture the little moments worth remembering."],
-		nl: ["Dagboek", "Leg kleine momenten vast die je wilt onthouden."]
+	lists: {
+		en: ["Lists", "To-do, shopping and grocery lists, all in one place."],
+		nl: ["Lijstjes", "Taken, boodschappen en winkellijstjes, allemaal op één plek."]
 	},
 	birthdays: {
 		en: ["Birthdays", "Never miss a chance to celebrate."],
@@ -1986,7 +1971,7 @@ var qe = [
 	}
 }, $ = class extends V {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.todoListId = "default", this.showDoneTodos = !1, this.journalPerson = "", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = Ge("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = Ge("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.haUsers = [], this.calendarSearch = "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = Ge("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = Ge("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.haUsers = [], this.calendarSearch = "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = ze(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.page === "settings" && (this.settingsUnlocked = !1, this.pinCapabilites = void 0), e.malformed && (this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.")));
 		};
@@ -2123,7 +2108,7 @@ var qe = [
 			if (e !== this.loadSequence) return;
 			this.data = Object.fromEntries(qe.map((e, n) => [e, t[n]]));
 			let n = this.settingsData;
-			this.listId = Le(this.data.groceries.lists || [], this.listId, n.default_grocery_list_id, !this.initialized), this.todoListId = Le(this.data.todos?.lists || [], this.todoListId), this.initialized ||= (this.calendarView = this.normalizedCalendarView(n.default_calendar_view || "list", n), this.scorePeriod = n.competition_default || "week", this.theme = localStorage.getItem("family-organizer-theme") || n.theme || "auto", !0), this.error = "", this.pinPersonId ||= this.settingsData.current_user?.person_id || "";
+			this.listId = Le(this.data.groceries.lists || [], this.listId, n.default_grocery_list_id, !this.initialized), this.initialized ||= (this.calendarView = this.normalizedCalendarView(n.default_calendar_view || "list", n), this.scorePeriod = n.competition_default || "week", this.theme = localStorage.getItem("family-organizer-theme") || n.theme || "auto", !0), this.error = "", this.pinPersonId ||= this.settingsData.current_user?.person_id || "";
 			let r = this.pinPersonId || this.me?.id || this.people[0]?.id || "";
 			this.people.some((e) => e.id === this.todayPersonId) || (this.todayPersonId = r);
 			let i = this.people.filter((e) => ["parent", "parent_admin"].includes(e.role));
@@ -2310,37 +2295,16 @@ var qe = [
 			store: u("store"),
 			list_id: u("list_id"),
 			assignee_id: u("assignee_id") || null,
+			deadline: u("deadline") || null,
 			checked: !!a.checked,
 			shared: d("shared")
 		};
 		else if (i === "list") o = "groceries", s = "lists", c = {
 			...c,
 			name: u("name"),
+			list_type: u("list_type") || a.list_type || "groceries",
 			store: u("store"),
-			shared: d("shared")
-		};
-		else if (i === "todo") o = "todos", c = {
-			...c,
-			title: u("title"),
-			notes: u("notes"),
-			list_id: u("list_id"),
-			due_date: u("due_date") || null,
-			assignee_id: u("assignee_id") || null,
-			done: !!a.done,
-			shared: d("shared")
-		};
-		else if (i === "todolist") o = "todos", s = "lists", c = {
-			...c,
-			name: u("name"),
-			shared: d("shared")
-		};
-		else if (i === "journal") o = "journal", c = {
-			...c,
-			title: u("title"),
-			body: u("body"),
-			day: u("day"),
-			person_ids: n.getAll("person_ids"),
-			photos: u("photos").split(/\r?\n/).map((e) => e.trim()).filter(Boolean),
+			deadline: u("deadline") || null,
 			shared: d("shared")
 		};
 		else if (i === "contact") {
@@ -2505,21 +2469,13 @@ var qe = [
 			},
 			{
 				label: this.x("Household"),
-				description: this.s("Groceries, todos and chores.", "Boodschappen, taken en klussen."),
-				pages: [
-					"groceries",
-					"todos",
-					"chores"
-				]
+				description: this.s("Lists and chores.", "Lijstjes en klussen."),
+				pages: ["lists", "chores"]
 			},
 			{
 				label: this.x("Keep in touch"),
-				description: this.s("Journal, birthdays and settings.", "Dagboek, verjaardagen en instellingen."),
-				pages: [
-					"journal",
-					"birthdays",
-					"settings"
-				]
+				description: this.s("Birthdays and settings.", "Verjaardagen en instellingen."),
+				pages: ["birthdays", "settings"]
 			}
 		];
 		return M`<div class="app" data-theme=${t} data-bottom-nav=${n}>
@@ -2577,11 +2533,9 @@ var qe = [
 		switch (this.page) {
 			case "today": return this.today();
 			case "calendar": return this.calendar();
-			case "groceries": return this.groceries();
-			case "todos": return this.todos();
+			case "lists": return this.lists();
 			case "chores": return this.chores();
 			case "recipes": return this.recipes();
-			case "journal": return this.journal();
 			case "birthdays": return this.birthdays();
 			default: return this.settingsUnlocked ? this.settings() : this.settingsPinGate();
 		}
@@ -2814,27 +2768,40 @@ var qe = [
 			return this.eventChip(t, `top:${s / 60 * 60}px;height:${Math.max(22, (c - s) / 60 * 60 - 2)}px;left:calc(${n / r * 100}% + 2px);width:calc(${100 / r}% - 4px);z-index:${i + 1}`);
 		})}</div>${e === U(r) ? M`<div class="now-line" style=${`top:${(r.getHours() + r.getMinutes() / 60) * 60}px`} aria-label=${this.s("Current time", "Huidige tijd")}></div>` : P}</div>`)}</div></div></div>`;
 	}
-	groceries() {
-		let e = this.data.groceries, t = e.lists || [], n = t.find((e) => e.id === this.listId), r = (e.items || []).filter((e) => e.list_id === this.listId && (!this.groceryAssignee || e.assignee_id === this.groceryAssignee));
-		r = [...r].sort((e, t) => (this.groupStores ? (e.store || "").localeCompare(t.store || "") : 0) || Number(e.checked) - Number(t.checked));
-		let i = r.filter((e) => e.checked).length, a = this.can("manage_groceries");
-		return M`<section><div class="shopping-layout"><div class="surface shopping-list"><div class="surface-heading"><div><span class="eyebrow">${this.x("SHOPPING LIST")}</span><h2>${n?.name || this.x("Groceries")}</h2><p class="muted">${r.length - i} ${this.x("to buy")} · ${i} ${this.x("in the basket")}</p></div>${this.addButton("Add item", "grocery", a, {
+	lists() {
+		let e = this.data.groceries, t = e.lists || [], n = t.find((e) => e.id === this.listId) || t[0], r = n?.list_type || "groceries", i = r !== "todo", a = this.can("manage_groceries"), o = (e.items || []).filter((e) => e.list_id === this.listId && (!this.groceryAssignee || e.assignee_id === this.groceryAssignee));
+		o = [...o].sort((e, t) => (this.groupStores && i ? (e.store || "").localeCompare(t.store || "") : 0) || Number(e.checked) - Number(t.checked));
+		let s = o.filter((e) => e.checked).length, c = (e) => e === "todo" ? this.s("To-Do", "Taken") : e === "shopping" ? this.s("Shopping", "Winkelen") : this.s("Groceries", "Boodschappen");
+		return M`<section><div class="shopping-layout"><div class="surface shopping-list"><div class="surface-heading"><div><span class="eyebrow">${this.x("LISTS")}</span><h2>${n?.name || this.s("Lists", "Lijstjes")}</h2><p class="muted">${o.length - s} ${this.s("open", "open")} · ${s} ${this.s("done", "klaar")}</p></div>${this.addButton(i ? "Add item" : "Add to-do", "grocery", a, {
 			list_id: this.listId,
+			list_type: r,
 			store: n?.store || ""
 		})}</div>
-      <div class="list-tabs" role="group" aria-label=${this.x("Grocery lists")}>${t.map((e) => M`<button class=${e.id === this.listId ? "active" : ""} aria-pressed=${e.id === this.listId} @click=${() => this.listId = e.id}>${e.name}</button>`)}</div>
-      <div class="list-tools"><label>${this.x("Assigned to")}<select .value=${this.groceryAssignee} @change=${(e) => this.groceryAssignee = e.target.value}><option value="">${this.x("Everyone")}</option>${this.peopleOptions()}</select></label><label class="check"><input type="checkbox" .checked=${this.groupStores} @change=${() => this.groupStores = !this.groupStores}>${this.x("Group by store")}</label>${a ? M`<button ?disabled=${!i || this.saving} @click=${() => void this.action(async () => {
-			for (let e of r.filter((e) => e.checked)) await this._hass.callWS({
+      <div class="list-tabs" role="group" aria-label=${this.s("Lists", "Lijstjes")}>${t.map((e) => M`<button class=${e.id === this.listId ? "active" : ""} aria-pressed=${e.id === this.listId} @click=${() => this.listId = e.id}>${e.name}</button>`)}</div>
+      <div class="list-tools">${i ? M`<label>${this.x("Assigned to")}<select .value=${this.groceryAssignee} @change=${(e) => this.groceryAssignee = e.target.value}><option value="">${this.x("Everyone")}</option>${this.peopleOptions()}</select></label><label class="check"><input type="checkbox" .checked=${this.groupStores} @change=${() => this.groupStores = !this.groupStores}>${this.x("Group by store")}</label>` : P}${a ? M`<button ?disabled=${!s || this.saving} @click=${() => void this.action(async () => {
+			for (let e of o.filter((e) => e.checked)) await this._hass.callWS({
 				type: "family_organizer/delete",
 				resource: "groceries",
 				item_id: e.id
 			});
-		}, "Bought items cleared")}>${this.x("Clear bought")}</button>` : P}</div>
-      <div class="grocery-items">${r.length ? r.map((e, t) => M`${this.groupStores && (t === 0 || r[t - 1].store !== e.store) ? M`<h3 class="store-heading">${e.store || this.x("No store")}</h3>` : P}<article class=${`grocery-row ${e.checked ? "checked" : ""}`}><input type="checkbox" aria-label=${`${this.x("Mark")} ${e.name} ${this.x(e.checked ? "to buy" : "bought")}`} .checked=${!!e.checked} ?disabled=${!a || this.saving} @change=${() => void this.action(() => this.mutate("groceries", {
+		}, this.s("Done items cleared", "Afgeronde items verwijderd"))}>${this.s("Clear done", "Verwijder afgerond")}</button>` : P}</div>
+      <div class="grocery-items">${o.length ? o.map((e, t) => M`${this.groupStores && i && (t === 0 || o[t - 1].store !== e.store) ? M`<h3 class="store-heading">${e.store || this.x("No store")}</h3>` : P}<article class=${`grocery-row ${e.checked ? "checked" : ""}`}><input type="checkbox" aria-label=${`${this.x("Mark")} ${e.name} ${this.x(e.checked ? "to buy" : "bought")}`} .checked=${!!e.checked} ?disabled=${!a || this.saving} @change=${() => void this.action(() => this.mutate("groceries", {
 			...e,
 			checked: !e.checked
-		}), e.checked ? "Moved back to your list" : "Added to the basket")}><div class="row-copy"><strong>${e.name}</strong><span class="muted">${J(Number(e.quantity))} ${e.unit || ""}${e.notes ? ` · ${e.notes}` : ""}${e.store ? ` · ${e.store}` : ""}</span></div><span title=${`${this.x("Created by")} ${this.person(e.creator_id)?.name || this.x("a family member")}`}>${this.avatar(e.creator_id)}</span>${e.assignee_id ? M`<span title=${`${this.x("Assigned to")} ${this.person(e.assignee_id)?.name || this.x("a family member")}`}>${this.avatar(e.assignee_id)}</span>` : P}${a ? M`<button class="icon-button" aria-label=${`${this.x("Edit")} ${e.name}`} @click=${() => this.openEditor("grocery", e)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${e.name}`} @click=${() => this.confirmDelete("groceries", e)}>×</button>` : P}</article>`) : this.empty("A fresh start", this.groceryAssignee ? "No items assigned to this person." : "Add an item or send ingredients from a recipe.", this.addButton("Add your first item", "grocery", a, { list_id: this.listId }))}</div></div>
-      <aside class="surface shopping-aside"><span class="eyebrow">${this.x("A LITTLE ORGANIZATION")}</span><h3>${this.x("One list for every stop")}</h3><p class="muted">${this.x("Keep the supermarket, farmers’ market and pantry runs separate. Matching items merge automatically.")}</p>${this.addButton("New list", "list", a)}${a && n ? M`<button @click=${() => this.openEditor("list", n)}>${this.x("Edit list")}</button><button class="danger" ?disabled=${t.length < 2} @click=${() => this.confirmDelete("groceries", n, "lists")}>${this.x("Delete list")}</button><small class="muted">${this.x("Deleting a list also removes its grocery items. Keep at least one list.")}</small>` : P}<hr><h3>${this.x("What’s cooking?")}</h3><p class="muted">${this.x("Plan the week and shop recipe ingredients straight into this list.")}</p><button @click=${() => this.navigate("recipes")}>${this.x("Meal planner & recipes →")}</button></aside></div></section>`;
+		}), e.checked ? "Moved back to your list" : "Added to the basket")}><div class="row-copy"><strong>${e.name}</strong><span class="muted">${i ? `${J(Number(e.quantity))} ${e.unit || ""}` : ""}${e.notes ? ` · ${e.notes}` : ""}${e.store ? ` · ${e.store}` : ""}${e.deadline ? ` · ${this.x("Due")} ${this.date(e.deadline, {
+			month: "short",
+			day: "numeric"
+		})}` : ""}</span></div><span title=${`${this.x("Created by")} ${this.person(e.creator_id)?.name || this.x("a family member")}`}>${this.avatar(e.creator_id)}</span>${e.assignee_id ? M`<span title=${`${this.x("Assigned to")} ${this.person(e.assignee_id)?.name || this.x("a family member")}`}>${this.avatar(e.assignee_id)}</span>` : P}${a ? M`<button class="icon-button" aria-label=${`${this.x("Edit")} ${e.name}`} @click=${() => this.openEditor("grocery", e)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${e.name}`} @click=${() => this.confirmDelete("groceries", e)}>×</button>` : P}</article>`) : this.empty("A fresh start", this.groceryAssignee ? "No items assigned to this person." : "Add an item or send ingredients from a recipe.", this.addButton(i ? "Add your first item" : "Add your first to-do", "grocery", a, {
+			list_id: this.listId,
+			list_type: r
+		}))}</div></div>
+      <aside class="surface shopping-aside"><span class="eyebrow">${this.x("A LITTLE ORGANIZATION")}</span><h3>${this.s("Create a new list", "Maak een nieuwe lijst")}</h3><p class="muted">${this.x("Keep the supermarket, farmers’ market and pantry runs separate. Matching items merge automatically.")}</p>
+      <div class="list-type-buttons">${[
+			"todo",
+			"shopping",
+			"groceries"
+		].map((e) => M`<button ?disabled=${!a} @click=${() => this.openEditor("list", { list_type: e })}>${c(e)}</button>`)}</div>
+      ${a && n ? M`<button @click=${() => this.openEditor("list", n)}>${this.x("Edit list")}</button><button class="danger" ?disabled=${n?.id === "default"} @click=${() => this.confirmDelete("groceries", n, "lists")}>${this.x("Delete list")}</button><small class="muted">${this.x("Deleting a list also removes its items.")}</small>` : P}<hr><h3>${this.x("What’s cooking?")}</h3><p class="muted">${this.x("Plan the week and shop recipe ingredients straight into this list.")}</p><button @click=${() => this.navigate("recipes")}>${this.x("Meal planner & recipes →")}</button></aside></div></section>`;
 	}
 	mealPlanner() {
 		let e = this.data.groceries, t = G(q(U(/* @__PURE__ */ new Date()), this.firstDay), this.mealWeek * 7), n = e.meal_slots || e.meal_plans || [];
@@ -2959,10 +2926,10 @@ var qe = [
 	today() {
 		let e = this.selectedDay || U(/* @__PURE__ */ new Date()), t = this.people.some((e) => e.id === this.todayPersonId) ? this.todayPersonId : this.pinPersonId || this.me?.id || this.people[0]?.id || "", n = this.person(t), r = (e = []) => !t || !e.length || e.includes(t), i = this.previousPersonId(t), a = this.nextPersonId(t), o = X(He(this.data.calendar.items || [], e, e), e).filter((e) => r(e.person_ids || []));
 		(this.data.groceries.items || []).filter((e) => !e.checked && (!t || !e.assignee_id || e.assignee_id === t));
-		let s = (this.data.todos?.items || []).filter((e) => !e.done && (!t || !e.assignee_id || e.assignee_id === t)), c = (this.data.chores.items || []).filter((t) => Be(t, e) && r(t.assignee_ids || [])), l = this.data.chores.completions || [], u = n?.name || this.s("Family overview", "Gezinsoverzicht");
+		let s = new Set((this.data.groceries.lists || []).filter((e) => e.list_type === "todo").map((e) => e.id)), c = (this.data.groceries.items || []).filter((e) => s.has(e.list_id) && !e.checked && (!t || !e.assignee_id || e.assignee_id === t)), l = (this.data.chores.items || []).filter((t) => Be(t, e) && r(t.assignee_ids || [])), u = this.data.chores.completions || [], d = n?.name || this.s("Family overview", "Gezinsoverzicht");
 		return M`<section class="today-page person-day-page">
       <div class="today-member-strip person-day-strip">
-        <div class="person-day-head"><span class="eyebrow">${this.s("Day for", "Dag voor")}</span><h3>${u}</h3></div>
+        <div class="person-day-head"><span class="eyebrow">${this.s("Day for", "Dag voor")}</span><h3>${d}</h3></div>
         <div class="person-day-nav" role="group" aria-label=${this.s("Choose family member", "Kies familielid")}>
           <button class="icon-button" ?disabled=${!i} aria-label=${this.s("Previous family member", "Vorige familielid")} @click=${() => this.selectTodayPerson(i)}>‹</button>
           <div class="person-day-strip-avatars">${this.people.map((n) => M`<button class=${t === n.id ? "person-pick active" : "person-pick"} style=${`--person-color:${this.color(n.color)}`} aria-pressed=${t === n.id} title=${n.name} @click=${() => {
@@ -2973,69 +2940,23 @@ var qe = [
       </div>
       <div class="today-grid person-day-grid">
         <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("TODAY’S AGENDA")}</span><h3>${this.x("Calendar")}</h3></div><button @click=${() => this.navigate("calendar")}>${this.x("Open calendar →")}</button></div>${o.length ? o.map((e) => M`<button class="agenda-event" style=${`--event-color:${this.eventColor(e)}`} @click=${() => this.openEditor("event-detail", e)}><span class="event-time">${e.all_day ? this.x("All day") : this.time(e.occurrence_start)}</span><strong>${e.title}</strong><span class="event-people">${(e.person_ids || []).map((e) => this.avatar(e))}</span></button>`) : M`<p class="muted">${this.x("Nothing scheduled today.")}</p>`}${this.addButton("Add an event", "event", this.canEvent(), { day: e })}</article>
-        <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("TO DO")}</span><h3>${s.length} ${this.x("open")}</h3></div><button @click=${() => this.navigate("todos")}>${this.x("To-do lists →")}</button></div>${s.slice(0, 6).map((e) => M`<label class="check compact-row"><input type="checkbox" ?disabled=${!this.can("manage_todos") || this.saving} @change=${() => void this.action(() => this.mutate("todos", {
+        <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("TO DO")}</span><h3>${c.length} ${this.x("open")}</h3></div><button @click=${() => this.navigate("lists")}>${this.s("Lists →", "Lijstjes →")}</button></div>${c.slice(0, 6).map((e) => M`<label class="check compact-row"><input type="checkbox" ?disabled=${!this.can("manage_groceries") || this.saving} @change=${() => void this.action(() => this.mutate("groceries", {
 			...e,
-			done: !0
-		}), "Nice, one less thing")}><span class="row-copy"><strong>${e.title}</strong>${e.due_date ? M`<span class="muted">${this.x("Due")} ${this.date(e.due_date, {
+			checked: !0
+		}), "Nice, one less thing")}><span class="row-copy"><strong>${e.name}</strong>${e.deadline ? M`<span class="muted">${this.x("Due")} ${this.date(e.deadline, {
 			month: "short",
 			day: "numeric"
-		})}</span>` : P}</span>${e.assignee_id ? this.avatar(e.assignee_id) : P}</label>`)}${this.addButton("Add to-do", "todo", this.can("manage_todos"), { list_id: this.todoListId })}</article>
-        <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("CHORES")}</span><h3>${c.length} ${this.x("today")}</h3></div><button @click=${() => {
+		})}</span>` : P}</span>${e.assignee_id ? this.avatar(e.assignee_id) : P}</label>`)}${this.addButton("Add to-do", "grocery", this.can("manage_groceries"), {
+			list_id: [...s][0] || this.listId,
+			list_type: "todo"
+		})}</article>
+        <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("CHORES")}</span><h3>${l.length} ${this.x("today")}</h3></div><button @click=${() => {
 			this.selectedDay = e, this.navigate("chores");
-		}}>${this.x("Chore board →")}</button></div>${c.map((t) => {
-			let n = t.assignee_ids || [], r = n[(Number(t.rotation_index) || 0) % Math.max(1, n.length)], i = l.some((n) => n.chore_id === t.id && U(new Date(n.completed_at)) === e);
+		}}>${this.x("Chore board →")}</button></div>${l.map((t) => {
+			let n = t.assignee_ids || [], r = n[(Number(t.rotation_index) || 0) % Math.max(1, n.length)], i = u.some((n) => n.chore_id === t.id && U(new Date(n.completed_at)) === e);
 			return M`<div class=${`compact-row ${i ? "done" : ""}`}>${this.avatar(r)}<span class="row-copy"><strong>${t.title}</strong><span class="muted">${i ? this.x("Done ✓") : `${t.points} ${this.x("pts")}`}</span></span></div>`;
-		})}${c.length ? P : M`<p class="muted">${this.x("No chores due today.")}</p>`}</article>
-        <article class="surface"><div class="surface-heading"><div><span class="eyebrow">${this.x("FAMILY JOURNAL")}</span><h3>${this.x("Latest moment")}</h3></div><button @click=${() => this.navigate("journal")}>${this.x("Journal →")}</button></div>${(() => {
-			let e = [...this.data.journal?.items || []].sort((e, t) => `${t.day}`.localeCompare(e.day))[0];
-			return e ? M`<p class="eyebrow">${this.date(e.day, {
-				month: "short",
-				day: "numeric",
-				year: "numeric"
-			})}</p><strong>${e.title}</strong><p class="muted journal-excerpt">${e.body}</p>` : M`<p class="muted">${this.x("Write down something worth remembering.")}</p>`;
-		})()}${this.addButton("New entry", "journal", this.can("manage_journal"), { day: e })}</article>
+		})}${l.length ? P : M`<p class="muted">${this.x("No chores due today.")}</p>`}</article>
       </div></section>`;
-	}
-	todos() {
-		let e = this.data.todos || {}, t = e.lists || [], n = t.find((e) => e.id === this.todoListId), r = this.can("manage_todos"), i = (e.items || []).filter((e) => e.list_id === this.todoListId), a = i.filter((e) => !e.done), o = i.filter((e) => e.done);
-		return i = [...a.sort((e, t) => (e.due_date || "9").localeCompare(t.due_date || "9")), ...this.showDoneTodos ? o : []], M`<section><div class="shopping-layout"><div class="surface shopping-list"><div class="surface-heading"><div><span class="eyebrow">${this.s("TO-DO LIST", "TAKENLIJST")}</span><h2>${n?.name || this.s("To Do", "Taken")}</h2><p class="muted">${a.length} ${this.s("open", "open")} · ${o.length} ${this.s("done", "klaar")}</p></div>${this.addButton(this.s("Add to-do", "Taak toevoegen"), "todo", r, { list_id: this.todoListId })}</div>
-      <div class="list-tabs" role="group" aria-label=${this.s("To-do lists", "Takenlijsten")}>${t.map((e) => M`<button class=${e.id === this.todoListId ? "active" : ""} aria-pressed=${e.id === this.todoListId} @click=${() => this.todoListId = e.id}>${e.name}</button>`)}</div>
-      <div class="list-tools"><label class="check"><input type="checkbox" .checked=${this.showDoneTodos} @change=${() => this.showDoneTodos = !this.showDoneTodos}>${this.s("Show completed", "Toon afgerond")}</label>${r ? M`<button ?disabled=${!o.length || this.saving} @click=${() => void this.action(async () => {
-			for (let e of o) await this._hass.callWS({
-				type: "family_organizer/delete",
-				resource: "todos",
-				item_id: e.id
-			});
-		}, this.s("Completed to-dos cleared", "Afgeronde taken verwijderd"))}>${this.s("Clear completed", "Verwijder afgerond")}</button>` : P}</div>
-      <div class="grocery-items">${i.length ? i.map((e) => this.todoRow(e, r)) : this.empty("Nothing to do", "Add a task, assign it to someone and give it a due date.", this.addButton("Add your first to-do", "todo", r, { list_id: this.todoListId }))}</div></div>
-      <aside class="surface shopping-aside"><span class="eyebrow">${this.x("LISTS FOR EVERYTHING")}</span><h3>${this.x("Packing, projects, errands")}</h3><p class="muted">${this.x("Keep separate lists for holidays, home projects or anything else the family needs to get done.")}</p>${this.addButton("New list", "todolist", r)}${r && n ? M`<button @click=${() => this.openEditor("todolist", n)}>${this.x("Edit list")}</button><button class="danger" ?disabled=${t.length < 2} @click=${() => this.confirmDelete("todos", n, "lists")}>${this.x("Delete list")}</button><small class="muted">${this.x("Deleting a list also removes its to-dos. Keep at least one list.")}</small>` : P}<hr><h3>${this.x("Need groceries instead?")}</h3><button @click=${() => this.navigate("groceries")}>${this.x("Shopping lists →")}</button></aside></div></section>`;
-	}
-	todoRow(e, t) {
-		let n = e.due_date ? `${this.x("Due")} ${this.date(e.due_date, {
-			weekday: "short",
-			month: "short",
-			day: "numeric"
-		})}` : "", r = `${n}${e.notes ? `${n ? " · " : ""}${e.notes}` : ""}`, i = () => void this.action(() => this.mutate("todos", {
-			...e,
-			done: !e.done
-		}), e.done ? "Back on the list" : "Nice, one less thing"), a = e.assignee_id ? M`<span title=${`${this.x("Assigned to")} ${this.person(e.assignee_id)?.name || this.x("a family member")}`}>${this.avatar(e.assignee_id)}</span>` : P, o = t ? M`<button class="icon-button" aria-label=${`${this.x("Edit")} ${e.title}`} @click=${() => this.openEditor("todo", e)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${e.title}`} @click=${() => this.confirmDelete("todos", e)}>×</button>` : P;
-		return M`<article class=${`grocery-row ${e.done ? "checked" : ""}`}><input type="checkbox" aria-label=${`${this.x("Mark")} ${e.title} ${this.x(e.done ? "open" : "done")}`} .checked=${!!e.done} ?disabled=${!t || this.saving} @change=${i}><div class="row-copy"><strong>${e.title}</strong><span class="muted">${r}</span></div>${a}${o}</article>`;
-	}
-	journal() {
-		let e = [...this.data.journal?.items || []].filter((e) => !this.journalPerson || (e.person_ids || []).includes(this.journalPerson)).sort((e, t) => `${t.day}`.localeCompare(e.day)), t = this.can("manage_journal");
-		return M`<section><div class="section-toolbar"><div><span class="eyebrow">${this.s("THE FAMILY JOURNAL", "HET GEZINSDAGBOEK")}</span><h2>${this.s("Moments worth keeping", "Momenten om te bewaren")}</h2></div><div class="toolbar-actions"><label>${this.t("family_member")}<select .value=${this.journalPerson} @change=${(e) => this.journalPerson = e.target.value}><option value="">${this.s("Everyone", "Iedereen")}</option>${this.peopleOptions()}</select></label>${this.addButton(this.s("New entry", "Nieuw item"), "journal", t, { day: U(/* @__PURE__ */ new Date()) })}</div></div>
-      <div class="journal-feed">${e.length ? e.map((e) => M`<article class="surface journal-entry">
-        <div class="detail-date"><span>${this.date(e.day, { month: "short" })}</span><strong>${W(e.day).getDate()}</strong></div>
-        <div class="journal-body"><span class="eyebrow">${this.date(e.day, {
-			weekday: "long",
-			year: "numeric",
-			month: "long",
-			day: "numeric"
-		})}</span><h3>${e.title}</h3><p>${e.body}</p>
-          ${(e.photos || []).length ? M`<div class="journal-photos">${e.photos.map((e) => M`<img src=${e} alt="" loading="lazy" referrerpolicy="no-referrer">`)}</div>` : P}
-          <div class="event-people">${(e.person_ids || []).map((e) => M`<span class="check">${this.avatar(e)}${this.person(e)?.name || ""}</span>`)}</div></div>
-        <button class="icon-button" aria-label=${`${this.x("Edit")} ${e.title}`} @click=${() => this.openEditor("journal", e)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${e.title}`} @click=${() => this.confirmDelete("journal", e)}>×</button>
-      </article>`) : this.empty("Your story starts here", this.journalPerson ? "No entries for this family member yet." : "Record first words, big wins and ordinary days you don’t want to forget.", this.addButton("Write the first entry", "journal", t, { day: U(/* @__PURE__ */ new Date()) }))}</div></section>`;
 	}
 	contacts() {
 		let e = this.can("manage_contacts"), t = this.contactQuery.trim().toLowerCase(), n = [...this.data.contacts?.items || []].sort((e, t) => `${e.name}`.localeCompare(t.name)).filter((e) => !t || [
@@ -3108,11 +3029,8 @@ var qe = [
 			quick: "Wat wil je toevoegen?",
 			"event-detail": t.title,
 			event: t.id ? "Afspraakreeks bewerken" : "Afspraak toevoegen",
-			grocery: t.id ? "Boodschappenitem bewerken" : "Aan boodschappenlijst toevoegen",
-			list: t.id ? "Boodschappenlijst bewerken" : "Boodschappenlijst maken",
-			todo: t.id ? "Taak bewerken" : "Taak toevoegen",
-			todolist: t.id ? "Takenlijst bewerken" : "Takenlijst maken",
-			journal: t.id ? "Dagboekitem bewerken" : "Nieuw dagboekitem",
+			grocery: t.id ? "Item bewerken" : "Item toevoegen",
+			list: t.id ? "Lijst bewerken" : "Lijst maken",
 			contact: t.id ? "Contact bewerken" : "Contact toevoegen",
 			"recipe-import": "Recept van internet importeren",
 			meal: t.id ? "Geplande maaltijd bewerken" : "Maaltijd plannen",
@@ -3130,11 +3048,8 @@ var qe = [
 			quick: "What would you like to add?",
 			"event-detail": t.title,
 			event: t.id ? "Edit event series" : "Add an event",
-			grocery: t.id ? "Edit shopping item" : "Add to your shopping list",
-			list: t.id ? "Edit grocery list" : "Create a grocery list",
-			todo: t.id ? "Edit to-do" : "Add a to-do",
-			todolist: t.id ? "Edit to-do list" : "Create a to-do list",
-			journal: t.id ? "Edit journal entry" : "New journal entry",
+			grocery: t.id ? "Edit item" : "Add item",
+			list: t.id ? "Edit list" : "Create a list",
 			contact: t.id ? "Edit contact" : "Add a contact",
 			"recipe-import": "Import a recipe from the web",
 			meal: t.id ? "Edit planned meal" : "Plan a meal",
@@ -3186,12 +3101,12 @@ var qe = [
 				item: { list_id: this.listId }
 			},
 			{
-				kind: "todo",
+				kind: "grocery",
 				title: "To-do",
 				description: "Get it off your mind and onto the list",
 				icon: "☑",
-				enabled: this.can("manage_todos"),
-				item: { list_id: this.todoListId }
+				enabled: this.can("manage_groceries"),
+				item: { list_type: "todo" }
 			},
 			{
 				kind: "meal",
@@ -3220,14 +3135,6 @@ var qe = [
 				icon: "♧",
 				enabled: this.can("manage_recipes"),
 				item: {}
-			},
-			{
-				kind: "journal",
-				title: "Journal entry",
-				description: "Save a moment worth remembering",
-				icon: "✎",
-				enabled: this.can("manage_journal"),
-				item: { day: this.selectedDay }
 			},
 			{
 				kind: "contact",
@@ -3263,7 +3170,7 @@ var qe = [
 	}
 	editorFields(e, t) {
 		if (e === "delete") {
-			let e = this.editor?.collection === "lists" ? this.x(this.editor.resource === "todos" ? "All to-dos on this list will also be removed." : "All grocery items on this list will also be removed.") : this.editor?.collection === "categories" ? this.x("Recipes are kept. Child categories move to the parent.") : t.recurrence ? this.x("This removes the entire repeating event series.") : this.x("This cannot be undone.");
+			let e = this.editor?.collection === "lists" ? this.x("All items on this list will also be removed.") : this.editor?.collection === "categories" ? this.x("Recipes are kept. Child categories move to the parent.") : t.recurrence ? this.x("This removes the entire repeating event series.") : this.x("This cannot be undone.");
 			return M`<div class="full"><p>${this.t("delete")} <strong>${t.title || t.name || this.x("this item")}</strong>?</p><p class="muted">${e}</p></div>`;
 		}
 		if (e === "event") {
@@ -3290,13 +3197,21 @@ var qe = [
 				["1440", "1 day before"]
 			])}${this.personChecks("person_ids", t.person_ids || (this.can("manage_calendar_all") ? [] : [this.me?.id]), !this.can("manage_calendar_all"))}${this.textarea("Notes", "description", t.description)}${this.shared(t)}`;
 		}
-		if (e === "grocery") return M`${this.field("Item name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Quantity", "quantity", t.quantity ?? 1, "number", !0, {
-			min: .001,
-			step: "any"
-		})}${this.field("Unit", "unit", t.unit, "text", !1, { placeholder: "cups, kg, packs…" })}${this.select("Grocery list", "list_id", t.list_id || this.listId, (this.data.groceries.lists || []).map((e) => [e.id, e.name]))}<label>${this.x("Store")}<input name="store" list="store-options" .value=${t.store || ""}><datalist id="store-options">${(this.settingsData.stores || []).map((e) => M`<option value=${e}></option>`)}</datalist></label><label>${this.x("Assigned to")}<select name="assignee_id"><option value="">${this.x("Anyone")}</option>${this.peopleOptions(t.assignee_id)}</select></label>${this.textarea("Notes", "notes", t.notes)}${this.shared(t)}`;
-		if (e === "list") return M`${this.field("List name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Default store", "store", t.store)}${this.shared(t)}`;
-		if (e === "todo") return M`${this.field("What needs doing?", "title", t.title, "text", !0, { autofocus: !0 })}${this.select("List", "list_id", t.list_id || this.todoListId, (this.data.todos?.lists || []).map((e) => [e.id, e.name]))}${this.field("Due date", "due_date", t.due_date, "date")}<label>${this.x("Assigned to")}<select name="assignee_id"><option value="">${this.x("Anyone")}</option>${this.peopleOptions(t.assignee_id)}</select></label>${this.textarea("Notes", "notes", t.notes)}${this.shared(t)}`;
-		if (e === "todolist") return M`${this.field("List name", "name", t.name, "text", !0, { autofocus: !0 })}${this.shared(t)}`;
+		if (e === "grocery") {
+			let e = (this.data.groceries.lists || []).find((e) => e.id === (t.list_id || this.listId)), n = (t.list_type || e?.list_type || "groceries") !== "todo";
+			return M`${this.field(n ? "Item name" : "What needs doing?", "name", t.name, "text", !0, { autofocus: !0 })}${n ? M`${this.field("Quantity", "quantity", t.quantity ?? 1, "number", !0, {
+				min: .001,
+				step: "any"
+			})}${this.field("Unit", "unit", t.unit, "text", !1, { placeholder: "cups, kg, packs" })}` : P}${this.select("List", "list_id", t.list_id || this.listId, (this.data.groceries.lists || []).map((e) => [e.id, e.name]))}${n ? M`<label>${this.x("Store")}<input name="store" list="store-options" .value=${t.store || ""}></label><datalist id="store-options">${(this.settingsData.stores || []).map((e) => M`<option value=${e}></option>`)}</datalist>` : P}${this.field("Deadline", "deadline", t.deadline, "date")}<label>${this.x("Assigned to")}<select name="assignee_id"><option value="">${this.x("Anyone")}</option>${this.peopleOptions(t.assignee_id)}</select></label>${this.textarea("Notes", "notes", t.notes)}${this.shared(t)}`;
+		}
+		if (e === "list") {
+			let e = (e) => e === "todo" ? this.s("To-Do", "Taken") : e === "shopping" ? this.s("Winkelen", "Winkelen") : this.s("Boodschappen", "Boodschappen");
+			return M`${this.field("List name", "name", t.name, "text", !0, { autofocus: !0 })}${t.id ? P : this.select("Type", "list_type", t.list_type || "groceries", [
+				"todo",
+				"shopping",
+				"groceries"
+			].map((t) => [t, e(t)]))}${(t.list_type || "groceries") === "todo" ? P : this.field("Default store", "store", t.store)}${this.shared(t)}`;
+		}
 		if (e === "recipe-import") return M`${this.field("Recipe page URL", "url", t.url, "url", !0, {
 			autofocus: !0,
 			placeholder: "https://â€¦"
@@ -3305,7 +3220,6 @@ var qe = [
 			list: "contact-groups",
 			placeholder: "School, Doctors, Family, Friends…"
 		})}<datalist id="contact-groups">${[...new Set((this.data.contacts?.items || []).map((e) => e.group).filter(Boolean))].map((e) => M`<option value=${e}></option>`)}</datalist>${this.textarea("Phone numbers (one per line)", "phones", (t.phones || []).join("\n"), "+31 6 1234 5678")}${this.textarea("Email addresses (one per line)", "emails", (t.emails || []).join("\n"), "name@example.com")}${this.field("Address", "address", t.address)}${this.textarea("Notes", "notes", t.notes, "Opening hours, who to ask for…")}${this.shared(t)}`;
-		if (e === "journal") return M`${this.field("Title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Date", "day", t.day || U(/* @__PURE__ */ new Date()), "date", !0)}${this.textarea("What happened?", "body", t.body, "First steps, a big win, a funny thing someone said…")}${this.personChecks("person_ids", t.person_ids || [])}${this.textarea("Photo URLs (one per line)", "photos", (t.photos || []).join("\n"), "https://…")}${this.shared(t)}`;
 		if (e === "meal") return M`${this.field("Date", "day", t.day || this.selectedDay, "date", !0)}${this.select("Meal slot", "slot", t.slot || t.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || [
 			"breakfast",
 			"lunch",
@@ -3423,6 +3337,6 @@ var qe = [
 		this.styles = We;
 	}
 };
-Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "todoListId", void 0), Z([H()], $.prototype, "showDoneTodos", void 0), Z([H()], $.prototype, "journalPerson", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), $ = Z([we("family-organizer-panel")], $);
+Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), $ = Z([we("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };

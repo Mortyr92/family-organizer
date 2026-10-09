@@ -78,8 +78,15 @@ def leaderboard(chores: list[dict], period: str, today: date | None = None) -> d
     return points_by_person(chores, start, days)
 
 
-def merge_grocery_item(items: list[dict], candidate: dict) -> tuple[dict, bool]:
-    """Merge equivalent unchecked items in the same routed list."""
+def merge_grocery_item(items: list[dict], candidate: dict, list_type: str = "groceries") -> tuple[dict, bool]:
+    """Merge equivalent unchecked items in the same routed list.
+
+    To-do lists have no quantities, so duplicate to-do titles are never merged;
+    only shopping/groceries lists combine matching items by summing quantity.
+    """
+    if list_type == "todo":
+        items.append(candidate)
+        return candidate, False
     for item in items:
         same = (
             not item.get("checked")

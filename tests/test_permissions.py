@@ -27,18 +27,18 @@ def test_exact_roles_capabilities_and_admin():
     assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_calendar_own"]
     assert not capabilities_for(user("child-user"), {}, PEOPLE)["manage_calendar_all"]
     assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_todos"]
-    assert capabilities_for(user("child-user"), {}, PEOPLE)["manage_journal"]
-    assert capabilities_for(user("parent-user"), {}, PEOPLE)["manage_journal"]
     assert all(capabilities_for(user("parent-user"), {}, PEOPLE).values())
-    assert not any(capabilities_for(user("unknown"), {}, PEOPLE).values())
+    # Any other authenticated Home Assistant account (not linked to a family
+    # person) is treated as a parent; only Settings is gated by the PIN lock.
+    assert all(capabilities_for(user("unknown"), {}, PEOPLE).values())
     pin_user = SimpleNamespace(id="tablet", is_admin=False, pin_person_id="p1")
     assert role_for(pin_user, {}, PEOPLE) == "parent"
     assert all(capabilities_for(pin_user, {}, PEOPLE).values())
 
 
-def test_unlinked_denied_and_person_override_authoritative():
-    with pytest.raises(Exception):
-        check_capability(user("unknown"), "groceries", "manage_groceries", {}, people=PEOPLE)
+def test_unlinked_allowed_and_person_override_authoritative():
+    # Unlinked accounts now default to parent-level access rather than being denied.
+    check_capability(user("unknown"), "groceries", "manage_groceries", {}, people=PEOPLE)
     people = {"items": [{**PEOPLE["items"][1], "permissions": {"manage_groceries": False}}]}
     with pytest.raises(Exception):
         check_capability(

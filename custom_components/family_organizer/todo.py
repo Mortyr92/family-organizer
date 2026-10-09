@@ -1,4 +1,4 @@
-"""Grocery todo list entity."""
+"""Grocery/list todo list entity."""
 from __future__ import annotations
 
 from uuid import uuid4
@@ -13,7 +13,6 @@ from .const import EVENT_UPDATED
 async def async_setup_entry(hass, entry, async_add_entities):
     stores = hass.data[DOMAIN]["stores"]
     known: set[str] = set()
-    known_todos: set[str] = set()
 
     @callback
     def add_lists(_event=None):
@@ -24,27 +23,24 @@ async def async_setup_entry(hass, entry, async_add_entities):
         if lists:
             known.update(value["id"] for value in lists)
             async_add_entities([GroceryTodo(stores, value, hass) for value in lists])
-        todo_lists = [
-            value for value in stores["todos"].data.get("lists", [])
-            if value["id"] not in known_todos
-        ]
-        if todo_lists:
-            known_todos.update(value["id"] for value in todo_lists)
-            async_add_entities([FamilyTodo(stores, value, hass) for value in todo_lists])
 
     add_lists()
 
     @callback
     def handle_update(event):
-        if event.data.get("resource") in ("groceries", "todos") and event.data.get("collection") == "lists":
+        if event.data.get("resource") == "groceries" and event.data.get("collection") == "lists":
             add_lists()
 
     entry.async_on_unload(hass.bus.async_listen(EVENT_UPDATED, handle_update))
 
 
 class GroceryTodo(TodoListEntity):
-    _attr_name = "Family groceries"
-    _attr_unique_id = "family_organizer_grocery_todo"
+    """A Home Assistant to-do list entity backed by a Family Organizer list.
+
+    Works for every list type (groceries, shopping, to-do); items use ``name``
+    (and ``checked``) regardless of list type.
+    """
+
     _attr_supported_features = (
         TodoListEntityFeature.CREATE_TODO_ITEM
         | TodoListEntityFeature.UPDATE_TODO_ITEM
@@ -94,54 +90,3 @@ class GroceryTodo(TodoListEntity):
         ]
         await self.stores["groceries"].async_save()
         self.hass.bus.async_fire(EVENT_UPDATED, {"resource": "groceries", "operation": "delete"})
-
-
-class FamilyTodo(TodoListEntity):
-    _attr_supported_features = (
-        TodoListEntityFeature.CREATE_TODO_ITEM
-        | TodoListEntityFeature.UPDATE_TODO_ITEM
-        | TodoListEntityFeature.DELETE_TODO_ITEM
-    )
-
-    def __init__(self, stores, todo_list, hass):
-        self.stores = stores
-        self.todo_list = todo_list
-        self.hass = hass
-        self._attr_name = f"{todo_list.get('name', 'To Do')} to-do"
-        self._attr_unique_id = f"family_organizer_todo_{todo_list['id']}"
-
-    @property
-    def todo_items(self):
-        return [
-            TodoItem(
-                uid=item["id"],
-                summary=item["title"],
-                status=TodoItemStatus.COMPLETED if item.get("done") else TodoItemStatus.NEEDS_ACTION,
-            )
-            for item in self.stores["todos"].data["items"]
-            if item.get("list_id", "default") == self.todo_list["id"]
-        ]
-
-    async def async_create_todo_item(self, item):
-        self.stores["todos"].data["items"].append({
-            "id": uuid4().hex, "title": item.summary, "notes": "", "done": False,
-            "list_id": self.todo_list["id"], "shared": True,
-        })
-        await self.stores["todos"].async_save()
-        self.hass.bus.async_fire(EVENT_UPDATED, {"resource": "todos", "operation": "create"})
-
-    async def async_update_todo_item(self, item):
-        target = next(value for value in self.stores["todos"].data["items"] if value["id"] == item.uid)
-        if item.summary is not None:
-            target["title"] = item.summary
-        if item.status is not None:
-            target["done"] = item.status == TodoItemStatus.COMPLETED
-        await self.stores["todos"].async_save()
-        self.hass.bus.async_fire(EVENT_UPDATED, {"resource": "todos", "operation": "update"})
-
-    async def async_delete_todo_items(self, uids):
-        self.stores["todos"].data["items"] = [
-            item for item in self.stores["todos"].data["items"] if item["id"] not in uids
-        ]
-        await self.stores["todos"].async_save()
-        self.hass.bus.async_fire(EVENT_UPDATED, {"resource": "todos", "operation": "delete"})

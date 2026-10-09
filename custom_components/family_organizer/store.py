@@ -45,20 +45,22 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
                 {"id": "other", "name": "Other", "icon": "🗒", "color": "#64748b"},
             ]
     if name == "groceries":
-        result.setdefault("lists", [{"id": "default", "name": "Groceries", "store": "", "shared": True}])
+        result.setdefault(
+            "lists", [{"id": "default", "name": "Groceries", "list_type": "groceries", "store": "", "shared": True}]
+        )
+        for lst in result["lists"]:
+            lst.setdefault("list_type", "groceries")
+            lst.setdefault("deadline", None)
         for item in result["items"]:
             item.setdefault("list_id", "default")
+            item.setdefault("deadline", None)
         result.setdefault("meal_plans", [])
         result.setdefault("meal_slots", result["meal_plans"])
-    if name == "todos":
+    if name == "todos_legacy":
         result.setdefault("lists", [{"id": "default", "name": "To Do", "shared": True}])
         for todo in result["items"]:
             todo.setdefault("list_id", "default")
             todo.setdefault("done", False)
-    if name == "journal":
-        for entry in result["items"]:
-            entry.setdefault("person_ids", [])
-            entry.setdefault("photos", [])
     if name == "contacts":
         for contact in result["items"]:
             contact.setdefault("phones", [])
@@ -111,11 +113,50 @@ class FamilyStore:
 
 class StoreManager:
     def __init__(self, hass) -> None:
+        self.hass = hass
         self.stores = {name: FamilyStore(hass, name) for name in STORES}
 
     async def async_load(self) -> None:
         for store in self.stores.values():
             await store.async_load()
+        await self._async_migrate_legacy_stores()
+
+    async def _async_migrate_legacy_stores(self) -> None:
+        """One-time migration of the retired todos/journal stores into groceries."""
+        groceries = self.stores["groceries"].data
+        migrated_marker = "_migrated_legacy_todos"
+        if groceries.get(migrated_marker):
+            return
+        legacy_todos = VersionedStore(self.hass, "todos")
+        legacy_data = await legacy_todos.async_load()
+        if legacy_data:
+            legacy_data = migrate_payload("todos_legacy", STORE_VERSION, legacy_data)
+            existing_list_ids = {lst["id"] for lst in groceries.setdefault("lists", [])}
+            for lst in legacy_data.get("lists", []):
+                if lst["id"] in existing_list_ids:
+                    lst = {**lst, "id": f"todo-{lst['id']}"}
+                groceries["lists"].append({
+                    "id": lst["id"], "name": lst.get("name", "To Do"), "list_type": "todo",
+                    "store": "", "deadline": None, "shared": lst.get("shared", True),
+                    "creator_id": lst.get("creator_id"),
+                })
+            list_id_map = {
+                original.get("id"): migrated.get("id")
+                for original, migrated in zip(legacy_data.get("lists", []), groceries["lists"][-len(legacy_data.get("lists", [])):])
+            } if legacy_data.get("lists") else {}
+            for todo in legacy_data.get("items", []):
+                groceries["items"].append({
+                    "id": todo["id"], "name": todo.get("title", ""), "quantity": 1, "unit": "",
+                    "checked": bool(todo.get("done")), "category": "Other",
+                    "notes": todo.get("notes", ""), "list_id": list_id_map.get(todo.get("list_id"), todo.get("list_id", "default")),
+                    "store": "", "deadline": todo.get("due_date"),
+                    "assignee_id": todo.get("assignee_id"), "creator_id": todo.get("creator_id"),
+                    "shared": todo.get("shared", True),
+                })
+            await self.stores["groceries"].async_save()
+        groceries[migrated_marker] = True
+        await self.stores["groceries"].async_save()
+        await legacy_todos.async_remove()
 
     def __getitem__(self, name: str) -> FamilyStore:
         return self.stores[name]

@@ -32,13 +32,12 @@ _COLLECTIONS = {
     "people": {"items"},
     "calendar": {"items", "sources", "categories"},
     "groceries": {"items", "lists", "meal_slots", "meal_plans"},
-    "todos": {"items", "lists"},
     "chores": {"items", "completions", "point_adjustments"},
     "recipes": {"items", "categories"},
-    "journal": {"items"},
     "contacts": {"items"},
     "settings": {"items"},
 }
+_LIST_TYPES = ("todo", "shopping", "groceries")
 
 
 def _manager(hass):
@@ -257,10 +256,8 @@ async def _mutate(hass, connection, msg, operation):
         "people": "manage_people",
         "calendar": "manage_calendar_all",
         "groceries": "manage_meal_plan" if collection in {"meal_slots", "meal_plans"} else "manage_groceries",
-        "todos": "manage_todos",
         "chores": "manage_chores",
         "recipes": "manage_recipes",
-        "journal": "manage_journal",
         "contacts": "manage_contacts",
     }[resource]
     if operation == "create":
@@ -297,7 +294,15 @@ async def _mutate(hass, connection, msg, operation):
             ):
                 raise vol.Invalid("Home Assistant user is already linked")
         if resource == "groceries" and collection == "items":
-            item, _ = merge_grocery_item(items, item)
+            target_list = next(
+                (value for value in manager["groceries"].data.get("lists", []) if value["id"] == item.get("list_id")),
+                None,
+            )
+            item, _ = merge_grocery_item(items, item, (target_list or {}).get("list_type", "groceries"))
+        elif resource == "groceries" and collection == "lists":
+            if item.get("list_type") not in _LIST_TYPES:
+                item["list_type"] = "groceries"
+            items.append(item)
         else:
             items.append(item)
     else:
@@ -377,19 +382,11 @@ async def _mutate(hass, connection, msg, operation):
                     if event.get("category") == item["id"]:
                         event["category"] = None
             if resource == "groceries" and collection == "lists":
-                if not items:
+                if item["id"] == "default":
                     items.insert(index, item)
-                    raise vol.Invalid("At least one grocery list is required")
+                    raise vol.Invalid("The default groceries list cannot be deleted")
                 manager["groceries"].data["items"] = [
                     value for value in manager["groceries"].data.get("items", [])
-                    if value.get("list_id") != item["id"]
-                ]
-            if resource == "todos" and collection == "lists":
-                if not items:
-                    items.insert(index, item)
-                    raise vol.Invalid("At least one to-do list is required")
-                manager["todos"].data["items"] = [
-                    value for value in manager["todos"].data.get("items", [])
                     if value.get("list_id") != item["id"]
                 ]
     await manager[resource].async_save()
@@ -458,7 +455,7 @@ async def ws_recipe_to_groceries(hass, connection, msg):
         (item for item in manager["groceries"].data["lists"] if item.get("id") == msg["list_id"]),
         None,
     )
-    if destination is None:
+    if destination is None or destination.get("list_type", "groceries") != "groceries":
         connection.send_error(msg["id"], "not_found", "Grocery list not found")
         return
     added = []
@@ -475,7 +472,10 @@ async def ws_recipe_to_groceries(hass, connection, msg):
         routed_list = routes.get(
             str(original_index), routes.get(original_index, item["list_id"])
         )
-        if not any(value.get("id") == routed_list for value in manager["groceries"].data["lists"]):
+        if not any(
+            value.get("id") == routed_list and value.get("list_type", "groceries") == "groceries"
+            for value in manager["groceries"].data["lists"]
+        ):
             routed_list = msg["list_id"]
         item["list_id"] = routed_list
         item["id"] = uuid4().hex

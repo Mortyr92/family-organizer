@@ -64,6 +64,31 @@ def agenda_message(occurrences: list[dict], time_format: str) -> str:
     return "\n".join(lines)
 
 
+def due_list_deadlines(lists: list[dict], items: list[dict], now: datetime, lookahead: timedelta = CHECK_INTERVAL) -> list[dict]:
+    """Return list/item deadlines whose one-hour-before moment falls within [now, now + lookahead)."""
+    due = []
+    list_names = {lst["id"]: lst.get("name", "") for lst in lists}
+    for entry, kind in [(lst, "list") for lst in lists] + [(item, "item") for item in items]:
+        deadline = entry.get("deadline")
+        if not deadline:
+            continue
+        try:
+            when = parse_datetime(deadline)
+        except (ValueError, TypeError):
+            continue
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=now.tzinfo)
+        remind_at = when - timedelta(hours=1)
+        if now <= remind_at < now + lookahead:
+            due.append({
+                "id": entry.get("id"), "kind": kind, "deadline": when,
+                "title": entry.get("title") or entry.get("name", ""),
+                "list_id": entry.get("list_id") or entry.get("id"),
+                "list_name": list_names.get(entry.get("list_id") or entry.get("id"), ""),
+            })
+    return due
+
+
 class ReminderScheduler:
     """Checks once a minute for reminders and the daily agenda."""
 
@@ -103,6 +128,13 @@ class ReminderScheduler:
             await self._deliver(reminder, settings)
         if len(self._sent) > 2000:
             self._sent = set(list(self._sent)[-1000:])
+        groceries = self.stores["groceries"].data
+        for reminder in due_list_deadlines(groceries.get("lists", []), groceries.get("items", []), now):
+            key = f"list|{reminder['kind']}|{reminder['id']}|{reminder['deadline'].isoformat()}"
+            if key in self._sent:
+                continue
+            self._sent.add(key)
+            await self._deliver_list_reminder(reminder, settings)
         digest = settings.get("daily_agenda_time") or ""
         if digest and now.strftime("%H:%M") == digest and self._agenda_day != now.date().isoformat():
             self._agenda_day = now.date().isoformat()
@@ -127,6 +159,17 @@ class ReminderScheduler:
             "person_ids": reminder.get("person_ids") or [], "people": names, "message": message,
         })
         await self._notify("Family Organizer reminder", message, settings, f"{DOMAIN}_{reminder.get('id')}")
+
+    async def _deliver_list_reminder(self, reminder: dict, settings: dict) -> None:
+        when = format_time(reminder["deadline"], str(settings.get("time_format", "24")))
+        suffix = f" ({reminder['list_name']})" if reminder["kind"] == "item" and reminder["list_name"] else ""
+        message = f"{reminder.get('title', 'Item')} is due at {when}{suffix}."
+        self.hass.bus.async_fire(EVENT_REMINDER, {
+            "list_reminder": True, "item_id": reminder["id"], "kind": reminder["kind"],
+            "deadline": reminder["deadline"].isoformat(), "title": reminder.get("title", ""),
+            "list_id": reminder.get("list_id"), "message": message,
+        })
+        await self._notify("Family Organizer reminder", message, settings, f"{DOMAIN}_list_{reminder['id']}")
 
     async def _notify(self, title: str, message: str, settings: dict, notification_id: str) -> None:
         service = str(settings.get("notify_service") or "").strip()

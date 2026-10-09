@@ -16,7 +16,6 @@ CAPABILITIES = (
     "complete_own_chores",
     "complete_any_chore",
     "manage_recipes",
-    "manage_journal",
     "manage_contacts",
     "manage_settings",
     "manage_calendar_sync",
@@ -28,7 +27,7 @@ ROLE_CAPABILITIES: dict[str, dict[str, bool]] = {
     "child": {
         capability: capability in {
             "manage_calendar_own", "manage_groceries", "manage_todos", "manage_meal_plan",
-            "complete_own_chores", "manage_recipes", "manage_journal",
+            "complete_own_chores", "manage_recipes",
         }
         for capability in CAPABILITIES
     },
@@ -151,7 +150,7 @@ def permission_for(user, resource: str, settings: dict, people: Any = None) -> s
     mapping = {
         "people": "manage_people", "calendar": "manage_calendar_own",
         "groceries": "manage_groceries", "chores": "complete_own_chores",
-        "todos": "manage_todos", "journal": "manage_journal", "contacts": "manage_contacts",
+        "contacts": "manage_contacts",
         "recipes": "manage_recipes", "settings": "manage_settings",
     }
     return "admin" if role_for(user, settings, people) == "parent_admin" else (

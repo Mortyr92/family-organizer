@@ -1,0 +1,5 @@
+- Change: Daily Journal has been removed entirely to simplify the app.
+- Change: To-Do and Groceries have been merged into a single "Lists" page supporting three list types (To-Do, Winkelen, Boodschappen); To-Do lists skip quantities, while Winkelen/Boodschappen lists keep quantity, unit, store, and duplicate-item merging.
+- Change: a default Groceries list is always present and can no longer be deleted; additional lists of any type can be created and removed freely.
+- Add: list items support optional deadlines with one-hour-before reminders, surfaced on Vandaag alongside the rest of your open to-dos.
+- Change: storage was migrated to a unified groceries store (version 5); existing to-do lists are automatically carried over as To-Do lists and the journal data is dropped during the upgrade.

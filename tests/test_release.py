@@ -17,7 +17,7 @@ def test_release_versions_and_hacs_bundle():
     hacs = json.loads((ROOT / "hacs.json").read_text())
     assert hacs["zip_release"] and hacs["filename"] == "family_organizer.zip"
     assert manifest["domain"] == DOMAIN == "family_organizer"
-    assert STORE_VERSION == 4
+    assert STORE_VERSION == 5
 
 
 def test_original_settings_and_family_records_survive_upgrade():

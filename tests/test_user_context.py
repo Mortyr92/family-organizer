@@ -40,4 +40,5 @@ def test_admin_and_unlinked_context():
     assert all(settings_payload(SimpleNamespace(id="admin", is_admin=True), {})["current_user"]["capabilities"].values())
     context = settings_payload(SimpleNamespace(id="unlinked", is_admin=False), {})["current_user"]
     assert context["person_id"] is None
-    assert not any(context["capabilities"].values())
+    # Unlinked but authenticated HA accounts now get full parent-level access.
+    assert all(context["capabilities"].values())

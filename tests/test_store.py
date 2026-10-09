@@ -22,11 +22,8 @@ def test_settings_migration_preserves_values():
     assert settings["meal_slots"] == ["breakfast", "lunch", "dinner"]
 
 
-def test_todos_and_journal_defaults():
-    todos = migrate_payload("todos", 4, {"items": [{"id": "t1", "title": "Pack bags"}]})
+def test_legacy_todos_migrate_into_groceries_todo_list():
+    todos = migrate_payload("todos_legacy", 5, {"items": [{"id": "t1", "title": "Pack bags"}]})
     assert todos["lists"][0]["id"] == "default"
     assert todos["items"][0]["list_id"] == "default"
     assert todos["items"][0]["done"] is False
-    journal = migrate_payload("journal", 4, {"items": [{"id": "j1", "title": "First steps"}]})
-    assert journal["items"][0]["person_ids"] == []
-    assert journal["items"][0]["photos"] == []

@@ -98,7 +98,9 @@ class CalendarCategory(Model):
 @dataclass
 class GroceryList(Model):
     name: str = "Groceries"
+    list_type: str = "groceries"
     store: str = ""
+    deadline: str | None = None
     shared: bool = True
     creator_id: str | None = None
 
@@ -113,37 +115,8 @@ class GroceryItem(Model):
     notes: str = ""
     list_id: str = "default"
     store: str = ""
+    deadline: str | None = None
     assignee_id: str | None = None
-    creator_id: str | None = None
-    shared: bool = True
-
-
-@dataclass
-class TodoList(Model):
-    name: str = "To Do"
-    shared: bool = True
-    creator_id: str | None = None
-
-
-@dataclass
-class TodoItem(Model):
-    title: str = ""
-    notes: str = ""
-    done: bool = False
-    list_id: str = "default"
-    due_date: str | None = None
-    assignee_id: str | None = None
-    creator_id: str | None = None
-    shared: bool = True
-
-
-@dataclass
-class JournalEntry(Model):
-    title: str = ""
-    body: str = ""
-    day: str = field(default_factory=lambda: date.today().isoformat())
-    person_ids: list[str] = field(default_factory=list)
-    photos: list[str] = field(default_factory=list)
     creator_id: str | None = None
     shared: bool = True
 
