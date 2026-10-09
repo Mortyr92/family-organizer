@@ -1,0 +1,3 @@
+- Change: the Lists page now shows all your lists together as cards in one overview instead of switching between them one at a time.
+- Change: Winkelen and Boodschappen list items now use a +/- quantity stepper for quick adjustments, instead of typing a number.
+- Change: each list card has its own add, edit and delete controls, with completed items tucked away in a collapsible "Done" section.
