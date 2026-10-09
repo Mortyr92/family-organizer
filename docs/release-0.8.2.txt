@@ -1,0 +1,3 @@
+- Fix: the weekly meal plan grid no longer clips the last day (Sunday) off-screen on narrow or portrait screens.
+- Change: choosing a recipe for a meal slot now uses a searchable text field with suggestions instead of a pulldown menu.
+- Change: servings now adjust in whole numbers (1 at a time) instead of quarters, for recipes and meal plans.
