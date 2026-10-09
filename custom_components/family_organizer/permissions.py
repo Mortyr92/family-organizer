@@ -62,12 +62,18 @@ def person_for(user, settings: dict, people: Any = None) -> dict | None:
 
 
 def role_for(user, settings: dict, people: Any = None) -> str | None:
-    if user and getattr(user, "is_admin", False):
+    if not user:
+        return None
+    if getattr(user, "is_admin", False):
         return "parent_admin"
     person = person_for(user, settings, people)
     if person and person.get("role") in ROLES:
         return person["role"]
-    return None
+    # Any other authenticated Home Assistant user (e.g. a generic kiosk/dashboard
+    # account that isn't linked to a family member) gets full access to every
+    # feature. Only the Settings page itself is protected, via the separate
+    # parent PIN lock screen in the frontend.
+    return "parent"
 
 
 def capabilities_for(user, settings: dict, people: Any = None) -> dict[str, bool]:

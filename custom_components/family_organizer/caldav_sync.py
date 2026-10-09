@@ -65,6 +65,24 @@ class CalendarSyncCoordinator(DataUpdateCoordinator):
                 response.raise_for_status()
                 return [await response.text()]
 
+    def _upsert_source(self, calendar_type: str) -> str:
+        """Ensure a calendar source entry exists for this config entry."""
+        source_id = self.entry.entry_id
+        sources = self.stores["calendar"].data.setdefault("sources", [])
+        existing = next((source for source in sources if source.get("id") == source_id), None)
+        if existing:
+            existing["name"] = self.entry.title or existing.get("name") or "Calendar"
+            existing["source_type"] = calendar_type
+        else:
+            sources.append({
+                "id": source_id,
+                "name": self.entry.title or "Calendar",
+                "source_type": calendar_type,
+                "enabled": True,
+                "color": "#64748b",
+            })
+        return source_id
+
     async def _async_update_data(self):
         url = self._config("calendar_url")
         if not url:
@@ -73,12 +91,15 @@ class CalendarSyncCoordinator(DataUpdateCoordinator):
         use_caldav = calendar_type == "caldav" or (
             calendar_type == "auto" and not url.lower().split("?")[0].endswith(".ics")
         )
+        source_id = self._upsert_source("caldav" if use_caldav else "ics")
         try:
             payloads = await self._payloads(url, use_caldav)
             parsed = await asyncio.gather(*(
                 self.hass.async_add_executor_job(parse_ics, payload) for payload in payloads
             ))
             events = [event for group in parsed for event in group]
+            for event in events:
+                event["source_id"] = source_id
         except Exception as err:
             raise UpdateFailed(f"Calendar sync failed: {err}") from err
         local = [

@@ -1,0 +1,3 @@
+- Fix: dark theme now uses proper surface/text colors for calendar list rows instead of hardcoded light stripes
+- Fix: synced calendars (CalDAV/ICS, e.g. Proton Calendar) are now registered as agenda sources and appear in the calendar filter panel
+- Change: any logged-in Home Assistant account now has full control of the organizer; only the Settings page still requires a parent PIN
