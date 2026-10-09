@@ -2908,10 +2908,10 @@ var qe = [
 			title: e.title,
 			servings: t
 		})}</div></div>
-      <div class="recipe-detail-grid"><div class="surface ingredient-panel"><div class="surface-heading"><h3>${this.x("Ingredients")}</h3><div class="serving-control"><button aria-label=${this.x("Decrease servings")} ?disabled=${t <= .25} @click=${() => this.servings = {
+      <div class="recipe-detail-grid"><div class="surface ingredient-panel"><div class="surface-heading"><h3>${this.x("Ingredients")}</h3><div class="serving-control"><button aria-label=${this.x("Decrease servings")} ?disabled=${t <= 1} @click=${() => this.servings = {
 			...this.servings,
-			[e.id]: Math.max(.25, t - .25)
-		}}>−</button><label><span class="sr-only">${this.x("Servings")}</span><input type="number" min=".25" step=".25" .value=${String(t)} @change=${(t) => {
+			[e.id]: Math.max(1, t - 1)
+		}}>−</button><label><span class="sr-only">${this.x("Servings")}</span><input type="number" min="1" step="1" .value=${String(t)} @change=${(t) => {
 			let n = Number(t.target.value);
 			n > 0 && (this.servings = {
 				...this.servings,
@@ -2919,7 +2919,7 @@ var qe = [
 			});
 		}}></label><button aria-label=${this.x("Increase servings")} @click=${() => this.servings = {
 			...this.servings,
-			[e.id]: t + .25
+			[e.id]: t + 1
 		}}>+</button></div></div><p class="muted">${J(t)} ${this.x("servings")} · ${this.x("automatically scaled from")} ${n}</p><p class="muted">${this.x("Check ingredients to send to your grocery lists.")}</p>
         ${r.map((r, o) => M`<div class="ingredient-row"><label class="check"><input type="checkbox" .checked=${i.has(o)} @change=${() => {
 			let t = new Set(i);
@@ -3251,8 +3251,8 @@ var qe = [
 				list: "meal-recipe-options",
 				placeholder: "Type to search your recipes…"
 			})}<datalist id="meal-recipe-options">${e.map((e) => M`<option value=${e.title}></option>`)}</datalist>${this.field("Servings", "servings", t.servings || 4, "number", !0, {
-				min: .25,
-				step: .25
+				min: 1,
+				step: 1
 			})}`;
 		}
 		if (e === "chore") return M`${this.field("Chore title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Points", "points", t.points ?? 5, "number", !0, {
@@ -3274,8 +3274,8 @@ var qe = [
 		})}${this.field("Due date (one time)", "due_date", t.due_date || this.selectedDay, "date")}${this.field("Due time", "due_time", t.due_time, "time")}${this.textarea("Description", "description", t.description)}${this.shared(t)}`;
 		if (e === "points") return M`<label>${this.x("Family member")}<select name="person_id">${this.peopleOptions()}</select></label>${this.field("Points (negative to subtract)", "points", "", "number", !0, { step: 1 })}${this.field("Reason", "note", "", "text", !0)}`;
 		if (e === "recipe") return M`${this.field("Recipe title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Tags (comma separated)", "tags", (t.tags || []).join(", "))}${this.field("Image URL", "image", t.image, "url")}${this.field("Base servings", "servings", t.servings || 4, "number", !0, {
-			min: .25,
-			step: .25
+			min: 1,
+			step: 1
 		})}${this.field("Prep time (minutes)", "prep_time", t.prep_time || 0, "number", !0, {
 			min: 0,
 			step: 1
