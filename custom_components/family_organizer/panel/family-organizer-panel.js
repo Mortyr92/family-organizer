@@ -2345,20 +2345,20 @@ var qe = [
 			};
 		} else if (i === "meal") {
 			o = "groceries", s = "meal_slots";
-			let e = (this.data.recipes.items || []).find((e) => e.id === u("recipe_id"));
+			let e = u("title"), t = (this.data.recipes.items || []).find((t) => t.title.toLowerCase() === e.trim().toLowerCase());
 			if (c = {
 				...c,
 				day: u("day"),
 				slot: u("slot"),
-				recipe_id: e?.id || null,
-				title: e?.title || u("title"),
+				recipe_id: t?.id || null,
+				title: t?.title || e,
 				servings: l("servings")
 			}, !c.title) {
 				this.error = this.tm("Choose a recipe or enter a meal name.");
 				return;
 			}
-			let t = (this.data.groceries.meal_slots || this.data.groceries.meal_plans || []).find((e) => e.day === c.day && (e.slot || e.meal) === c.slot);
-			if (t && t.id !== a.id) {
+			let n = (this.data.groceries.meal_slots || this.data.groceries.meal_plans || []).find((e) => e.day === c.day && (e.slot || e.meal) === c.slot);
+			if (n && n.id !== a.id) {
 				this.error = this.tm("That meal slot is already planned. Edit it from the planner instead.");
 				return;
 			}
@@ -3241,14 +3241,20 @@ var qe = [
 			list: "contact-groups",
 			placeholder: "School, Doctors, Family, Friends…"
 		})}<datalist id="contact-groups">${[...new Set((this.data.contacts?.items || []).map((e) => e.group).filter(Boolean))].map((e) => M`<option value=${e}></option>`)}</datalist>${this.textarea("Phone numbers (one per line)", "phones", (t.phones || []).join("\n"), "+31 6 1234 5678")}${this.textarea("Email addresses (one per line)", "emails", (t.emails || []).join("\n"), "name@example.com")}${this.field("Address", "address", t.address)}${this.textarea("Notes", "notes", t.notes, "Opening hours, who to ask for…")}${this.shared(t)}`;
-		if (e === "meal") return M`${this.field("Date", "day", t.day || this.selectedDay, "date", !0)}${this.select("Meal slot", "slot", t.slot || t.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || [
-			"breakfast",
-			"lunch",
-			"dinner"
-		]).map((e) => [e, e]))}${this.select("Choose a recipe", "recipe_id", t.recipe_id || "", [["", "Use a meal name instead"], ...(this.data.recipes.items || []).map((e) => [e.id, e.title])])}${this.field("Meal name (if not using a recipe)", "title", t.title)}${this.field("Servings", "servings", t.servings || 4, "number", !0, {
-			min: .25,
-			step: .25
-		})}`;
+		if (e === "meal") {
+			let e = this.data.recipes.items || [], n = e.find((e) => e.id === t.recipe_id);
+			return M`${this.field("Date", "day", t.day || this.selectedDay, "date", !0)}${this.select("Meal slot", "slot", t.slot || t.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || [
+				"breakfast",
+				"lunch",
+				"dinner"
+			]).map((e) => [e, e]))}${this.field("Meal or recipe name", "title", n?.title || t.title, "text", !0, {
+				list: "meal-recipe-options",
+				placeholder: "Type to search your recipes…"
+			})}<datalist id="meal-recipe-options">${e.map((e) => M`<option value=${e.title}></option>`)}</datalist>${this.field("Servings", "servings", t.servings || 4, "number", !0, {
+				min: .25,
+				step: .25
+			})}`;
+		}
 		if (e === "chore") return M`${this.field("Chore title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Points", "points", t.points ?? 5, "number", !0, {
 			min: 0,
 			step: 1
