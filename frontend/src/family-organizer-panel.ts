@@ -714,7 +714,7 @@ export class FamilyOrganizerPanel extends LitElement {
   }
   private mealPlanner() {
     const grocery = this.data.groceries, start = shift(weekStart(iso(new Date()), this.firstDay), this.mealWeek * 7), slots = grocery.meal_slots || grocery.meal_plans || [];
-    return html`<div class="section-toolbar meal-heading"><div><span class="eyebrow">${this.x("LESS “WHAT’S FOR DINNER?”")}</span><h2>${this.x("Your weekly meal plan")}</h2></div><div class="date-navigation"><button class="icon-button" aria-label=${this.x("Previous meal week")} @click=${() => this.mealWeek--}>‹</button><button @click=${() => this.mealWeek = 0}>${this.x("This week")}</button><button class="icon-button" aria-label=${this.x("Next meal week")} @click=${() => this.mealWeek++}>›</button>
+    return html`<div class="section-toolbar meal-heading"><div><span class="eyebrow">${this.x("LESS “WHAT’S FOR DINNER?”")}</span><h2>${this.x("Your weekly meal plan")}</h2></div><div class="date-navigation"><button class="icon-button" aria-label=${this.x("Previous meal week")} @click=${() => this.mealWeek--}>‹</button><button @click=${() => this.mealWeek = 0}>${this.x("This week")}</button><button class="icon-button" aria-label=${this.x("Next meal week")} @click=${() => this.mealWeek++}>›</button></div></div>
       <div class="meal-grid">${Array.from({ length: 7 }, (_, i) => {
         const day = shift(start, i);
         return html`<article class=${`meal-day ${day === iso(new Date()) ? "meal-today" : ""}`}><header><span>${this.date(day, { weekday: "short" })}</span><strong>${dayDate(day).getDate()}</strong></header>${(this.settingsData.meal_slots || ["breakfast", "lunch", "dinner"]).map((slot: string) => {

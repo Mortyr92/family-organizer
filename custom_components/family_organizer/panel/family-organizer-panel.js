@@ -2826,7 +2826,7 @@ var qe = [
 	}
 	mealPlanner() {
 		let e = this.data.groceries, t = G(q(U(/* @__PURE__ */ new Date()), this.firstDay), this.mealWeek * 7), n = e.meal_slots || e.meal_plans || [];
-		return M`<div class="section-toolbar meal-heading"><div><span class="eyebrow">${this.x("LESS “WHAT’S FOR DINNER?”")}</span><h2>${this.x("Your weekly meal plan")}</h2></div><div class="date-navigation"><button class="icon-button" aria-label=${this.x("Previous meal week")} @click=${() => this.mealWeek--}>‹</button><button @click=${() => this.mealWeek = 0}>${this.x("This week")}</button><button class="icon-button" aria-label=${this.x("Next meal week")} @click=${() => this.mealWeek++}>›</button>
+		return M`<div class="section-toolbar meal-heading"><div><span class="eyebrow">${this.x("LESS “WHAT’S FOR DINNER?”")}</span><h2>${this.x("Your weekly meal plan")}</h2></div><div class="date-navigation"><button class="icon-button" aria-label=${this.x("Previous meal week")} @click=${() => this.mealWeek--}>‹</button><button @click=${() => this.mealWeek = 0}>${this.x("This week")}</button><button class="icon-button" aria-label=${this.x("Next meal week")} @click=${() => this.mealWeek++}>›</button></div></div>
       <div class="meal-grid">${Array.from({ length: 7 }, (e, r) => {
 			let i = G(t, r);
 			return M`<article class=${`meal-day ${i === U(/* @__PURE__ */ new Date()) ? "meal-today" : ""}`}><header><span>${this.date(i, { weekday: "short" })}</span><strong>${W(i).getDate()}</strong></header>${(this.settingsData.meal_slots || [
