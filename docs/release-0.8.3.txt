@@ -1,0 +1,1 @@
+- Fix: the recipe search field in the meal planner now shows a Dutch placeholder ("Zoek in recepten") instead of English text.
