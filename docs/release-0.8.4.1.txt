@@ -1,0 +1,1 @@
+- Fix: grocery item names in the Lists overview no longer wrap letter-by-letter on wide screens (e.g. 24" portrait monitors); text now wraps on word boundaries like normal text.
