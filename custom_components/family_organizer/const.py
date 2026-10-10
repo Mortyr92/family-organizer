@@ -25,6 +25,12 @@ DEFAULT_SETTINGS = {
     "notify_service": "",
     "daily_agenda_time": "",
     "floating_navigation": False,
+    "chores_paused": False,
+    "chore_dayparts": {
+        "morning": {"start": "07:00", "end": "11:59"},
+        "afternoon": {"start": "12:00", "end": "17:59"},
+        "evening": {"start": "18:00", "end": "23:59"},
+    },
 }
 PERMISSION_LEVELS = {"view": 1, "edit": 2, "admin": 3}
 EVENT_UPDATED = f"{DOMAIN}_updated"
@@ -35,4 +41,5 @@ SETTING_KEYS = (
     "default_grocery_list_id", "meal_slots", "competition_default",
     "language", "stores", "reminders_enabled", "default_reminder_minutes",
     "notify_service", "daily_agenda_time", "floating_navigation",
+    "chores_paused", "chore_dayparts",
 )

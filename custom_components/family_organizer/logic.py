@@ -4,13 +4,15 @@ from __future__ import annotations
 from datetime import date, datetime, time, timedelta
 
 
-def chore_due(chore: dict, day: date) -> bool:
+def chore_due(chore: dict, day: date, paused: bool = False) -> bool:
     schedule = chore.get("schedule", "once")
     created = date.fromisoformat(chore.get("created", day.isoformat())[:10])
     if day < created:
         return False
     if schedule in ("", "once"):
         return day == date.fromisoformat((chore.get("due_date") or chore.get("created") or day.isoformat())[:10])
+    if paused:
+        return False
     if schedule == "daily":
         return True
     if schedule == "weekly":
@@ -41,6 +43,54 @@ def chore_overdue(chore: dict, day: date, now: datetime | None = None) -> bool:
         return True
     due_time = chore.get("due_time")
     return bool(due_time and now.time().replace(tzinfo=None) > time.fromisoformat(due_time))
+
+
+DEFAULT_DAYPARTS = {
+    "morning": {"start": "07:00", "end": "11:59"},
+    "afternoon": {"start": "12:00", "end": "17:59"},
+    "evening": {"start": "18:00", "end": "23:59"},
+}
+
+
+def chore_status(
+    chore: dict,
+    day: date,
+    now: datetime | None = None,
+    dayparts: dict | None = None,
+    completed: bool = False,
+) -> str:
+    """Return one of: done, expired, retry, late, upcoming, active."""
+    now = now or datetime.now().astimezone()
+    if completed:
+        return "done"
+    is_free = bool(chore.get("is_free"))
+    if is_free:
+        expires_at = chore.get("expires_at")
+        if expires_at and now.date() > date.fromisoformat(expires_at[:10]):
+            return "expired"
+    dayparts = dayparts or DEFAULT_DAYPARTS
+    daypart = chore.get("daypart") or "custom"
+    start_time = end_time = None
+    if daypart in dayparts:
+        entry = dayparts.get(daypart) or {}
+        start_time = time.fromisoformat(entry["start"]) if entry.get("start") else None
+        end_time = time.fromisoformat(entry["end"]) if entry.get("end") else None
+    due_time = chore.get("due_time")
+    deadline_time = time.fromisoformat(due_time) if due_time else end_time
+    if day > now.date():
+        return "upcoming"
+    if day == now.date() and start_time and now.time().replace(tzinfo=None) < start_time:
+        return "upcoming"
+    if day < now.date() or (deadline_time and now.time().replace(tzinfo=None) > deadline_time):
+        if chore.get("retry_allowed"):
+            retry_minutes = int(chore.get("retry_minutes") or 60)
+            deadline_dt = datetime.combine(day, deadline_time or time(23, 59))
+            if hasattr(now, "tzinfo") and now.tzinfo is not None:
+                deadline_dt = deadline_dt.replace(tzinfo=now.tzinfo)
+            if now <= deadline_dt + timedelta(minutes=retry_minutes):
+                return "retry"
+        return "expired" if is_free else "late"
+    return "active"
 
 
 def points_by_person(

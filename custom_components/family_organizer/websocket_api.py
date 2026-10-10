@@ -173,6 +173,24 @@ def _validate_settings(values: dict) -> dict:
         result["daily_agenda_time"] = value
     if "floating_navigation" in result:
         result["floating_navigation"] = bool(result["floating_navigation"])
+    if "chores_paused" in result:
+        result["chores_paused"] = bool(result["chores_paused"])
+    if "chore_dayparts" in result:
+        dayparts = result["chore_dayparts"] or {}
+        if not isinstance(dayparts, dict):
+            raise vol.Invalid("Invalid chore_dayparts")
+        time_re = vol.Match(r"^([01]\d|2[0-3]):[0-5]\d$")
+        cleaned: dict = {}
+        for key in ("morning", "afternoon", "evening"):
+            entry = dayparts.get(key) or {}
+            start = str(entry.get("start", "")).strip()
+            end = str(entry.get("end", "")).strip()
+            if start:
+                time_re(start)
+            if end:
+                time_re(end)
+            cleaned[key] = {"start": start, "end": end}
+        result["chore_dayparts"] = cleaned
     for key in ("meal_slots", "stores"):
         if key in result:
             result[key] = [str(value).strip() for value in result[key] if str(value).strip()]
@@ -496,6 +514,7 @@ async def ws_recipe_to_groceries(hass, connection, msg):
     vol.Required("type"): f"{DOMAIN}/complete_chore",
     vol.Required("chore_id"): str,
     vol.Optional("person_id"): str,
+    vol.Optional("target", default="savings"): str,
 })
 @websocket_api.async_response
 async def ws_complete_chore(hass, connection, msg):
@@ -524,6 +543,7 @@ async def ws_complete_chore(hass, connection, msg):
         "completed_at": datetime.now(timezone.utc).isoformat(),
         "points": int(chore.get("points", 0)),
         "adjustment": False,
+        "target": msg.get("target") or "savings",
     }
     manager["chores"].data.setdefault("completions", []).append(completion)
     # Preserve the old shape for existing automations while history is canonical.
@@ -536,6 +556,52 @@ async def ws_complete_chore(hass, connection, msg):
         "operation": "create", "item": completion,
     })
     connection.send_result(msg["id"], completion)
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): f"{DOMAIN}/uncomplete_chore",
+    vol.Required("chore_id"): str,
+    vol.Optional("day"): str,
+})
+@websocket_api.async_response
+async def ws_uncomplete_chore(hass, connection, msg):
+    manager = _manager(hass)
+    chore = next(
+        (value for value in manager["chores"].data["items"] if value.get("id") == msg["chore_id"]),
+        None,
+    )
+    if chore is None:
+        connection.send_error(msg["id"], "not_found", "Chore not found")
+        return
+    settings, people = _settings(manager), _people(manager)
+    person = _person(manager, _user(connection))
+    caps = capabilities_for(_user(connection), settings, people)
+    if not caps["complete_any_chore"]:
+        check_capability(
+            _user(connection), "chores", "complete_own_chores", settings, chore, people
+        )
+    day = msg.get("day") or datetime.now(timezone.utc).date().isoformat()
+    completions = manager["chores"].data.setdefault("completions", [])
+    matching = [
+        value for value in completions
+        if value.get("chore_id") == chore["id"]
+        and not value.get("adjustment")
+        and value.get("completed_at", "")[:10] == day
+    ]
+    if not matching:
+        connection.send_error(msg["id"], "not_found", "No completion found for that day")
+        return
+    removed = max(matching, key=lambda value: value.get("completed_at", ""))
+    completions.remove(removed)
+    chore["completed"] = [
+        value for value in chore.get("completed", []) if value != removed.get("completed_at")
+    ]
+    await manager["chores"].async_save()
+    hass.bus.async_fire(EVENT_UPDATED, {
+        "resource": "chores", "collection": "completions",
+        "operation": "delete", "item": removed,
+    })
+    connection.send_result(msg["id"], removed)
 
 
 @websocket_api.websocket_command({
@@ -700,7 +766,7 @@ async def ws_ha_users(hass, connection, msg):
 def async_register(hass):
     for command in (
         ws_list, ws_create, ws_update, ws_delete, ws_recipe_to_groceries,
-        ws_complete_chore, ws_adjust_points, ws_subscribe, ws_settings,
+        ws_complete_chore, ws_uncomplete_chore, ws_adjust_points, ws_subscribe, ws_settings,
         ws_verify_pin, ws_import_recipe, ws_ha_users,
     ):
         websocket_api.async_register_command(hass, command)

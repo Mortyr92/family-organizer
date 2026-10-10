@@ -1,7 +1,7 @@
 // @ts-nocheck
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarDates, calendarPayload, choreDue, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
+import { calendarDates, calendarPayload, choreDue, choreStatus, DEFAULT_DAYPARTS, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
 
 test("month navigation clamps at month end and handles leap years", () => {
   assert.equal(moveDate("2024-01-31", "month", 1), "2024-02-29");
@@ -106,6 +106,24 @@ test("chore schedules use full weekdays and safe custom intervals", () => {
   assert.equal(choreDue({ ...base, schedule: "custom", interval_days: 3 }, "2026-06-04"), true);
   assert.equal(choreDue({ ...base, schedule: "daily" }, "2026-05-31"), false);
   assert.equal(choreDue({ ...base, schedule: "once", due_date: "2026-06-03" }, "2026-06-03"), true);
+});
+test("chore schedules respect the paused flag for routines but not one-time chores", () => {
+  const base = { created: "2026-06-01" };
+  assert.equal(choreDue({ ...base, schedule: "daily" }, "2026-06-05", true), false);
+  assert.equal(choreDue({ ...base, schedule: "once", due_date: "2026-06-05" }, "2026-06-05", true), true);
+});
+test("choreStatus mirrors backend behavior for upcoming, active, late, retry, expired and done", () => {
+  assert.equal(choreStatus({}, "2026-06-30", new Date("2026-06-30T08:00:00"), DEFAULT_DAYPARTS, true), "done");
+  const morning = { daypart: "morning" };
+  assert.equal(choreStatus(morning, "2026-06-30", new Date("2026-06-30T08:00:00")), "active");
+  assert.equal(choreStatus(morning, "2026-06-30", new Date("2026-06-30T06:00:00")), "upcoming");
+  assert.equal(choreStatus(morning, "2026-07-01", new Date("2026-06-30T08:00:00")), "upcoming");
+  assert.equal(choreStatus(morning, "2026-06-29", new Date("2026-06-30T08:00:00")), "late");
+  const retryable = { due_time: "08:00", retry_allowed: true, retry_minutes: 60 };
+  assert.equal(choreStatus(retryable, "2026-06-30", new Date("2026-06-30T08:30:00")), "retry");
+  assert.equal(choreStatus(retryable, "2026-06-30", new Date("2026-06-30T10:00:00")), "late");
+  const free = { is_free: true, expires_at: "2026-06-29" };
+  assert.equal(choreStatus(free, "2026-06-30", new Date("2026-06-30T10:00:00")), "expired");
 });
 test("permissions match backend role presets", () => {
   assert.equal(presetCapability("child", "manage_settings"), false);

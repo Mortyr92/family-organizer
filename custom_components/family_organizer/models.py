@@ -165,6 +165,11 @@ class Chore(Model):
     created: str = field(default_factory=lambda: date.today().isoformat())
     creator_id: str | None = None
     shared: bool = True
+    is_free: bool = False
+    retry_allowed: bool = False
+    retry_minutes: int = 60
+    daypart: str = "custom"
+    expires_at: str | None = None
 
     @property
     def assignee_id(self) -> str | None:
@@ -181,6 +186,7 @@ class ChoreCompletion(Model):
     points: int = 0
     note: str = ""
     adjustment: bool = False
+    target: str = "savings"
 
 
 @dataclass

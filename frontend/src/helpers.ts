@@ -108,11 +108,12 @@ export function organizerRoute(hash: string) {
   try { return { page: match[1], recipeId: match[1] === "recipes" ? decodeURIComponent(match[2] || "") : "", malformed: false }; }
   catch { return { page: match[1], recipeId: "", malformed: true }; }
 }
-export function choreDue(chore: Item, day: string) {
+export function choreDue(chore: Item, day: string, paused = false) {
   const created = String(chore.created || chore.due_date || day).slice(0, 10);
   if (day < created) return false;
   const date = dayDate(day);
   if (!chore.schedule || chore.schedule === "once") return day === (chore.due_date || created);
+  if (paused) return false;
   if (chore.schedule === "daily") return true;
   if (chore.schedule === "weekly") return (chore.weekdays || []).map(Number).includes((date.getDay() + 6) % 7);
   if (String(chore.schedule).startsWith("weekly:")) return String(chore.schedule).split(":")[1].split(",").includes(date.toLocaleDateString("en", { weekday: "long" }).toLowerCase());
@@ -120,6 +121,38 @@ export function choreDue(chore: Item, day: string) {
   const interval = Math.max(1, Number(chore.interval_days || String(chore.schedule).split(":")[1]) || 1);
   const elapsed = Math.round((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(dayDate(created).getFullYear(), dayDate(created).getMonth(), dayDate(created).getDate())) / 86400000);
   return elapsed % interval === 0;
+}
+
+export const DEFAULT_DAYPARTS: Item = {
+  morning: { start: "07:00", end: "11:59" },
+  afternoon: { start: "12:00", end: "17:59" },
+  evening: { start: "18:00", end: "23:59" },
+};
+
+/** Mirrors the backend chore_status logic for consistent status labels in the UI. */
+export function choreStatus(chore: Item, day: string, now: Date = new Date(), dayparts: Item = DEFAULT_DAYPARTS, completed = false) {
+  if (completed) return "done";
+  const today = iso(now), nowTime = now.toTimeString().slice(0, 5);
+  const isFree = !!chore.is_free;
+  if (isFree && chore.expires_at && today > String(chore.expires_at).slice(0, 10)) return "expired";
+  const daypart = chore.daypart || "custom";
+  const entry = dayparts[daypart];
+  const startTime: string | undefined = entry?.start || undefined;
+  const endTime: string | undefined = entry?.end || undefined;
+  const deadlineTime: string | undefined = chore.due_time || endTime;
+  if (day > today) return "upcoming";
+  if (day === today && startTime && nowTime < startTime) return "upcoming";
+  const pastDeadline = day < today || (deadlineTime && nowTime > deadlineTime);
+  if (pastDeadline) {
+    if (chore.retry_allowed) {
+      const retryMinutes = Number(chore.retry_minutes || 60);
+      const deadlineDate = new Date(`${day}T${deadlineTime || "23:59"}:00`);
+      const retryUntil = new Date(deadlineDate.getTime() + retryMinutes * 60000);
+      if (now <= retryUntil) return "retry";
+    }
+    return isFree ? "expired" : "late";
+  }
+  return "active";
 }
 
 const weekdays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
