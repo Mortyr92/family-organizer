@@ -1,0 +1,2 @@
+- Fix: grocery item rows in the Lists overview now wrap properly on wider screens instead of squeezing the item name behind the quantity +/- controls or breaking the name letter by letter.
+- Fix: the quantity +/- buttons no longer appear oversized relative to the rest of the row on touch/coarse-pointer displays.
