@@ -1224,10 +1224,10 @@ var Ke = o`
   .manage-pin-form { display:grid; gap:10px; grid-template-columns:1fr 1fr auto; align-items:end; }
   .manage-pin-form > button { align-self:end; }
   .confetti-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
-  .confetti-cannon { position:absolute; left:8%; bottom:8%; font-size:42px; animation:cannon-pop 1.5s ease-out; }
+  .confetti-cannon { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:64px; animation:cannon-pop 1.5s ease-out; }
   .confetti-stream { position:absolute; inset:0; display:grid; place-items:center; font-size:34px; letter-spacing:16px; animation:confetti-rain 1.5s linear; }
-  @keyframes cannon-pop { 0% { transform:translateY(28px) scale(.7) rotate(-8deg); opacity:0; } 20% { opacity:1; } 100% { transform:translateY(-18px) scale(1.15) rotate(6deg); opacity:0; } }
-  @keyframes confetti-rain { 0% { transform:translateY(-24px); opacity:0; } 15% { opacity:1; } 100% { transform:translateY(160px); opacity:0; } }
+  @keyframes cannon-pop { 0% { transform:translate(-50%,-50%) scale(.6); opacity:0; } 15% { opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.1); opacity:0; } }
+  @keyframes confetti-rain { 0% { transform:translateY(-30px); opacity:0; } 10% { opacity:1; } 100% { transform:translateY(180px); opacity:0; } }
   .points-runup { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; width:min(92vw,560px); background:#fff; border:1px solid #e6d9ca; border-radius:14px; box-shadow:0 12px 28px rgba(24, 18, 12, .18); padding:10px 12px; display:grid; gap:8px; }
   .points-runup-person { display:flex; align-items:center; gap:8px; }
   .points-runup-person .avatar { width:26px; height:26px; min-width:26px; }
@@ -3003,25 +3003,28 @@ var Ye = [
 	}
 	triggerCelebration(e, t, n) {
 		let r = t + Math.max(0, Number(n || 0));
-		this.celebrate = !0, this.pointsCelebration = {
-			personId: e,
-			from: t,
-			to: r,
-			progress: 0
-		};
-		let i = performance.now(), a = (e) => {
-			let t = Math.min(1, (e - i) / 1500);
-			this.pointsCelebration &&= {
-				...this.pointsCelebration,
-				progress: t
-			}, t < 1 ? requestAnimationFrame(a) : setTimeout(() => {
-				this.celebrate = !1, this.pointsCelebration = void 0;
-			}, 350);
-		};
-		requestAnimationFrame(a);
+		this.celebrate = !0, this.pointsCelebration = void 0;
 		try {
 			new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {});
 		} catch {}
+		setTimeout(() => {
+			this.celebrate = !1, this.pointsCelebration = {
+				personId: e,
+				from: t,
+				to: r,
+				progress: 0
+			};
+			let n = performance.now(), i = (e) => {
+				let t = Math.min(1, (e - n) / 1500);
+				this.pointsCelebration &&= {
+					...this.pointsCelebration,
+					progress: t
+				}, t < 1 ? requestAnimationFrame(i) : setTimeout(() => {
+					this.pointsCelebration = void 0;
+				}, 200);
+			};
+			requestAnimationFrame(i);
+		}, 1500);
 	}
 	async performCompletion(e, t) {
 		let n = t ? this.personPointsTotal(t) : 0;
@@ -3041,6 +3044,10 @@ var Ye = [
 	chooseFreeCompletion(e) {
 		let t = this.pendingFreeCompletion;
 		this.pendingFreeCompletion = void 0, t && this.performCompletion(t.chore, e);
+	}
+	toggleChoresManage() {
+		let e = !this.choresManageOpen;
+		this.choresManageOpen = e, e || (this.choresManageUnlocked = !1);
 	}
 	async undoChore(e, t) {
 		await this.action(() => this._hass.callWS({
@@ -3070,7 +3077,7 @@ var Ye = [
     </article>`;
 	}
 	personChoreCard(e, t, n, r) {
-		let i = t.filter((t) => !t.is_free && (t.assignee_ids || (t.assignee_id ? [t.assignee_id] : [])).includes(e.id)), a = i.filter((e) => !e.schedule || e.schedule === "once"), o = i.filter((e) => e.schedule && e.schedule !== "once"), s = (this.data.chores.completions || []).filter((t) => t.person_id === e.id).reduce((e, t) => e + Number(t.points || 0), 0);
+		let i = t.filter((t) => !t.is_free && (t.assignee_ids || (t.assignee_id ? [t.assignee_id] : [])).includes(e.id)).filter((e) => !this.choreCompleted(e, r, n)), a = i.filter((e) => !e.schedule || e.schedule === "once"), o = i.filter((e) => e.schedule && e.schedule !== "once"), s = (this.data.chores.completions || []).filter((t) => t.person_id === e.id).reduce((e, t) => e + Number(t.points || 0), 0);
 		return M`<article class="surface person-task-card">
       <header class="person-task-header">${this.avatar(e.id)}<div class="row-copy"><strong>${e.name}</strong></div><span class="points-badge">🏆 ${s}</span></header>
       <div class="task-group"><span class="group-title">${this.s("Taakjes", "Taakjes")} (${a.length})</span>
@@ -3082,7 +3089,7 @@ var Ye = [
     </article>`;
 	}
 	freeChoreCard(e, t, n) {
-		let r = e.filter((e) => e.is_free), i = r.filter((e) => !e.schedule || e.schedule === "once"), a = r.filter((e) => e.schedule && e.schedule !== "once");
+		let r = e.filter((e) => e.is_free).filter((e) => !this.choreCompleted(e, n, t)), i = r.filter((e) => !e.schedule || e.schedule === "once"), a = r.filter((e) => e.schedule && e.schedule !== "once");
 		return M`<article class="surface person-task-card free-task-card">
       <header class="person-task-header"><span class="free-icon" aria-hidden="true">✋</span><div class="row-copy"><strong>${this.s("Vrij op te pakken taakjes", "Vrij op te pakken taakjes")}</strong></div></header>
       <div class="task-group"><span class="group-title">${this.s("Taakjes", "Taakjes")} (${i.length})</span>
@@ -3098,7 +3105,7 @@ var Ye = [
 		return M`<section class="tasks-routines">
       <div class="section-toolbar tasks-toolbar"><div><span class="eyebrow">${this.x("TAAKJES & ROUTINES")}</span><h2>${this.s("Taakjes & Routines", "Taakjes & Routines")}</h2></div>
         <div class="toolbar-actions">
-          <button class="icon-button manage-toggle" @click=${() => this.choresManageOpen = !this.choresManageOpen}>${this.s("Manage", "Beheer")}</button>
+          <button class="icon-button manage-toggle" @click=${() => this.toggleChoresManage()}>${this.s("Manage", "Beheer")}</button>
           <button class="icon-button pause-toggle" title=${this.choresPaused() ? this.s("Resume routines", "Routines hervatten") : this.s("Pause routines", "Routines pauzeren")} ?disabled=${!this.can("manage_chores")} @click=${() => void this.toggleChoresPaused()}>${this.choresPaused() ? "▶" : "⏸"}</button>
         </div>
       </div>

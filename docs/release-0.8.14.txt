@@ -1,0 +1,4 @@
+- Fix: closing the Beheer panel now immediately re-locks management, so reopening always requires parent/admin PIN again.
+- Fix: chores and free chores that were completed today now disappear from today’s lists immediately.
+- Behavior: repeating routines return automatically on the next due day, while previously earned points remain recorded.
+- UX: completion celebration is now two-phase exactly as requested: 1.5s single center confetti cannon with confetti/streamers across the full screen, then a 1.5s animated points run-up bar.

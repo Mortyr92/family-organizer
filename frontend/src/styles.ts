@@ -376,10 +376,10 @@ export const panelStyles = css`
   .manage-pin-form { display:grid; gap:10px; grid-template-columns:1fr 1fr auto; align-items:end; }
   .manage-pin-form > button { align-self:end; }
   .confetti-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
-  .confetti-cannon { position:absolute; left:8%; bottom:8%; font-size:42px; animation:cannon-pop 1.5s ease-out; }
+  .confetti-cannon { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:64px; animation:cannon-pop 1.5s ease-out; }
   .confetti-stream { position:absolute; inset:0; display:grid; place-items:center; font-size:34px; letter-spacing:16px; animation:confetti-rain 1.5s linear; }
-  @keyframes cannon-pop { 0% { transform:translateY(28px) scale(.7) rotate(-8deg); opacity:0; } 20% { opacity:1; } 100% { transform:translateY(-18px) scale(1.15) rotate(6deg); opacity:0; } }
-  @keyframes confetti-rain { 0% { transform:translateY(-24px); opacity:0; } 15% { opacity:1; } 100% { transform:translateY(160px); opacity:0; } }
+  @keyframes cannon-pop { 0% { transform:translate(-50%,-50%) scale(.6); opacity:0; } 15% { opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.1); opacity:0; } }
+  @keyframes confetti-rain { 0% { transform:translateY(-30px); opacity:0; } 10% { opacity:1; } 100% { transform:translateY(180px); opacity:0; } }
   .points-runup { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; width:min(92vw,560px); background:#fff; border:1px solid #e6d9ca; border-radius:14px; box-shadow:0 12px 28px rgba(24, 18, 12, .18); padding:10px 12px; display:grid; gap:8px; }
   .points-runup-person { display:flex; align-items:center; gap:8px; }
   .points-runup-person .avatar { width:26px; height:26px; min-width:26px; }

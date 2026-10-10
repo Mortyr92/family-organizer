@@ -794,17 +794,21 @@ export class FamilyOrganizerPanel extends LitElement {
   private triggerCelebration(personId: string, from: number, points: number) {
     const to = from + Math.max(0, Number(points || 0));
     this.celebrate = true;
-    this.pointsCelebration = { personId, from, to, progress: 0 };
-    const start = performance.now();
-    const duration = 1500;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      if (this.pointsCelebration) this.pointsCelebration = { ...this.pointsCelebration, progress: p };
-      if (p < 1) requestAnimationFrame(tick);
-      else setTimeout(() => { this.celebrate = false; this.pointsCelebration = undefined; }, 350);
-    };
-    requestAnimationFrame(tick);
+    this.pointsCelebration = undefined;
     try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {}); } catch { /* ignore */ }
+    setTimeout(() => {
+      this.celebrate = false;
+      this.pointsCelebration = { personId, from, to, progress: 0 };
+      const start = performance.now();
+      const duration = 1500;
+      const tick = (now: number) => {
+        const p = Math.min(1, (now - start) / duration);
+        if (this.pointsCelebration) this.pointsCelebration = { ...this.pointsCelebration, progress: p };
+        if (p < 1) requestAnimationFrame(tick);
+        else setTimeout(() => { this.pointsCelebration = undefined; }, 200);
+      };
+      requestAnimationFrame(tick);
+    }, 1500);
   }
   private async performCompletion(chore: Item, personId: string) {
     const baseline = personId ? this.personPointsTotal(personId) : 0;
@@ -826,6 +830,11 @@ export class FamilyOrganizerPanel extends LitElement {
     this.pendingFreeCompletion = undefined;
     if (!pending) return;
     void this.performCompletion(pending.chore, personId);
+  }
+  private toggleChoresManage() {
+    const next = !this.choresManageOpen;
+    this.choresManageOpen = next;
+    if (!next) this.choresManageUnlocked = false;
   }
   private async undoChore(chore: Item, day: string) {
     await this.action(() => this._hass!.callWS({ type: "family_organizer/uncomplete_chore", chore_id: chore.id, day }), this.s("Undone", "Ongedaan gemaakt"));
@@ -852,7 +861,9 @@ export class FamilyOrganizerPanel extends LitElement {
     </article>`;
   }
   private personChoreCard(person: Item, chores: Item[], completions: Item[], today: string) {
-    const mine = chores.filter((c: Item) => !c.is_free && (c.assignee_ids || (c.assignee_id ? [c.assignee_id] : [])).includes(person.id));
+    const mine = chores
+      .filter((c: Item) => !c.is_free && (c.assignee_ids || (c.assignee_id ? [c.assignee_id] : [])).includes(person.id))
+      .filter((c: Item) => !this.choreCompleted(c, today, completions));
     const tasks = mine.filter((c: Item) => !c.schedule || c.schedule === "once");
     const routines = mine.filter((c: Item) => c.schedule && c.schedule !== "once");
     const points = (this.data.chores.completions || []).filter((x: Item) => x.person_id === person.id).reduce((n: number, x: Item) => n + Number(x.points || 0), 0);
@@ -867,7 +878,7 @@ export class FamilyOrganizerPanel extends LitElement {
     </article>`;
   }
   private freeChoreCard(chores: Item[], completions: Item[], today: string) {
-    const free = chores.filter((c: Item) => c.is_free);
+    const free = chores.filter((c: Item) => c.is_free).filter((c: Item) => !this.choreCompleted(c, today, completions));
     const tasks = free.filter((c: Item) => !c.schedule || c.schedule === "once");
     const routines = free.filter((c: Item) => c.schedule && c.schedule !== "once");
     return html`<article class="surface person-task-card free-task-card">
@@ -887,7 +898,7 @@ export class FamilyOrganizerPanel extends LitElement {
     return html`<section class="tasks-routines">
       <div class="section-toolbar tasks-toolbar"><div><span class="eyebrow">${this.x("TAAKJES & ROUTINES")}</span><h2>${this.s("Taakjes & Routines", "Taakjes & Routines")}</h2></div>
         <div class="toolbar-actions">
-          <button class="icon-button manage-toggle" @click=${() => this.choresManageOpen = !this.choresManageOpen}>${this.s("Manage", "Beheer")}</button>
+          <button class="icon-button manage-toggle" @click=${() => this.toggleChoresManage()}>${this.s("Manage", "Beheer")}</button>
           <button class="icon-button pause-toggle" title=${this.choresPaused() ? this.s("Resume routines", "Routines hervatten") : this.s("Pause routines", "Routines pauzeren")} ?disabled=${!this.can("manage_chores")} @click=${() => void this.toggleChoresPaused()}>${this.choresPaused() ? "▶" : "⏸"}</button>
         </div>
       </div>
