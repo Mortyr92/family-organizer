@@ -1099,7 +1099,7 @@ var We = o`
   .lists-toolbar { margin-bottom:14px; }
   .list-type-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
   .list-type-chips .chip { font-size:12px; padding:7px 14px; border-radius:999px; background:var(--soft); border:1px solid var(--line); color:var(--orange); }
-  .lists-overview { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; align-items:start; }
+  .lists-overview { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:18px; align-items:start; }
   .list-card { padding:18px; display:flex; flex-direction:column; gap:4px; }
   .list-card-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
   .list-card-heading h3 { color:var(--orange); font-size:16px; }
@@ -1107,13 +1107,13 @@ var We = o`
   .list-card-menu .icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
   .list-card-items { display:flex; flex-direction:column; }
   .list-card-empty { padding:8px 0; font-size:12px; }
-  .list-item-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .list-item-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:9px 0; border-bottom:1px solid var(--line); }
   .list-item-row:last-child { border-bottom:0; }
-  .list-item-row label.check { flex:1; min-width:0; font-weight:500; }
+  .list-item-row label.check { flex:1 1 140px; min-width:140px; font-weight:500; }
   .list-item-row label.check span { display:inline-block; white-space:normal; word-break:normal; overflow-wrap:break-word; }
   .list-item-row.checked label.check span { text-decoration:line-through; color:var(--muted); }
-  .list-item-row>.icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
-  .qty-stepper { display:flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:999px; padding:2px; background:var(--surface); }
+  .list-item-row>.icon-button { flex:0 0 auto; min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
+  .qty-stepper { flex:0 0 auto; display:flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:999px; padding:2px; background:var(--surface); }
   .qty-stepper span { min-width:22px; text-align:center; font-size:12px; font-weight:650; }
   .qty-stepper .icon-button { min-width:26px; min-height:26px; padding:0; font-size:15px; border:0; background:transparent; line-height:1; }
   .list-card-done { margin-top:8px; font-size:12px; color:var(--muted); }
@@ -1336,6 +1336,7 @@ var We = o`
     .app .month-grid,.app .weekday-row { min-width:322px; }
     .app .calendar-surface { overflow:auto; }
     .app .icon-button { min-width:44px; }
+    .app .qty-stepper .icon-button { min-width:36px; min-height:36px; }
     .app .check { min-height:44px; }
     .app input[type=checkbox] { appearance:none; position:relative; display:grid; place-items:center; width:44px; min-width:44px; height:44px; min-height:44px; border:0; padding:0; background:transparent; border-radius:6px; }
     .app input[type=checkbox]:before { content:""; width:20px; height:20px; border:1px solid var(--muted); border-radius:4px; background:var(--surface); }
