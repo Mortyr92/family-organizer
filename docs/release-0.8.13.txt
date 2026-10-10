@@ -1,0 +1,7 @@
+- New: Tasks & Routines now has a dedicated "Beheer" button in the toolbar above creation controls.
+- New: opening Beheer requires parent/family-admin PIN unlock before management actions are shown.
+- Change: creation and management actions for chores/routines (including "Adjust points") are moved into the Beheer panel.
+- Change: completing chores no longer asks for savings/goal target; points now go to one shared points flow.
+- New: completing a free chore/routine now opens a large face-picker popup with all family members so the completer can be selected.
+- New: completion celebration upgraded with a confetti cannon + confetti stream for ~1.5 seconds.
+- New: after completion, an animated points bar runs up and shows the user’s updated total points.

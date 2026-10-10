@@ -161,7 +161,11 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private haUsers: Item[] = [];
   @state() private calendarSearch = "";
   @state() private celebrate = false;
-  @state() private pendingCompletion?: Item;
+  @state() private choresManageOpen = false;
+  @state() private choresManageUnlocked = false;
+  @state() private choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "";
+  @state() private pendingFreeCompletion?: Item;
+  @state() private pointsCelebration?: { personId: string; from: number; to: number; progress: number };
   private _hass?: Hass;
   private unsubscribe?: () => void;
   private subscribing = false;
@@ -302,6 +306,7 @@ export class FamilyOrganizerPanel extends LitElement {
       if (!this.people.some((p: Item) => p.id === this.todayPersonId)) this.todayPersonId = fallbackTodayPerson;
       const admins = this.people.filter((p: Item) => ["parent", "parent_admin"].includes(p.role));
       if (!admins.some((p: Item) => p.id === this.settingsPinPersonId)) this.settingsPinPersonId = admins[0]?.id || "";
+      if (!admins.some((p: Item) => p.id === this.choresPinPersonId)) this.choresPinPersonId = admins[0]?.id || "";
       if (!this.unsubscribe && !this.subscribing && this.isConnected) {
         this.subscribing = true;
         try {
@@ -338,6 +343,10 @@ export class FamilyOrganizerPanel extends LitElement {
   private switchSettingsPinPerson(id: string) {
     this.settingsPinPersonId = id;
     localStorage.setItem("family-organizer-settings-person-id", id || "");
+  }
+  private switchChoresPinPerson(id: string) {
+    this.choresPinPersonId = id;
+    localStorage.setItem("family-organizer-chores-person-id", id || "");
   }
   private selectTodayPerson(id: string) {
     this.todayPersonId = id;
@@ -575,6 +584,27 @@ export class FamilyOrganizerPanel extends LitElement {
   }
   private empty(title: string, description: string, button?: TemplateResult | typeof nothing) { return html`<div class="empty"><span class="empty-icon" aria-hidden="true">✧</span><h3>${this.x(title)}</h3><p>${this.x(description)}</p>${button || nothing}</div>`; }
   private addButton(label: string, kind: string, enabled: boolean, item: Item = {}) { return enabled ? html`<button class="primary" @click=${() => this.openEditor(kind, item)}>+ ${this.x(label)}</button>` : nothing; }
+  private choresAdmins() { return this.people.filter((p: Item) => ["parent", "parent_admin"].includes(p.role)); }
+  private async verifyChoresPin(event: SubmitEvent) {
+    event.preventDefault();
+    if (!this._hass || !this.choresPinPersonId) return;
+    const form = event.currentTarget as HTMLFormElement;
+    const pin = String(new FormData(form).get("pin") || "").trim();
+    if (!/^\d{4,8}$/.test(pin)) { this.error = this.tm("Enter a 4 to 8 digit PIN."); return; }
+    this.error = "";
+    this.saving = true;
+    try {
+      const person = this.people.find((p: Item) => p.id === this.choresPinPersonId);
+      if (!person || !["parent", "parent_admin"].includes(person.role)) {
+        this.error = this.s("Choose a parent or family administrator.", "Kies een ouder of gezinsbeheerder.");
+        return;
+      }
+      await this._hass.callWS<Item>({ type: "family_organizer/verify_pin", person_id: this.choresPinPersonId, pin });
+      this.choresManageUnlocked = true;
+      localStorage.setItem("family-organizer-chores-person-id", this.choresPinPersonId);
+    } catch (error) { this.error = this.message(error); }
+    finally { this.saving = false; }
+  }
   private calendarCategories(): { id: string; label: string; icon: string; color: string }[] {
     const stored = this.data.calendar.categories || [];
     if (stored.length) return stored.map((category: Item) => ({ id: category.id, label: category.name, icon: category.icon || "🗒", color: category.color || "#64748b" }));
@@ -758,22 +788,44 @@ export class FamilyOrganizerPanel extends LitElement {
     };
     return this.s(...(labels[status] || labels.active));
   }
-  private completeChore(chore: Item, personId: string) {
-    this.pendingCompletion = { chore, personId };
+  private personPointsTotal(personId: string) {
+    return (this.data.chores.completions || []).filter((x: Item) => x.person_id === personId).reduce((n: number, x: Item) => n + Number(x.points || 0), 0);
   }
-  private async confirmCompletion(target: string) {
-    const pending = this.pendingCompletion;
-    if (!pending) return;
-    this.pendingCompletion = undefined;
+  private triggerCelebration(personId: string, from: number, points: number) {
+    const to = from + Math.max(0, Number(points || 0));
+    this.celebrate = true;
+    this.pointsCelebration = { personId, from, to, progress: 0 };
+    const start = performance.now();
+    const duration = 1500;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      if (this.pointsCelebration) this.pointsCelebration = { ...this.pointsCelebration, progress: p };
+      if (p < 1) requestAnimationFrame(tick);
+      else setTimeout(() => { this.celebrate = false; this.pointsCelebration = undefined; }, 350);
+    };
+    requestAnimationFrame(tick);
+    try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {}); } catch { /* ignore */ }
+  }
+  private async performCompletion(chore: Item, personId: string) {
+    const baseline = personId ? this.personPointsTotal(personId) : 0;
     const ok = await this.action(() => this._hass!.callWS({
-      type: "family_organizer/complete_chore", chore_id: pending.chore.id,
-      ...(pending.personId ? { person_id: pending.personId } : {}), target,
+      type: "family_organizer/complete_chore", chore_id: chore.id,
+      ...(personId ? { person_id: personId } : {}),
     }), this.x("Chore completed. Thank you!"));
-    if (ok) {
-      this.celebrate = true;
-      setTimeout(() => { this.celebrate = false; }, 1600);
-      try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {}); } catch { /* ignore */ }
+    if (ok && personId) this.triggerCelebration(personId, baseline, Number(chore.points || 0));
+  }
+  private completeChore(chore: Item, personId: string, isFree: boolean) {
+    if (isFree) {
+      this.pendingFreeCompletion = { chore };
+      return;
     }
+    void this.performCompletion(chore, personId || this.me?.id || "");
+  }
+  private chooseFreeCompletion(personId: string) {
+    const pending = this.pendingFreeCompletion;
+    this.pendingFreeCompletion = undefined;
+    if (!pending) return;
+    void this.performCompletion(pending.chore, personId);
   }
   private async undoChore(chore: Item, day: string) {
     await this.action(() => this._hass!.callWS({ type: "family_organizer/uncomplete_chore", chore_id: chore.id, day }), this.s("Undone", "Ongedaan gemaakt"));
@@ -796,7 +848,7 @@ export class FamilyOrganizerPanel extends LitElement {
       </div>
       ${status === "done"
         ? html`<button class="icon-button task-action" title=${this.s("Undo", "Ongedaan maken")} @click=${() => void this.undoChore(chore, today)}>↺</button>`
-        : html`<button class="icon-button task-action" ?disabled=${!canComplete || this.saving || ["upcoming", "expired"].includes(status)} title=${this.s("Check off", "Afvinken")} @click=${() => this.completeChore(chore, personId || this.me?.id || "")}>○</button>`}
+        : html`<button class="icon-button task-action" ?disabled=${!canComplete || this.saving || ["upcoming", "expired"].includes(status)} title=${this.s("Check off", "Afvinken")} @click=${() => this.completeChore(chore, personId || this.me?.id || "", isFree)}>○</button>`}
     </article>`;
   }
   private personChoreCard(person: Item, chores: Item[], completions: Item[], today: string) {
@@ -835,18 +887,32 @@ export class FamilyOrganizerPanel extends LitElement {
     return html`<section class="tasks-routines">
       <div class="section-toolbar tasks-toolbar"><div><span class="eyebrow">${this.x("TAAKJES & ROUTINES")}</span><h2>${this.s("Taakjes & Routines", "Taakjes & Routines")}</h2></div>
         <div class="toolbar-actions">
+          <button class="icon-button manage-toggle" @click=${() => this.choresManageOpen = !this.choresManageOpen}>${this.s("Manage", "Beheer")}</button>
           <button class="icon-button pause-toggle" title=${this.choresPaused() ? this.s("Resume routines", "Routines hervatten") : this.s("Pause routines", "Routines pauzeren")} ?disabled=${!this.can("manage_chores")} @click=${() => void this.toggleChoresPaused()}>${this.choresPaused() ? "▶" : "⏸"}</button>
-          ${this.addButton("New chore", "chore", this.can("manage_chores"))}
         </div>
       </div>
+      ${this.choresManageOpen ? html`<section class="surface chores-manage-panel">
+        ${this.choresManageUnlocked ? html`<div class="manage-actions">
+          ${this.addButton("New chore", "chore", true)}
+          ${this.addButton(this.s("Adjust points", "Punten aanpassen"), "points", true)}
+        </div>` : html`${(() => {
+          const admins = this.choresAdmins();
+          return admins.length ? html`<form class="manage-pin-form" @submit=${(e: SubmitEvent) => void this.verifyChoresPin(e)}>
+            <label>${this.t("family_member")}<select name="person" @change=${(e: Event) => this.switchChoresPinPerson((e.target as HTMLSelectElement).value)}>${admins.map((person: Item) => html`<option value=${person.id} ?selected=${person.id === this.choresPinPersonId}>${person.name}</option>`)}</select></label>
+            <label>${this.t("pin")}<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8"></label>
+            <button class="primary" type="submit" ?disabled=${this.saving}>${this.s("Unlock management", "Beheer ontgrendelen")}</button>
+          </form>` : html`<p class="muted">${this.s("No parent/admin profile is available yet.", "Er is nog geen ouder/beheerder-profiel beschikbaar.")}</p>`;
+        })()}`}
+      </section>` : nothing}
       ${this.choresPaused() ? html`<div class="banner paused-banner">${this.s("All routines paused", "Alle routines gepauzeerd")}</div>` : nothing}
       <div class="person-task-grid">
         ${this.people.map((person: Item) => this.personChoreCard(person, due, completions, today))}
         ${this.freeChoreCard(due, completions, today)}
       </div>
-      <div class="surface history"><div class="surface-heading"><div><span class="eyebrow">${this.x("EVERY CONTRIBUTION COUNTS")}</span><h2>${this.x("Recent activity")}</h2></div>${this.addButton("Adjust points", "points", this.can("manage_chores") && this.people.length > 0)}</div>${completions.length ? [...completions].sort((a: Item, b: Item) => b.completed_at.localeCompare(a.completed_at)).slice(0, 30).map((completion: Item) => html`<div class="compact-row">${this.avatar(completion.person_id)}<span class="row-copy"><strong>${this.person(completion.person_id)?.name || this.x("Family member")}</strong><span class="muted">${completion.note || chores.find((c: Item) => c.id === completion.chore_id)?.title || (completion.adjustment ? this.x("Manual adjustment") : this.x("Completed chore"))}</span></span></div>`) : this.empty("Nothing yet", "Completions will show up here.")}</div>
-      ${this.celebrate ? html`<div class="confetti-overlay" aria-hidden="true">🎉</div>` : nothing}
-      ${this.pendingCompletion ? html`<dialog open class="editor-dialog target-dialog"><header class="dialog-heading"><h2>${this.s("Where should the points go?", "Waar moeten de punten heen?")}</h2></header><div class="dialog-content target-options"><button class="primary" @click=${() => void this.confirmCompletion("savings")}>${this.s("Savings jar", "Spaarpot")}</button><button @click=${() => void this.confirmCompletion("goal")}>${this.s("A goal", "Een doel")}</button><button @click=${() => { this.pendingCompletion = undefined; }}>${this.t("cancel")}</button></div></dialog>` : nothing}
+      <div class="surface history"><div class="surface-heading"><div><span class="eyebrow">${this.x("EVERY CONTRIBUTION COUNTS")}</span><h2>${this.x("Recent activity")}</h2></div></div>${completions.length ? [...completions].sort((a: Item, b: Item) => b.completed_at.localeCompare(a.completed_at)).slice(0, 30).map((completion: Item) => html`<div class="compact-row">${this.avatar(completion.person_id)}<span class="row-copy"><strong>${this.person(completion.person_id)?.name || this.x("Family member")}</strong><span class="muted">${completion.note || chores.find((c: Item) => c.id === completion.chore_id)?.title || (completion.adjustment ? this.x("Manual adjustment") : this.x("Completed chore"))}</span></span></div>`) : this.empty("Nothing yet", "Completions will show up here.")}</div>
+      ${this.celebrate ? html`<div class="confetti-overlay" aria-hidden="true"><span class="confetti-cannon">🎊</span><span class="confetti-stream">🎉 ✨ 🎉 ✨ 🎉 ✨ 🎉</span></div>` : nothing}
+      ${this.pointsCelebration ? html`<div class="points-runup"><div class="points-runup-person">${this.avatar(this.pointsCelebration.personId)}<strong>${this.person(this.pointsCelebration.personId)?.name || this.x("Family member")}</strong></div><div class="points-runup-track"><div class="points-runup-fill" style=${`width:${Math.round(this.pointsCelebration.progress * 100)}%`}></div></div><div class="points-runup-values"><span>${Math.round(this.pointsCelebration.from + ((this.pointsCelebration.to - this.pointsCelebration.from) * this.pointsCelebration.progress))}</span><small>${this.s("total points", "totaal punten")}</small></div></div>` : nothing}
+      ${this.pendingFreeCompletion ? html`<dialog open class="editor-dialog picker-dialog"><header class="dialog-heading"><h2>${this.s("Who completed this?", "Wie heeft dit afgerond?")}</h2></header><div class="dialog-content face-picker">${this.people.map((person: Item) => html`<button class="face-option" @click=${() => this.chooseFreeCompletion(person.id)}>${this.avatar(person.id)}<span>${person.name}</span></button>`)}<button @click=${() => { this.pendingFreeCompletion = undefined; }}>${this.t("cancel")}</button></div></dialog>` : nothing}
     </section>`;
   }
 

@@ -340,6 +340,7 @@ export const panelStyles = css`
   .score-row progress { width:100%; height:6px; accent-color:var(--orange); border:0; overflow:hidden; border-radius:5px; }
   .tasks-toolbar { margin-bottom:12px; }
   .tasks-routines .toolbar-actions { display:flex; gap:10px; align-items:center; }
+  .manage-toggle { min-width:88px; font-size:13px; font-weight:700; border-radius:10px; background:#f4efe8; border:1px solid #e4d7c8; color:#5b4a38; }
   .pause-toggle { font-size:16px; width:38px; height:38px; border-radius:10px; background:#fff3e8; border:1px solid #f3d3b8; color:#c26a2e; }
   .paused-banner { background:#fff3e8; color:#c26a2e; border:1px solid #f3d3b8; border-radius:10px; padding:10px 16px; margin:10px 0 18px; font-weight:700; text-align:center; }
   .person-task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin:16px 0 24px; }
@@ -370,11 +371,28 @@ export const panelStyles = css`
   .task-tile.status-done { opacity:.78; }
   .task-tile.status-late,.task-tile.status-expired { border-color:#f0c5c5; background:#fff2f2; }
   .task-tile.status-retry { border-color:#f0d5ba; background:#fff6ef; }
-  .confetti-overlay { position:fixed; inset:0; display:grid; place-items:center; font-size:64px; pointer-events:none; z-index:999; animation:confetti-pop 1.4s ease-out; }
-  @keyframes confetti-pop { 0% { opacity:0; transform:scale(.4); } 30% { opacity:1; transform:scale(1.2); } 100% { opacity:0; transform:scale(1.4); } }
-  .target-dialog { max-width:320px; }
-  .target-options { display:flex; flex-direction:column; gap:10px; }
-  @media(max-width:950px) { .person-task-grid { grid-template-columns:minmax(0,1fr); } }
+  .chores-manage-panel { margin:0 0 14px; padding:14px; border:1px solid #e8dccf; background:#fff9f2; }
+  .manage-actions { display:flex; gap:10px; flex-wrap:wrap; }
+  .manage-pin-form { display:grid; gap:10px; grid-template-columns:1fr 1fr auto; align-items:end; }
+  .manage-pin-form > button { align-self:end; }
+  .confetti-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
+  .confetti-cannon { position:absolute; left:8%; bottom:8%; font-size:42px; animation:cannon-pop 1.5s ease-out; }
+  .confetti-stream { position:absolute; inset:0; display:grid; place-items:center; font-size:34px; letter-spacing:16px; animation:confetti-rain 1.5s linear; }
+  @keyframes cannon-pop { 0% { transform:translateY(28px) scale(.7) rotate(-8deg); opacity:0; } 20% { opacity:1; } 100% { transform:translateY(-18px) scale(1.15) rotate(6deg); opacity:0; } }
+  @keyframes confetti-rain { 0% { transform:translateY(-24px); opacity:0; } 15% { opacity:1; } 100% { transform:translateY(160px); opacity:0; } }
+  .points-runup { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; width:min(92vw,560px); background:#fff; border:1px solid #e6d9ca; border-radius:14px; box-shadow:0 12px 28px rgba(24, 18, 12, .18); padding:10px 12px; display:grid; gap:8px; }
+  .points-runup-person { display:flex; align-items:center; gap:8px; }
+  .points-runup-person .avatar { width:26px; height:26px; min-width:26px; }
+  .points-runup-track { width:100%; height:11px; background:#f4ebdf; border-radius:999px; overflow:hidden; }
+  .points-runup-fill { height:100%; background:linear-gradient(90deg,#f3ab66,#ce7238); transition:width .08s linear; }
+  .points-runup-values { display:flex; align-items:baseline; justify-content:space-between; }
+  .points-runup-values span { font-size:24px; font-weight:800; color:#2d2a27; line-height:1; }
+  .points-runup-values small { color:#86796e; font-size:11px; }
+  .picker-dialog { max-width:560px; }
+  .face-picker { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; }
+  .face-option { display:flex; flex-direction:column; align-items:center; gap:8px; min-height:120px; border-radius:14px; }
+  .face-option .avatar { width:72px; height:72px; min-width:72px; font-size:24px; }
+  @media(max-width:950px) { .person-task-grid { grid-template-columns:minmax(0,1fr); } .manage-pin-form { grid-template-columns:1fr; } .points-runup { bottom:max(14px,env(safe-area-inset-bottom)); } }
   progress::-webkit-progress-bar { background:var(--soft); }
   progress::-webkit-progress-value { background:var(--orange); border-radius:5px; }
   progress::-moz-progress-bar { background:var(--orange); }

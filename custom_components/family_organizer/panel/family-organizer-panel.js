@@ -1188,6 +1188,7 @@ var Ke = o`
   .score-row progress { width:100%; height:6px; accent-color:var(--orange); border:0; overflow:hidden; border-radius:5px; }
   .tasks-toolbar { margin-bottom:12px; }
   .tasks-routines .toolbar-actions { display:flex; gap:10px; align-items:center; }
+  .manage-toggle { min-width:88px; font-size:13px; font-weight:700; border-radius:10px; background:#f4efe8; border:1px solid #e4d7c8; color:#5b4a38; }
   .pause-toggle { font-size:16px; width:38px; height:38px; border-radius:10px; background:#fff3e8; border:1px solid #f3d3b8; color:#c26a2e; }
   .paused-banner { background:#fff3e8; color:#c26a2e; border:1px solid #f3d3b8; border-radius:10px; padding:10px 16px; margin:10px 0 18px; font-weight:700; text-align:center; }
   .person-task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin:16px 0 24px; }
@@ -1218,11 +1219,28 @@ var Ke = o`
   .task-tile.status-done { opacity:.78; }
   .task-tile.status-late,.task-tile.status-expired { border-color:#f0c5c5; background:#fff2f2; }
   .task-tile.status-retry { border-color:#f0d5ba; background:#fff6ef; }
-  .confetti-overlay { position:fixed; inset:0; display:grid; place-items:center; font-size:64px; pointer-events:none; z-index:999; animation:confetti-pop 1.4s ease-out; }
-  @keyframes confetti-pop { 0% { opacity:0; transform:scale(.4); } 30% { opacity:1; transform:scale(1.2); } 100% { opacity:0; transform:scale(1.4); } }
-  .target-dialog { max-width:320px; }
-  .target-options { display:flex; flex-direction:column; gap:10px; }
-  @media(max-width:950px) { .person-task-grid { grid-template-columns:minmax(0,1fr); } }
+  .chores-manage-panel { margin:0 0 14px; padding:14px; border:1px solid #e8dccf; background:#fff9f2; }
+  .manage-actions { display:flex; gap:10px; flex-wrap:wrap; }
+  .manage-pin-form { display:grid; gap:10px; grid-template-columns:1fr 1fr auto; align-items:end; }
+  .manage-pin-form > button { align-self:end; }
+  .confetti-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
+  .confetti-cannon { position:absolute; left:8%; bottom:8%; font-size:42px; animation:cannon-pop 1.5s ease-out; }
+  .confetti-stream { position:absolute; inset:0; display:grid; place-items:center; font-size:34px; letter-spacing:16px; animation:confetti-rain 1.5s linear; }
+  @keyframes cannon-pop { 0% { transform:translateY(28px) scale(.7) rotate(-8deg); opacity:0; } 20% { opacity:1; } 100% { transform:translateY(-18px) scale(1.15) rotate(6deg); opacity:0; } }
+  @keyframes confetti-rain { 0% { transform:translateY(-24px); opacity:0; } 15% { opacity:1; } 100% { transform:translateY(160px); opacity:0; } }
+  .points-runup { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; width:min(92vw,560px); background:#fff; border:1px solid #e6d9ca; border-radius:14px; box-shadow:0 12px 28px rgba(24, 18, 12, .18); padding:10px 12px; display:grid; gap:8px; }
+  .points-runup-person { display:flex; align-items:center; gap:8px; }
+  .points-runup-person .avatar { width:26px; height:26px; min-width:26px; }
+  .points-runup-track { width:100%; height:11px; background:#f4ebdf; border-radius:999px; overflow:hidden; }
+  .points-runup-fill { height:100%; background:linear-gradient(90deg,#f3ab66,#ce7238); transition:width .08s linear; }
+  .points-runup-values { display:flex; align-items:baseline; justify-content:space-between; }
+  .points-runup-values span { font-size:24px; font-weight:800; color:#2d2a27; line-height:1; }
+  .points-runup-values small { color:#86796e; font-size:11px; }
+  .picker-dialog { max-width:560px; }
+  .face-picker { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; }
+  .face-option { display:flex; flex-direction:column; align-items:center; gap:8px; min-height:120px; border-radius:14px; }
+  .face-option .avatar { width:72px; height:72px; min-width:72px; font-size:24px; }
+  @media(max-width:950px) { .person-task-grid { grid-template-columns:minmax(0,1fr); } .manage-pin-form { grid-template-columns:1fr; } .points-runup { bottom:max(14px,env(safe-area-inset-bottom)); } }
   progress::-webkit-progress-bar { background:var(--soft); }
   progress::-webkit-progress-value { background:var(--orange); border-radius:5px; }
   progress::-moz-progress-bar { background:var(--orange); }
@@ -2048,7 +2066,7 @@ var Ye = [
 	}
 }, $ = class extends V {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = qe("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = qe("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.mealTitleQuery = "", this.haUsers = [], this.calendarSearch = "", this.celebrate = !1, this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = qe("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = qe("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.mealTitleQuery = "", this.haUsers = [], this.calendarSearch = "", this.celebrate = !1, this.choresManageOpen = !1, this.choresManageUnlocked = !1, this.choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = ze(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.page === "settings" && (this.settingsUnlocked = !1, this.pinCapabilites = void 0), e.malformed && (this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.")));
 		};
@@ -2189,7 +2207,7 @@ var Ye = [
 			let r = this.pinPersonId || this.me?.id || this.people[0]?.id || "";
 			this.people.some((e) => e.id === this.todayPersonId) || (this.todayPersonId = r);
 			let i = this.people.filter((e) => ["parent", "parent_admin"].includes(e.role));
-			if (i.some((e) => e.id === this.settingsPinPersonId) || (this.settingsPinPersonId = i[0]?.id || ""), !this.unsubscribe && !this.subscribing && this.isConnected) {
+			if (i.some((e) => e.id === this.settingsPinPersonId) || (this.settingsPinPersonId = i[0]?.id || ""), i.some((e) => e.id === this.choresPinPersonId) || (this.choresPinPersonId = i[0]?.id || ""), !this.unsubscribe && !this.subscribing && this.isConnected) {
 				this.subscribing = !0;
 				try {
 					let e = await this._hass.connection.subscribeMessage(() => void this.load(), { type: "family_organizer/subscribe" });
@@ -2235,6 +2253,9 @@ var Ye = [
 	}
 	switchSettingsPinPerson(e) {
 		this.settingsPinPersonId = e, localStorage.setItem("family-organizer-settings-person-id", e || "");
+	}
+	switchChoresPinPerson(e) {
+		this.choresPinPersonId = e, localStorage.setItem("family-organizer-chores-person-id", e || "");
 	}
 	selectTodayPerson(e) {
 		this.todayPersonId = e, localStorage.setItem("family-organizer-today-person-id", e || "");
@@ -2652,6 +2673,34 @@ var Ye = [
 	addButton(e, t, n, r = {}) {
 		return n ? M`<button class="primary" @click=${() => this.openEditor(t, r)}>+ ${this.x(e)}</button>` : P;
 	}
+	choresAdmins() {
+		return this.people.filter((e) => ["parent", "parent_admin"].includes(e.role));
+	}
+	async verifyChoresPin(e) {
+		if (e.preventDefault(), !this._hass || !this.choresPinPersonId) return;
+		let t = e.currentTarget, n = String(new FormData(t).get("pin") || "").trim();
+		if (!/^\d{4,8}$/.test(n)) {
+			this.error = this.tm("Enter a 4 to 8 digit PIN.");
+			return;
+		}
+		this.error = "", this.saving = !0;
+		try {
+			let e = this.people.find((e) => e.id === this.choresPinPersonId);
+			if (!e || !["parent", "parent_admin"].includes(e.role)) {
+				this.error = this.s("Choose a parent or family administrator.", "Kies een ouder of gezinsbeheerder.");
+				return;
+			}
+			await this._hass.callWS({
+				type: "family_organizer/verify_pin",
+				person_id: this.choresPinPersonId,
+				pin: n
+			}), this.choresManageUnlocked = !0, localStorage.setItem("family-organizer-chores-person-id", this.choresPinPersonId);
+		} catch (e) {
+			this.error = this.message(e);
+		} finally {
+			this.saving = !1;
+		}
+	}
 	calendarCategories() {
 		let e = this.data.calendar.categories || [];
 		return e.length ? e.map((e) => ({
@@ -2949,27 +2998,49 @@ var Ye = [
 		};
 		return this.s(...t[e] || t.active);
 	}
-	completeChore(e, t) {
-		this.pendingCompletion = {
-			chore: e,
-			personId: t
-		};
+	personPointsTotal(e) {
+		return (this.data.chores.completions || []).filter((t) => t.person_id === e).reduce((e, t) => e + Number(t.points || 0), 0);
 	}
-	async confirmCompletion(e) {
-		let t = this.pendingCompletion;
-		if (t && (this.pendingCompletion = void 0, await this.action(() => this._hass.callWS({
+	triggerCelebration(e, t, n) {
+		let r = t + Math.max(0, Number(n || 0));
+		this.celebrate = !0, this.pointsCelebration = {
+			personId: e,
+			from: t,
+			to: r,
+			progress: 0
+		};
+		let i = performance.now(), a = (e) => {
+			let t = Math.min(1, (e - i) / 1500);
+			this.pointsCelebration &&= {
+				...this.pointsCelebration,
+				progress: t
+			}, t < 1 ? requestAnimationFrame(a) : setTimeout(() => {
+				this.celebrate = !1, this.pointsCelebration = void 0;
+			}, 350);
+		};
+		requestAnimationFrame(a);
+		try {
+			new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {});
+		} catch {}
+	}
+	async performCompletion(e, t) {
+		let n = t ? this.personPointsTotal(t) : 0;
+		await this.action(() => this._hass.callWS({
 			type: "family_organizer/complete_chore",
-			chore_id: t.chore.id,
-			...t.personId ? { person_id: t.personId } : {},
-			target: e
-		}), this.x("Chore completed. Thank you!")))) {
-			this.celebrate = !0, setTimeout(() => {
-				this.celebrate = !1;
-			}, 1600);
-			try {
-				new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {});
-			} catch {}
+			chore_id: e.id,
+			...t ? { person_id: t } : {}
+		}), this.x("Chore completed. Thank you!")) && t && this.triggerCelebration(t, n, Number(e.points || 0));
+	}
+	completeChore(e, t, n) {
+		if (n) {
+			this.pendingFreeCompletion = { chore: e };
+			return;
 		}
+		this.performCompletion(e, t || this.me?.id || "");
+	}
+	chooseFreeCompletion(e) {
+		let t = this.pendingFreeCompletion;
+		this.pendingFreeCompletion = void 0, t && this.performCompletion(t.chore, e);
 	}
 	async undoChore(e, t) {
 		await this.action(() => this._hass.callWS({
@@ -2995,7 +3066,7 @@ var Ye = [
         <strong class="task-title">${e.title || this.s("Untitled task", "Naamloos taakje")}</strong>
         <span class="task-meta">${Number(e.points || 0)} ${this.x("pts")} · ${this.statusLabel(s)}</span>
       </div>
-      ${s === "done" ? M`<button class="icon-button task-action" title=${this.s("Undo", "Ongedaan maken")} @click=${() => void this.undoChore(e, r)}>↺</button>` : M`<button class="icon-button task-action" ?disabled=${!c || this.saving || ["upcoming", "expired"].includes(s)} title=${this.s("Check off", "Afvinken")} @click=${() => this.completeChore(e, t || this.me?.id || "")}>○</button>`}
+      ${s === "done" ? M`<button class="icon-button task-action" title=${this.s("Undo", "Ongedaan maken")} @click=${() => void this.undoChore(e, r)}>↺</button>` : M`<button class="icon-button task-action" ?disabled=${!c || this.saving || ["upcoming", "expired"].includes(s)} title=${this.s("Check off", "Afvinken")} @click=${() => this.completeChore(e, t || this.me?.id || "", i)}>○</button>`}
     </article>`;
 	}
 	personChoreCard(e, t, n, r) {
@@ -3027,19 +3098,33 @@ var Ye = [
 		return M`<section class="tasks-routines">
       <div class="section-toolbar tasks-toolbar"><div><span class="eyebrow">${this.x("TAAKJES & ROUTINES")}</span><h2>${this.s("Taakjes & Routines", "Taakjes & Routines")}</h2></div>
         <div class="toolbar-actions">
+          <button class="icon-button manage-toggle" @click=${() => this.choresManageOpen = !this.choresManageOpen}>${this.s("Manage", "Beheer")}</button>
           <button class="icon-button pause-toggle" title=${this.choresPaused() ? this.s("Resume routines", "Routines hervatten") : this.s("Pause routines", "Routines pauzeren")} ?disabled=${!this.can("manage_chores")} @click=${() => void this.toggleChoresPaused()}>${this.choresPaused() ? "▶" : "⏸"}</button>
-          ${this.addButton("New chore", "chore", this.can("manage_chores"))}
         </div>
       </div>
+      ${this.choresManageOpen ? M`<section class="surface chores-manage-panel">
+        ${this.choresManageUnlocked ? M`<div class="manage-actions">
+          ${this.addButton("New chore", "chore", !0)}
+          ${this.addButton(this.s("Adjust points", "Punten aanpassen"), "points", !0)}
+        </div>` : M`${(() => {
+			let e = this.choresAdmins();
+			return e.length ? M`<form class="manage-pin-form" @submit=${(e) => void this.verifyChoresPin(e)}>
+            <label>${this.t("family_member")}<select name="person" @change=${(e) => this.switchChoresPinPerson(e.target.value)}>${e.map((e) => M`<option value=${e.id} ?selected=${e.id === this.choresPinPersonId}>${e.name}</option>`)}</select></label>
+            <label>${this.t("pin")}<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8"></label>
+            <button class="primary" type="submit" ?disabled=${this.saving}>${this.s("Unlock management", "Beheer ontgrendelen")}</button>
+          </form>` : M`<p class="muted">${this.s("No parent/admin profile is available yet.", "Er is nog geen ouder/beheerder-profiel beschikbaar.")}</p>`;
+		})()}`}
+      </section>` : P}
       ${this.choresPaused() ? M`<div class="banner paused-banner">${this.s("All routines paused", "Alle routines gepauzeerd")}</div>` : P}
       <div class="person-task-grid">
         ${this.people.map((e) => this.personChoreCard(e, r, t, n))}
         ${this.freeChoreCard(r, t, n)}
       </div>
-      <div class="surface history"><div class="surface-heading"><div><span class="eyebrow">${this.x("EVERY CONTRIBUTION COUNTS")}</span><h2>${this.x("Recent activity")}</h2></div>${this.addButton("Adjust points", "points", this.can("manage_chores") && this.people.length > 0)}</div>${t.length ? [...t].sort((e, t) => t.completed_at.localeCompare(e.completed_at)).slice(0, 30).map((t) => M`<div class="compact-row">${this.avatar(t.person_id)}<span class="row-copy"><strong>${this.person(t.person_id)?.name || this.x("Family member")}</strong><span class="muted">${t.note || e.find((e) => e.id === t.chore_id)?.title || (t.adjustment ? this.x("Manual adjustment") : this.x("Completed chore"))}</span></span></div>`) : this.empty("Nothing yet", "Completions will show up here.")}</div>
-      ${this.celebrate ? M`<div class="confetti-overlay" aria-hidden="true">🎉</div>` : P}
-      ${this.pendingCompletion ? M`<dialog open class="editor-dialog target-dialog"><header class="dialog-heading"><h2>${this.s("Where should the points go?", "Waar moeten de punten heen?")}</h2></header><div class="dialog-content target-options"><button class="primary" @click=${() => void this.confirmCompletion("savings")}>${this.s("Savings jar", "Spaarpot")}</button><button @click=${() => void this.confirmCompletion("goal")}>${this.s("A goal", "Een doel")}</button><button @click=${() => {
-			this.pendingCompletion = void 0;
+      <div class="surface history"><div class="surface-heading"><div><span class="eyebrow">${this.x("EVERY CONTRIBUTION COUNTS")}</span><h2>${this.x("Recent activity")}</h2></div></div>${t.length ? [...t].sort((e, t) => t.completed_at.localeCompare(e.completed_at)).slice(0, 30).map((t) => M`<div class="compact-row">${this.avatar(t.person_id)}<span class="row-copy"><strong>${this.person(t.person_id)?.name || this.x("Family member")}</strong><span class="muted">${t.note || e.find((e) => e.id === t.chore_id)?.title || (t.adjustment ? this.x("Manual adjustment") : this.x("Completed chore"))}</span></span></div>`) : this.empty("Nothing yet", "Completions will show up here.")}</div>
+      ${this.celebrate ? M`<div class="confetti-overlay" aria-hidden="true"><span class="confetti-cannon">🎊</span><span class="confetti-stream">🎉 ✨ 🎉 ✨ 🎉 ✨ 🎉</span></div>` : P}
+      ${this.pointsCelebration ? M`<div class="points-runup"><div class="points-runup-person">${this.avatar(this.pointsCelebration.personId)}<strong>${this.person(this.pointsCelebration.personId)?.name || this.x("Family member")}</strong></div><div class="points-runup-track"><div class="points-runup-fill" style=${`width:${Math.round(this.pointsCelebration.progress * 100)}%`}></div></div><div class="points-runup-values"><span>${Math.round(this.pointsCelebration.from + (this.pointsCelebration.to - this.pointsCelebration.from) * this.pointsCelebration.progress)}</span><small>${this.s("total points", "totaal punten")}</small></div></div>` : P}
+      ${this.pendingFreeCompletion ? M`<dialog open class="editor-dialog picker-dialog"><header class="dialog-heading"><h2>${this.s("Who completed this?", "Wie heeft dit afgerond?")}</h2></header><div class="dialog-content face-picker">${this.people.map((e) => M`<button class="face-option" @click=${() => this.chooseFreeCompletion(e.id)}>${this.avatar(e.id)}<span>${e.name}</span></button>`)}<button @click=${() => {
+			this.pendingFreeCompletion = void 0;
 		}}>${this.t("cancel")}</button></div></dialog>` : P}
     </section>`;
 	}
@@ -3559,6 +3644,6 @@ var Ye = [
 		this.styles = Ke;
 	}
 };
-Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "mealTitleQuery", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), Z([H()], $.prototype, "celebrate", void 0), Z([H()], $.prototype, "pendingCompletion", void 0), $ = Z([we("family-organizer-panel")], $);
+Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "mealTitleQuery", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), Z([H()], $.prototype, "celebrate", void 0), Z([H()], $.prototype, "choresManageOpen", void 0), Z([H()], $.prototype, "choresManageUnlocked", void 0), Z([H()], $.prototype, "choresPinPersonId", void 0), Z([H()], $.prototype, "pendingFreeCompletion", void 0), Z([H()], $.prototype, "pointsCelebration", void 0), $ = Z([we("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };
