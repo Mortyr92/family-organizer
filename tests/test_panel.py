@@ -13,8 +13,8 @@ import pytest
 ROOT = Path(__file__).parents[1]
 INTEGRATION = ROOT / "custom_components" / "family_organizer"
 VERSION = json.loads((INTEGRATION / "manifest.json").read_text())["version"]
-BASE_URL = f"/family_organizer/{VERSION}"
-URL = f"{BASE_URL}/family-organizer-panel.js"
+BASE_URL = "/family_organizer/panel"
+URL = f"{BASE_URL}/family-organizer-panel.js?v={VERSION}"
 PANEL_DIR = str(INTEGRATION / "panel")
 
 
@@ -82,8 +82,12 @@ def test_registration_compatibility_and_reload(monkeypatch, modern):
 
 
 def test_modern_registration_errors_are_not_hidden(monkeypatch):
+    class StaticPathConfig:
+        def __init__(self, url_path, path, cache_headers):
+            self.url_path, self.path, self.cache_headers = url_path, path, cache_headers
+
     module = types.ModuleType("homeassistant.components.http")
-    module.StaticPathConfig = lambda *args: args
+    module.StaticPathConfig = StaticPathConfig
     monkeypatch.setitem(sys.modules, "homeassistant.components.http", module)
 
     class Http:

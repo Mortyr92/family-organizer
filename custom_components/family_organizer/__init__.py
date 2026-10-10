@@ -38,10 +38,10 @@ async def async_setup_entry(hass, entry):
         await stores.async_load()
         domain_data["stores"] = stores
         async_register_websocket(hass)
-        await _async_register_panel(hass)
         _register_services(hass, stores)
         hass.http.register_view(CalendarExportView(stores))
         domain_data["reminders"] = ReminderScheduler(hass, stores)
+    await _async_register_panel(hass)
     domain_data["reminders"].async_start()
     coordinator = CalendarSyncCoordinator(hass, entry, domain_data["stores"])
     domain_data.setdefault("coordinators", {})[entry.entry_id] = coordinator
@@ -74,16 +74,16 @@ async def _async_register_panel(hass):
     bundle = Path(__file__).parent / "panel" / "family-organizer-panel.js"
     manifest = bundle.parent.parent / "manifest.json"
     version = json.loads(await hass.async_add_executor_job(manifest.read_text))["version"]
-    base_url = f"/family_organizer/{version}"
-    module_url = f"{base_url}/family-organizer-panel.js"
+    static_base_url = "/family_organizer/panel"
+    module_url = f"{static_base_url}/family-organizer-panel.js?v={version}"
     try:
         from homeassistant.components.http import StaticPathConfig
     except ImportError:
         # Home Assistant 2024.6 predates the asynchronous static path API.
-        hass.http.register_static_path(base_url, str(bundle.parent), True)
+        hass.http.register_static_path(static_base_url, str(bundle.parent), True)
     else:
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(base_url, str(bundle.parent), True)]
+            [StaticPathConfig(static_base_url, str(bundle.parent), True)]
         )
     await panel_custom.async_register_panel(
         hass,
