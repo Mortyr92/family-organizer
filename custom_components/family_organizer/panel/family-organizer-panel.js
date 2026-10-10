@@ -1110,7 +1110,7 @@ var We = o`
   .list-item-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
   .list-item-row:last-child { border-bottom:0; }
   .list-item-row label.check { flex:1; min-width:0; font-weight:500; }
-  .list-item-row label.check span { overflow-wrap:anywhere; white-space:normal; }
+  .list-item-row label.check span { display:inline-block; white-space:normal; word-break:normal; overflow-wrap:break-word; }
   .list-item-row.checked label.check span { text-decoration:line-through; color:var(--muted); }
   .list-item-row>.icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
   .qty-stepper { display:flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:999px; padding:2px; background:var(--surface); }
