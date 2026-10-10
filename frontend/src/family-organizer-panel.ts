@@ -157,6 +157,7 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private loading = true;
   @state() private saving = false;
   @state() private editor?: Editor;
+  @state() private mealTitleQuery = "";
   @state() private haUsers: Item[] = [];
   @state() private calendarSearch = "";
   private _hass?: Hass;
@@ -374,6 +375,7 @@ export class FamilyOrganizerPanel extends LitElement {
     if (!this.editor) this.returnFocus = (this.renderRoot as ShadowRoot).activeElement as HTMLElement;
     this.error = "";
     this.editor = { kind, item: { ...item }, resource, collection };
+    this.mealTitleQuery = "";
     if (kind === "person") void this.loadHaUsers();
     void this.updateComplete.then(() => {
       const dialog = this.renderRoot.querySelector("dialog") as HTMLDialogElement;
@@ -385,6 +387,7 @@ export class FamilyOrganizerPanel extends LitElement {
     if (this.saving && !force) return;
     (this.renderRoot.querySelector("dialog") as HTMLDialogElement)?.close();
     this.editor = undefined;
+    this.mealTitleQuery = "";
     void this.updateComplete.then(() => this.returnFocus?.isConnected ? this.returnFocus.focus() : (this.renderRoot.querySelector(".quick-add") as HTMLElement)?.focus());
   }
   private async loadHaUsers() {
@@ -903,7 +906,9 @@ export class FamilyOrganizerPanel extends LitElement {
     if (kind === "meal") {
       const recipes = this.data.recipes.items || [];
       const current = recipes.find((r: Item) => r.id === item.recipe_id);
-      return html`${this.field("Date", "day", item.day || this.selectedDay, "date", true)}${this.select("Meal slot", "slot", item.slot || item.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || ["breakfast", "lunch", "dinner"]).map((slot: string) => [slot, slot]))}${this.field("Meal or recipe name", "title", current?.title || item.title, "text", true, { list: "meal-recipe-options", placeholder: "Type to search your recipes…" })}<datalist id="meal-recipe-options">${recipes.map((r: Item) => html`<option value=${r.title}></option>`)}</datalist>${this.field("Servings", "servings", item.servings || 4, "number", true, { min: 1, step: 1 })}`;
+      const query = this.mealTitleQuery || current?.title || item.title || "";
+      const suggestions = query.trim() ? recipes.filter((r: Item) => r.title.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8) : [];
+      return html`${this.field("Date", "day", item.day || this.selectedDay, "date", true)}${this.select("Meal slot", "slot", item.slot || item.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || ["breakfast", "lunch", "dinner"]).map((slot: string) => [slot, slot]))}<div class="form-field full meal-title-field"><label for="editor-title">${this.x("Meal or recipe name")}</label><input id="editor-title" name="title" type="text" .value=${query} required autocomplete="off" placeholder=${this.x("Type to search your recipes…")} @input=${(e: Event) => { this.mealTitleQuery = (e.target as HTMLInputElement).value; }}>${suggestions.length ? html`<ul class="meal-title-suggestions">${suggestions.map((r: Item) => html`<li><button type="button" @click=${(e: Event) => { const input = (e.currentTarget as HTMLElement).closest(".meal-title-field")?.querySelector("input") as HTMLInputElement; if (input) input.value = r.title; this.mealTitleQuery = r.title; }}>${r.title}</button></li>`)}</ul>` : nothing}</div>${this.field("Servings", "servings", item.servings || 4, "number", true, { min: 1, step: 1 })}`;
     }
     if (kind === "chore") return html`${this.field("Chore title", "title", item.title, "text", true, { autofocus: true })}${this.field("Points", "points", item.points ?? 5, "number", true, { min: 0, step: 1 })}${this.field("Icon (MDI name)", "icon", item.icon || "mdi:check-circle-outline")}${this.select("Schedule", "schedule", item.schedule || "once", [["once", "One time"], ["daily", "Daily"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["custom", "Custom interval"], ...(item.schedule?.startsWith("weekly:") ? [[item.schedule, "Keep existing weekdays"] as [string, string]] : [])])}${this.personChecks("assignee_ids", item.assignee_ids || (item.assignee_id ? [item.assignee_id] : []))}<label class="check full"><input name="rotate" type="checkbox" ?checked=${!!item.rotate}>${this.x("Rotate between assignees after each completion")}</label><fieldset class="full"><legend>${this.x("Weekdays (weekly schedule)")}</legend><div class="checkbox-group">${Array.from({ length: 7 }, (_, i) => html`<label class="check"><input name="weekdays" type="checkbox" value=${i} ?checked=${(item.weekdays || []).includes(i)}>${this.date(shift("2026-06-01", i), { weekday: "long" })}</label>`)}</div></fieldset>${this.field("Day of month (monthly)", "month_day", item.month_day || 1, "number", true, { min: 1, max: 31 })}${this.field("Every N days (custom)", "interval_days", item.interval_days || 2, "number", true, { min: 1, max: 365 })}${this.field("Due date (one time)", "due_date", item.due_date || this.selectedDay, "date")}${this.field("Due time", "due_time", item.due_time, "time")}${this.textarea("Description", "description", item.description)}${this.shared(item)}`;
     if (kind === "points") return html`<label>${this.x("Family member")}<select name="person_id">${this.peopleOptions()}</select></label>${this.field("Points (negative to subtract)", "points", "", "number", true, { step: 1 })}${this.field("Reason", "note", "", "text", true)}`;

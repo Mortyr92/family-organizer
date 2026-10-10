@@ -1110,7 +1110,7 @@ var We = o`
   .list-item-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
   .list-item-row:last-child { border-bottom:0; }
   .list-item-row label.check { flex:1; min-width:0; font-weight:500; }
-  .list-item-row label.check span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .list-item-row label.check span { overflow-wrap:anywhere; white-space:normal; }
   .list-item-row.checked label.check span { text-decoration:line-through; color:var(--muted); }
   .list-item-row>.icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
   .qty-stepper { display:flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:999px; padding:2px; background:var(--surface); }
@@ -1237,6 +1237,11 @@ var We = o`
   .form-fields legend { font-size:12px; font-weight:600; padding:0 5px; }
   .form-field { display:flex; flex-direction:column; gap:6px; }
   .full { grid-column:1/-1; }
+  .meal-title-field { position:relative; }
+  .meal-title-suggestions { position:absolute; top:100%; left:0; right:0; z-index:5; margin:4px 0 0; padding:4px; list-style:none; background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:0 8px 20px rgba(0,0,0,.15); max-height:200px; overflow-y:auto; }
+  .meal-title-suggestions li { margin:0; }
+  .meal-title-suggestions button { width:100%; text-align:left; padding:8px 10px; border:0; background:none; border-radius:7px; font-size:13px; }
+  .meal-title-suggestions button:hover, .meal-title-suggestions button:focus { background:var(--orange-soft); }
   .checkbox-group { display:flex; flex-wrap:wrap; gap:13px 20px; }
   .checkbox-group .check { font-size:12px; }
   .permissions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
@@ -1975,7 +1980,7 @@ var qe = [
 	}
 }, $ = class extends V {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = Ge("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = Ge("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.haUsers = [], this.calendarSearch = "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = Ge("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = Ge("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.mealTitleQuery = "", this.haUsers = [], this.calendarSearch = "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = ze(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.page === "settings" && (this.settingsUnlocked = !1, this.pinCapabilites = void 0), e.malformed && (this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.")));
 		};
@@ -2206,13 +2211,13 @@ var qe = [
 			item: { ...t },
 			resource: n,
 			collection: r
-		}, e === "person" && this.loadHaUsers(), this.updateComplete.then(() => {
+		}, this.mealTitleQuery = "", e === "person" && this.loadHaUsers(), this.updateComplete.then(() => {
 			let e = this.renderRoot.querySelector("dialog");
 			e.open || e.showModal(), (e.querySelector("[autofocus]") || e.querySelector("input,select,button"))?.focus();
 		}));
 	}
 	closeEditor(e = !1) {
-		(!this.saving || e) && (this.renderRoot.querySelector("dialog")?.close(), this.editor = void 0, this.updateComplete.then(() => this.returnFocus?.isConnected ? this.returnFocus.focus() : this.renderRoot.querySelector(".quick-add")?.focus()));
+		(!this.saving || e) && (this.renderRoot.querySelector("dialog")?.close(), this.editor = void 0, this.mealTitleQuery = "", this.updateComplete.then(() => this.returnFocus?.isConnected ? this.returnFocus.focus() : this.renderRoot.querySelector(".quick-add")?.focus()));
 	}
 	async loadHaUsers() {
 		try {
@@ -3223,15 +3228,17 @@ var qe = [
 			placeholder: "School, Doctors, Family, Friends…"
 		})}<datalist id="contact-groups">${[...new Set((this.data.contacts?.items || []).map((e) => e.group).filter(Boolean))].map((e) => M`<option value=${e}></option>`)}</datalist>${this.textarea("Phone numbers (one per line)", "phones", (t.phones || []).join("\n"), "+31 6 1234 5678")}${this.textarea("Email addresses (one per line)", "emails", (t.emails || []).join("\n"), "name@example.com")}${this.field("Address", "address", t.address)}${this.textarea("Notes", "notes", t.notes, "Opening hours, who to ask for…")}${this.shared(t)}`;
 		if (e === "meal") {
-			let e = this.data.recipes.items || [], n = e.find((e) => e.id === t.recipe_id);
+			let e = this.data.recipes.items || [], n = e.find((e) => e.id === t.recipe_id), r = this.mealTitleQuery || n?.title || t.title || "", i = r.trim() ? e.filter((e) => e.title.toLowerCase().includes(r.trim().toLowerCase())).slice(0, 8) : [];
 			return M`${this.field("Date", "day", t.day || this.selectedDay, "date", !0)}${this.select("Meal slot", "slot", t.slot || t.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || [
 				"breakfast",
 				"lunch",
 				"dinner"
-			]).map((e) => [e, e]))}${this.field("Meal or recipe name", "title", n?.title || t.title, "text", !0, {
-				list: "meal-recipe-options",
-				placeholder: "Type to search your recipes…"
-			})}<datalist id="meal-recipe-options">${e.map((e) => M`<option value=${e.title}></option>`)}</datalist>${this.field("Servings", "servings", t.servings || 4, "number", !0, {
+			]).map((e) => [e, e]))}<div class="form-field full meal-title-field"><label for="editor-title">${this.x("Meal or recipe name")}</label><input id="editor-title" name="title" type="text" .value=${r} required autocomplete="off" placeholder=${this.x("Type to search your recipes…")} @input=${(e) => {
+				this.mealTitleQuery = e.target.value;
+			}}>${i.length ? M`<ul class="meal-title-suggestions">${i.map((e) => M`<li><button type="button" @click=${(t) => {
+				let n = t.currentTarget.closest(".meal-title-field")?.querySelector("input");
+				n && (n.value = e.title), this.mealTitleQuery = e.title;
+			}}>${e.title}</button></li>`)}</ul>` : P}</div>${this.field("Servings", "servings", t.servings || 4, "number", !0, {
 				min: 1,
 				step: 1
 			})}`;
@@ -3345,6 +3352,6 @@ var qe = [
 		this.styles = We;
 	}
 };
-Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), $ = Z([we("family-organizer-panel")], $);
+Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "mealTitleQuery", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), $ = Z([we("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };

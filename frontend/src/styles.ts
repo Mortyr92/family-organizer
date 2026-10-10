@@ -292,7 +292,7 @@ export const panelStyles = css`
   .list-item-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
   .list-item-row:last-child { border-bottom:0; }
   .list-item-row label.check { flex:1; min-width:0; font-weight:500; }
-  .list-item-row label.check span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .list-item-row label.check span { overflow-wrap:anywhere; white-space:normal; }
   .list-item-row.checked label.check span { text-decoration:line-through; color:var(--muted); }
   .list-item-row>.icon-button { min-width:30px; min-height:30px; padding:2px; font-size:15px; border:0; background:transparent; }
   .qty-stepper { display:flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:999px; padding:2px; background:var(--surface); }
@@ -419,6 +419,11 @@ export const panelStyles = css`
   .form-fields legend { font-size:12px; font-weight:600; padding:0 5px; }
   .form-field { display:flex; flex-direction:column; gap:6px; }
   .full { grid-column:1/-1; }
+  .meal-title-field { position:relative; }
+  .meal-title-suggestions { position:absolute; top:100%; left:0; right:0; z-index:5; margin:4px 0 0; padding:4px; list-style:none; background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:0 8px 20px rgba(0,0,0,.15); max-height:200px; overflow-y:auto; }
+  .meal-title-suggestions li { margin:0; }
+  .meal-title-suggestions button { width:100%; text-align:left; padding:8px 10px; border:0; background:none; border-radius:7px; font-size:13px; }
+  .meal-title-suggestions button:hover, .meal-title-suggestions button:focus { background:var(--orange-soft); }
   .checkbox-group { display:flex; flex-wrap:wrap; gap:13px 20px; }
   .checkbox-group .check { font-size:12px; }
   .permissions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
