@@ -338,31 +338,38 @@ export const panelStyles = css`
   .rank { width:15px; flex:0 0 auto; color:var(--orange); }
   .score-row .row-copy { font-size:12px; }
   .score-row progress { width:100%; height:6px; accent-color:var(--orange); border:0; overflow:hidden; border-radius:5px; }
+  .tasks-toolbar { margin-bottom:12px; }
   .tasks-routines .toolbar-actions { display:flex; gap:10px; align-items:center; }
-  .pause-toggle { font-size:16px; width:38px; height:38px; border-radius:50%; background:var(--soft); border:1px solid var(--line); }
-  .paused-banner { background:color-mix(in srgb,var(--orange) 14%,var(--surface)); color:var(--orange); border:1px solid var(--orange); border-radius:10px; padding:10px 16px; margin:10px 0 18px; font-weight:600; text-align:center; }
-  .person-task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:18px; margin:18px 0 24px; }
-  .person-task-card { display:flex; flex-direction:column; gap:14px; padding:18px; }
-  .free-task-card { border:1px dashed var(--line); background:color-mix(in srgb,var(--surface) 92%,var(--muted) 4%); }
-  .person-task-header { display:flex; align-items:center; gap:10px; }
-  .person-task-header .avatar { width:36px; height:36px; min-width:36px; }
-  .person-task-header .points-badge { margin-left:auto; }
-  .free-icon { width:36px; height:36px; min-width:36px; border-radius:50%; background:var(--soft); display:grid; place-items:center; font-size:18px; }
+  .pause-toggle { font-size:16px; width:38px; height:38px; border-radius:10px; background:#fff3e8; border:1px solid #f3d3b8; color:#c26a2e; }
+  .paused-banner { background:#fff3e8; color:#c26a2e; border:1px solid #f3d3b8; border-radius:10px; padding:10px 16px; margin:10px 0 18px; font-weight:700; text-align:center; }
+  .person-task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin:16px 0 24px; }
+  .person-task-card { display:flex; flex-direction:column; gap:14px; padding:14px; background:#fff; border:1px solid #f1e7dc; border-radius:14px; box-shadow:0 4px 14px rgba(62, 37, 14, .06); }
+  .free-task-card { border:1px solid #d9d0eb; background:#ffffff; }
+  .person-task-header { display:flex; align-items:center; gap:10px; padding-bottom:4px; }
+  .person-task-header .avatar { width:30px; height:30px; min-width:30px; }
+  .person-task-header .row-copy strong { font-size:16px; font-weight:800; letter-spacing:-.2px; }
+  .person-task-header .points-badge { margin-left:auto; background:transparent; border:none; box-shadow:none; padding:0; font-size:14px; color:#b08a4d; }
+  .free-icon { width:30px; height:30px; min-width:30px; border-radius:50%; background:#f4eefc; display:grid; place-items:center; font-size:16px; color:#7b5ea8; }
   .task-group { display:flex; flex-direction:column; gap:8px; }
-  .task-group > .eyebrow { font-size:10px; letter-spacing:.6px; color:var(--muted); }
-  .task-list { display:flex; flex-direction:column; gap:8px; min-height:16px; }
+  .group-title { font-size:22px; line-height:1; letter-spacing:-.4px; font-weight:800; color:#1f2a32; }
+  .task-list { display:flex; flex-direction:column; gap:6px; min-height:16px; }
   .task-empty { padding:8px 0; font-size:11px; }
-  .task-tile { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:var(--soft); border:1px solid var(--line); }
-  .task-tile .task-icon { width:28px; height:28px; min-width:28px; border-radius:9px; background:var(--orange-soft); color:var(--orange); display:grid; place-items:center; font-size:16px; }
-  .task-tile .row-copy { min-width:0; flex:1; }
-  .task-tile .row-copy strong { display:block; font-size:12px; overflow-wrap:anywhere; }
-  .status-pill { display:inline-block; font-size:9px; padding:2px 7px; border-radius:20px; margin-top:2px; }
+  .task-tile { display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:10px; background:#fff8f1; border:1px solid #f5dfc9; }
+  .task-tile.tile-routine { background:#eaf9fc; border-color:#d3edf3; }
+  .task-tile .task-icon { width:20px; height:20px; min-width:20px; border-radius:6px; background:#fff; color:#ce8447; display:grid; place-items:center; font-size:12px; border:1px solid #f0decf; }
+  .task-tile.tile-routine .task-icon { color:#4d8aa0; border-color:#d1e8ee; }
+  .task-tile .task-main { min-width:0; flex:1; display:flex; flex-direction:column; gap:1px; }
+  .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
+  .task-tile .task-meta { font-size:11px; color:#8d98a3; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .task-action { min-width:24px; width:24px; height:24px; padding:0; border-radius:999px; border:1px solid #f1d9bf; background:#fff; color:#d38a52; font-size:14px; box-shadow:none; }
   .status-active .status-pill, .status-pill.status-active { background:color-mix(in srgb,var(--green) 16%,var(--surface)); color:var(--green); }
   .status-upcoming .status-pill, .status-pill.status-upcoming { background:color-mix(in srgb,#64748b 16%,var(--surface)); color:#64748b; }
   .status-late .status-pill, .status-pill.status-late, .status-expired .status-pill, .status-pill.status-expired { background:color-mix(in srgb,#b33930 14%,var(--surface)); color:#b33930; }
   .status-retry .status-pill, .status-pill.status-retry { background:color-mix(in srgb,var(--orange) 16%,var(--surface)); color:var(--orange); }
   .status-done .status-pill, .status-pill.status-done { background:color-mix(in srgb,var(--green) 22%,var(--surface)); color:var(--green); }
-  .task-tile.status-done { opacity:.75; }
+  .task-tile.status-done { opacity:.78; }
+  .task-tile.status-late,.task-tile.status-expired { border-color:#f0c5c5; background:#fff2f2; }
+  .task-tile.status-retry { border-color:#f0d5ba; background:#fff6ef; }
   .confetti-overlay { position:fixed; inset:0; display:grid; place-items:center; font-size:64px; pointer-events:none; z-index:999; animation:confetti-pop 1.4s ease-out; }
   @keyframes confetti-pop { 0% { opacity:0; transform:scale(.4); } 30% { opacity:1; transform:scale(1.2); } 100% { opacity:0; transform:scale(1.4); } }
   .target-dialog { max-width:320px; }

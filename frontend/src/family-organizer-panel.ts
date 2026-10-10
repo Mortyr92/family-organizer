@@ -788,15 +788,15 @@ export class FamilyOrganizerPanel extends LitElement {
     const status = choreStatus(chore, today, new Date(), this.settingsData.chore_dayparts || DEFAULT_DAYPARTS, !!completion);
     const canComplete = isFree ? this.can("manage_chores") || this.can("complete_own_chores") || this.can("complete_any_chore") : this.choreCanComplete(chore, ids);
     const isRoutine = chore.schedule && chore.schedule !== "once";
-    return html`<article class=${`task-tile status-${status}`}>
+    return html`<article class=${`task-tile ${isRoutine ? "tile-routine" : "tile-task"} status-${status}`}>
       <span class="task-icon" aria-hidden="true">${this.choreIcon(chore)}</span>
-      <div class="row-copy"><strong>${chore.title}</strong>
-        <span class="muted status-pill status-${status}">${this.statusLabel(status)}</span>
+      <div class="task-main">
+        <strong class="task-title">${chore.title || this.s("Untitled task", "Naamloos taakje")}</strong>
+        <span class="task-meta">${Number(chore.points || 0)} ${this.x("pts")} · ${this.statusLabel(status)}</span>
       </div>
-      <span class="points-badge">${chore.points} ${this.x("pts")}</span>
-      ${status === "done" ? html`<button class="icon-button" title=${this.s("Undo", "Ongedaan maken")} @click=${() => void this.undoChore(chore, today)}>↺</button>`
-        : html`<button class="primary" ?disabled=${!canComplete || this.saving || ["upcoming", "expired"].includes(status)} @click=${() => this.completeChore(chore, personId || this.me?.id || "")}>${this.s("Check off!", "Afvinken maar!")}</button>`}
-      ${this.can("manage_chores") ? html`<button class="icon-button" aria-label=${`${this.x("Edit")} ${chore.title}`} @click=${() => this.openEditor("chore", chore)}>✎</button><button class="icon-button" aria-label=${`${this.x("Delete")} ${chore.title}`} @click=${() => this.confirmDelete("chores", chore)}>×</button>` : nothing}
+      ${status === "done"
+        ? html`<button class="icon-button task-action" title=${this.s("Undo", "Ongedaan maken")} @click=${() => void this.undoChore(chore, today)}>↺</button>`
+        : html`<button class="icon-button task-action" ?disabled=${!canComplete || this.saving || ["upcoming", "expired"].includes(status)} title=${this.s("Check off", "Afvinken")} @click=${() => this.completeChore(chore, personId || this.me?.id || "")}>○</button>`}
     </article>`;
   }
   private personChoreCard(person: Item, chores: Item[], completions: Item[], today: string) {
@@ -806,10 +806,10 @@ export class FamilyOrganizerPanel extends LitElement {
     const points = (this.data.chores.completions || []).filter((x: Item) => x.person_id === person.id).reduce((n: number, x: Item) => n + Number(x.points || 0), 0);
     return html`<article class="surface person-task-card">
       <header class="person-task-header">${this.avatar(person.id)}<div class="row-copy"><strong>${person.name}</strong></div><span class="points-badge">🏆 ${points}</span></header>
-      <div class="task-group"><span class="eyebrow">${this.x("Chores")} (${tasks.length})</span>
+      <div class="task-group"><span class="group-title">${this.s("Taakjes", "Taakjes")} (${tasks.length})</span>
         <div class="task-list">${tasks.length ? tasks.map((c: Item) => this.choreTile(c, person.id, completions, today, false)) : html`<p class="muted task-empty">${this.s("No active chores", "Geen actieve taakjes")}</p>`}</div>
       </div>
-      <div class="task-group"><span class="eyebrow">${this.x("Routines")} (${routines.length})</span>
+      <div class="task-group"><span class="group-title">${this.s("Routines", "Routines")} (${routines.length})</span>
         <div class="task-list">${routines.length ? routines.map((c: Item) => this.choreTile(c, person.id, completions, today, false)) : html`<p class="muted task-empty">${this.s("No active routines", "Geen actieve routines")}</p>`}</div>
       </div>
     </article>`;
@@ -819,11 +819,11 @@ export class FamilyOrganizerPanel extends LitElement {
     const tasks = free.filter((c: Item) => !c.schedule || c.schedule === "once");
     const routines = free.filter((c: Item) => c.schedule && c.schedule !== "once");
     return html`<article class="surface person-task-card free-task-card">
-      <header class="person-task-header"><span class="free-icon" aria-hidden="true">✋</span><div class="row-copy"><strong>${this.s("Free to pick up", "Vrij op te pakken taakjes")}</strong></div></header>
-      <div class="task-group"><span class="eyebrow">${this.x("Chores")} (${tasks.length})</span>
+      <header class="person-task-header"><span class="free-icon" aria-hidden="true">✋</span><div class="row-copy"><strong>${this.s("Vrij op te pakken taakjes", "Vrij op te pakken taakjes")}</strong></div></header>
+      <div class="task-group"><span class="group-title">${this.s("Taakjes", "Taakjes")} (${tasks.length})</span>
         <div class="task-list">${tasks.length ? tasks.map((c: Item) => this.choreTile(c, undefined, completions, today, true)) : html`<p class="muted task-empty">${this.s("No free chores", "Geen vrije taakjes")}</p>`}</div>
       </div>
-      <div class="task-group"><span class="eyebrow">${this.x("Routines")} (${routines.length})</span>
+      <div class="task-group"><span class="group-title">${this.s("Routines", "Routines")} (${routines.length})</span>
         <div class="task-list">${routines.length ? routines.map((c: Item) => this.choreTile(c, undefined, completions, today, true)) : html`<p class="muted task-empty">${this.s("No free routines", "Geen vrije routines")}</p>`}</div>
       </div>
     </article>`;
@@ -833,7 +833,7 @@ export class FamilyOrganizerPanel extends LitElement {
     const today = iso(new Date());
     const due = chores.filter((c: Item) => choreDue(c, today, this.choresPaused()));
     return html`<section class="tasks-routines">
-      <div class="section-toolbar"><div><span class="eyebrow">${this.x("TAAKJES & ROUTINES")}</span><h2>${this.s("Tasks & Routines", "Taakjes & Routines")}</h2></div>
+      <div class="section-toolbar tasks-toolbar"><div><span class="eyebrow">${this.x("TAAKJES & ROUTINES")}</span><h2>${this.s("Taakjes & Routines", "Taakjes & Routines")}</h2></div>
         <div class="toolbar-actions">
           <button class="icon-button pause-toggle" title=${this.choresPaused() ? this.s("Resume routines", "Routines hervatten") : this.s("Pause routines", "Routines pauzeren")} ?disabled=${!this.can("manage_chores")} @click=${() => void this.toggleChoresPaused()}>${this.choresPaused() ? "▶" : "⏸"}</button>
           ${this.addButton("New chore", "chore", this.can("manage_chores"))}

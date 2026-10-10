@@ -1,0 +1,4 @@
+- Improve: Tasks & Routines board now matches the reference style much closer, with per-person cards and a free-pickup card that use the same visual hierarchy as the design.
+- Improve: colors for task and routine rows were tuned to calmer, more identical warm/cool pastel shades.
+- Fix: task title rendering no longer breaks vertically; titles now stay on one line with ellipsis for overflow.
+- Improve: section labels and tile spacing were refined to better match the screenshot field layout.
