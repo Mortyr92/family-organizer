@@ -14,6 +14,7 @@ ROOT = Path(__file__).parents[1]
 INTEGRATION = ROOT / "custom_components" / "family_organizer"
 VERSION = json.loads((INTEGRATION / "manifest.json").read_text())["version"]
 BASE_URL = "/family_organizer/panel"
+VERSION_BASE_URL = f"/family_organizer/{VERSION}"
 URL = f"{BASE_URL}/family-organizer-panel.js?v={VERSION}"
 PANEL_DIR = str(INTEGRATION / "panel")
 
@@ -73,8 +74,9 @@ def test_registration_compatibility_and_reload(monkeypatch, modern):
     )
     asyncio.run(register(hass))
     asyncio.run(register(hass))
-    assert registered == [(BASE_URL, PANEL_DIR, True)]
     assert len(panel.calls) == 1
+    assert (BASE_URL, PANEL_DIR, True) in registered
+    assert (VERSION_BASE_URL, PANEL_DIR, True) in registered
     assert panel.calls[0]["module_url"] == URL
     assert panel.calls[0]["frontend_url_path"] == "family-organizer"
     assert panel.calls[0]["require_admin"] is False
