@@ -1,0 +1,2 @@
+- Fix: recipe suggestions when searching for a meal now use a custom suggestion list instead of the native browser datalist, so suggestions reliably appear on every device.
+- Fix: grocery item names in the Lists overview no longer get clipped to a few letters on narrower screens; long names now wrap instead of being cut off.
