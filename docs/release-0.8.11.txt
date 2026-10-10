@@ -1,0 +1,7 @@
+- New: the Chores menu is replaced by "Taakjes & Routines" with a card per family member (name and avatar on top, their tasks and routines below) plus a "free to pick up" card for unassigned items.
+- New: routines recur daily, weekly or monthly with intervals and dayparts (morning, afternoon, evening or custom); default daypart times are configurable in Settings.
+- New: task lifecycle statuses: active, upcoming, late, retry, expired and done. Retry windows after the deadline are supported (default one hour).
+- New: completing a task shows confetti and asks where the points go (savings jar or a goal); completions can be undone which revokes the earned points.
+- New: a pause button stops all routines for the whole family and shows an "All routines paused" banner.
+- Fix: startup crash when a synced calendar contains a timezone-aware RRULE with a non-UTC UNTIL value.
+- Fix: the custom panel is now served from a stable URL (/family_organizer/panel/...) with version-based cache busting, plus legacy versioned URLs for backward compatibility, resolving "Unable to load custom panel" errors.
