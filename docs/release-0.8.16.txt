@@ -1,0 +1,4 @@
+- Improve: task/routine icons are now larger for better readability.
+- New: each task/routine can now use a custom icon image URL.
+- Behavior: when a custom image is set, it is shown in the same icon slot/size as the standard icon.
+- Technical: added chore image persistence support in the model/store migration defaults.

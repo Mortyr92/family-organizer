@@ -162,6 +162,7 @@ class Chore(Model):
     due_date: str | None = None
     due_time: str | None = None
     icon: str = "mdi:check-circle-outline"
+    chore_image: str | None = None
     created: str = field(default_factory=lambda: date.today().isoformat())
     creator_id: str | None = None
     shared: bool = True

@@ -461,7 +461,7 @@ export class FamilyOrganizerPanel extends LitElement {
     } else if (kind === "chore") {
       resource = "chores";
       const isFree = checked("is_free");
-      patch = { ...patch, title: text("title"), description: text("description"), icon: text("icon"), points: number("points"), assignee_ids: isFree ? [] : values.getAll("assignee_ids"), rotate: checked("rotate"), schedule: text("schedule"), weekdays: values.getAll("weekdays").map(Number), month_day: number("month_day"), interval_days: number("interval_days"), due_date: text("due_date") || null, due_time: text("due_time") || null, created: item.created || iso(new Date()), shared: checked("shared"), is_free: isFree, retry_allowed: checked("retry_allowed"), retry_minutes: number("retry_minutes") || 60, daypart: text("daypart") || "custom", expires_at: isFree ? (text("expires_at") || null) : null, continuous: checked("continuous") };
+      patch = { ...patch, title: text("title"), description: text("description"), icon: text("icon"), chore_image: text("chore_image") || null, points: number("points"), assignee_ids: isFree ? [] : values.getAll("assignee_ids"), rotate: checked("rotate"), schedule: text("schedule"), weekdays: values.getAll("weekdays").map(Number), month_day: number("month_day"), interval_days: number("interval_days"), due_date: text("due_date") || null, due_time: text("due_time") || null, created: item.created || iso(new Date()), shared: checked("shared"), is_free: isFree, retry_allowed: checked("retry_allowed"), retry_minutes: number("retry_minutes") || 60, daypart: text("daypart") || "custom", expires_at: isFree ? (text("expires_at") || null) : null, continuous: checked("continuous") };
       if (patch.schedule === "weekly" && !patch.weekdays.length) { this.error = this.tm("Choose at least one weekday."); return; }
       if (!isFree && !patch.assignee_ids.length) { this.error = this.tm("Choose at least one family member."); return; }
       if (patch.rotate && !isFree) {
@@ -776,6 +776,9 @@ export class FamilyOrganizerPanel extends LitElement {
   }
 
   private choreIcon(chore: Item) {
+    if (chore.chore_image) {
+      return html`<img class="chore-image" src=${chore.chore_image} alt="" loading="lazy" referrerpolicy="no-referrer">`;
+    }
     return html`<ha-icon .icon=${chore.icon || "mdi:check-circle-outline"} aria-hidden="true"></ha-icon><span class="chore-icon-fallback" aria-hidden="true">✓</span>`;
   }
   private choreCompleted(chore: Item, day: string, completions: Item[]) {
@@ -1128,7 +1131,7 @@ export class FamilyOrganizerPanel extends LitElement {
       const suggestions = query.trim() ? recipes.filter((r: Item) => r.title.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8) : [];
       return html`${this.field("Date", "day", item.day || this.selectedDay, "date", true)}${this.select("Meal slot", "slot", item.slot || item.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || ["breakfast", "lunch", "dinner"]).map((slot: string) => [slot, slot]))}<div class="form-field full meal-title-field"><label for="editor-title">${this.x("Meal or recipe name")}</label><input id="editor-title" name="title" type="text" .value=${query} required autocomplete="off" placeholder=${this.x("Type to search your recipes…")} @input=${(e: Event) => { this.mealTitleQuery = (e.target as HTMLInputElement).value; }}>${suggestions.length ? html`<ul class="meal-title-suggestions">${suggestions.map((r: Item) => html`<li><button type="button" @click=${(e: Event) => { const input = (e.currentTarget as HTMLElement).closest(".meal-title-field")?.querySelector("input") as HTMLInputElement; if (input) input.value = r.title; this.mealTitleQuery = r.title; }}>${r.title}</button></li>`)}</ul>` : nothing}</div>${this.field("Servings", "servings", item.servings || 4, "number", true, { min: 1, step: 1 })}`;
     }
-    if (kind === "chore") return html`${this.field("Chore title", "title", item.title, "text", true, { autofocus: true })}${this.field("Points", "points", item.points ?? 5, "number", true, { min: 0, step: 1 })}${this.field("Icon (MDI name)", "icon", item.icon || "mdi:check-circle-outline")}
+    if (kind === "chore") return html`${this.field("Chore title", "title", item.title, "text", true, { autofocus: true })}${this.field("Points", "points", item.points ?? 5, "number", true, { min: 0, step: 1 })}${this.field("Icon (MDI name)", "icon", item.icon || "mdi:check-circle-outline")}${this.field("Icon image URL (optional)", "chore_image", item.chore_image, "url")}
       <label class="check full"><input name="is_free" type="checkbox" ?checked=${!!item.is_free}>${this.s("Free to pick up by anyone", "Vrij, door iedereen op te pakken")}</label>
       ${this.select("Schedule", "schedule", item.schedule || "once", [["once", "One time"], ["daily", "Daily"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["custom", "Custom interval"], ...(item.schedule?.startsWith("weekly:") ? [[item.schedule, "Keep existing weekdays"] as [string, string]] : [])])}
       ${item.is_free ? nothing : this.personChecks("assignee_ids", item.assignee_ids || (item.assignee_id ? [item.assignee_id] : []))}

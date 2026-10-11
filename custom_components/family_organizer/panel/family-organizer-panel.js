@@ -1203,11 +1203,13 @@ var Ke = o`
   .group-title { font-size:22px; line-height:1; letter-spacing:-.4px; font-weight:800; color:#1f2a32; }
   .task-list { display:flex; flex-direction:column; gap:6px; min-height:16px; }
   .task-empty { padding:8px 0; font-size:11px; }
-  .task-tile { display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:10px; background:#fff8f1; border:1px solid #f5dfc9; transition:background .2s,border-color .2s,box-shadow .2s; }
+  .task-tile { display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:10px; background:#fff8f1; border:1px solid #f5dfc9; transition:background .2s,border-color .2s,box-shadow .2s; }
   .task-tile.tile-routine { background:#eaf9fc; border-color:#d3edf3; }
   .task-tile.is-available.tile-task { background:#f5b782; border-color:#db8a4d; box-shadow:0 0 0 1px #db8a4d inset; }
   .task-tile.is-available.tile-routine { background:#66bde2; border-color:#2f88b4; box-shadow:0 0 0 1px #2f88b4 inset; }
-  .task-tile .task-icon { width:20px; height:20px; min-width:20px; border-radius:6px; background:#fff; color:#ce8447; display:grid; place-items:center; font-size:12px; border:1px solid #f0decf; }
+  .task-tile .task-icon { width:34px; height:34px; min-width:34px; border-radius:8px; background:#fff; color:#ce8447; display:grid; place-items:center; font-size:18px; border:1px solid #f0decf; overflow:hidden; }
+  .task-tile .task-icon ha-icon { --mdc-icon-size:20px; width:20px; height:20px; }
+  .task-tile .task-icon .chore-image { width:100%; height:100%; object-fit:cover; display:block; }
   .task-tile.tile-routine .task-icon { color:#4d8aa0; border-color:#d1e8ee; }
   .task-tile .task-main { min-width:0; flex:1; display:flex; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
@@ -2459,6 +2461,7 @@ var Ye = [
 				title: u("title"),
 				description: u("description"),
 				icon: u("icon"),
+				chore_image: u("chore_image") || null,
 				points: l("points"),
 				assignee_ids: e ? [] : n.getAll("assignee_ids"),
 				rotate: d("rotate"),
@@ -3004,7 +3007,7 @@ var Ye = [
 		})}</div>`;
 	}
 	choreIcon(e) {
-		return M`<ha-icon .icon=${e.icon || "mdi:check-circle-outline"} aria-hidden="true"></ha-icon><span class="chore-icon-fallback" aria-hidden="true">✓</span>`;
+		return e.chore_image ? M`<img class="chore-image" src=${e.chore_image} alt="" loading="lazy" referrerpolicy="no-referrer">` : M`<ha-icon .icon=${e.icon || "mdi:check-circle-outline"} aria-hidden="true"></ha-icon><span class="chore-icon-fallback" aria-hidden="true">✓</span>`;
 	}
 	choreCompleted(e, t, n) {
 		let r = n.find((n) => n.chore_id === e.id && !n.adjustment && U(new Date(n.completed_at)) === t);
@@ -3577,7 +3580,7 @@ var Ye = [
 		if (e === "chore") return M`${this.field("Chore title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Points", "points", t.points ?? 5, "number", !0, {
 			min: 0,
 			step: 1
-		})}${this.field("Icon (MDI name)", "icon", t.icon || "mdi:check-circle-outline")}
+		})}${this.field("Icon (MDI name)", "icon", t.icon || "mdi:check-circle-outline")}${this.field("Icon image URL (optional)", "chore_image", t.chore_image, "url")}
       <label class="check full"><input name="is_free" type="checkbox" ?checked=${!!t.is_free}>${this.s("Free to pick up by anyone", "Vrij, door iedereen op te pakken")}</label>
       ${this.select("Schedule", "schedule", t.schedule || "once", [
 			["once", "One time"],

@@ -73,6 +73,7 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
         for chore in result["items"]:
             if "assignee_ids" not in chore:
                 chore["assignee_ids"] = [chore["assignee_id"]] if chore.get("assignee_id") else []
+            chore.setdefault("chore_image", None)
     if name == "recipes":
         result.setdefault("categories", [])
         for recipe in result["items"]:
