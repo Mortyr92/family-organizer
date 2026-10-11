@@ -349,7 +349,9 @@ export const panelStyles = css`
   .person-task-header { display:flex; align-items:center; gap:10px; padding-bottom:4px; }
   .person-task-header .avatar { width:30px; height:30px; min-width:30px; }
   .person-task-header .row-copy strong { font-size:16px; font-weight:800; letter-spacing:-.2px; }
-  .person-task-header .points-badge { margin-left:auto; background:transparent; border:none; box-shadow:none; padding:0; font-size:14px; color:#b08a4d; }
+  .person-task-header .points-badge { background:transparent; border:none; box-shadow:none; padding:0; font-size:14px; color:#b08a4d; }
+  .person-task-header .points-stack { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .person-task-header .coin-badge { background:transparent; border:none; box-shadow:none; padding:0; font-size:14px; color:#b08a4d; font-weight:700; }
   .free-icon { width:30px; height:30px; min-width:30px; border-radius:50%; background:#f4eefc; display:grid; place-items:center; font-size:16px; color:#7b5ea8; }
   .task-group { display:flex; flex-direction:column; gap:8px; }
   .group-title { font-size:22px; line-height:1; letter-spacing:-.4px; font-weight:800; color:#1f2a32; }
@@ -395,10 +397,15 @@ export const panelStyles = css`
   .manage-pin-form { display:grid; gap:10px; grid-template-columns:1fr 1fr auto; align-items:end; }
   .manage-pin-form > button { align-self:end; }
   .confetti-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
-  .confetti-cannon { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:64px; animation:cannon-pop 1.5s ease-out; }
-  .confetti-stream { position:absolute; inset:0; display:grid; place-items:center; font-size:34px; letter-spacing:16px; animation:confetti-rain 1.5s linear; }
-  @keyframes cannon-pop { 0% { transform:translate(-50%,-50%) scale(.6); opacity:0; } 15% { opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.1); opacity:0; } }
-  @keyframes confetti-rain { 0% { transform:translateY(-30px); opacity:0; } 10% { opacity:1; } 100% { transform:translateY(180px); opacity:0; } }
+  .confetti-piece { position:absolute; top:-10vh; font-size:30px; animation:confetti-fall 2s linear infinite; will-change:transform; }
+  .streamer-piece { position:absolute; top:-14vh; width:8px; height:46px; border-radius:4px; animation:streamer-fall 2.2s linear infinite; will-change:transform; }
+  @keyframes confetti-fall { 0% { transform:translateY(0) rotate(0deg); opacity:0; } 8% { opacity:1; } 100% { transform:translateY(125vh) rotate(340deg); opacity:1; } }
+  @keyframes streamer-fall { 0% { transform:translateY(0) rotate(-14deg); opacity:0; } 8% { opacity:1; } 50% { transform:translateY(62vh) rotate(16deg); } 100% { transform:translateY(130vh) rotate(-12deg); opacity:1; } }
+  .coin-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; display:grid; place-items:center; }
+  .coin-rain-piece { position:absolute; top:-10vh; font-size:26px; animation:coin-rain-fall 1.8s linear infinite; will-change:transform; }
+  @keyframes coin-rain-fall { 0% { transform:translateY(0) rotate(0deg); opacity:0; } 10% { opacity:1; } 100% { transform:translateY(125vh) rotate(260deg); opacity:1; } }
+  .coin-hero { font-size:48px; animation:coin-hero-spin 2.6s ease-out forwards; will-change:transform; filter:drop-shadow(0 10px 24px rgba(24,18,12,.35)); }
+  @keyframes coin-hero-spin { 0% { transform:scale(.05) rotateY(0deg); opacity:0; } 15% { opacity:1; } 55% { transform:scale(4.2) rotateY(1080deg); } 85% { transform:scale(4.2) rotateY(1080deg); opacity:1; } 100% { transform:scale(4.6) rotateY(1080deg); opacity:0; } }
   .points-runup { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; width:min(92vw,560px); background:#fff; border:1px solid #e6d9ca; border-radius:14px; box-shadow:0 12px 28px rgba(24, 18, 12, .18); padding:10px 12px; display:grid; gap:8px; }
   .points-runup-person { display:flex; align-items:center; gap:8px; }
   .points-runup-person .avatar { width:26px; height:26px; min-width:26px; }

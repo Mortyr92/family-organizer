@@ -1197,7 +1197,9 @@ var Ke = o`
   .person-task-header { display:flex; align-items:center; gap:10px; padding-bottom:4px; }
   .person-task-header .avatar { width:30px; height:30px; min-width:30px; }
   .person-task-header .row-copy strong { font-size:16px; font-weight:800; letter-spacing:-.2px; }
-  .person-task-header .points-badge { margin-left:auto; background:transparent; border:none; box-shadow:none; padding:0; font-size:14px; color:#b08a4d; }
+  .person-task-header .points-badge { background:transparent; border:none; box-shadow:none; padding:0; font-size:14px; color:#b08a4d; }
+  .person-task-header .points-stack { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .person-task-header .coin-badge { background:transparent; border:none; box-shadow:none; padding:0; font-size:14px; color:#b08a4d; font-weight:700; }
   .free-icon { width:30px; height:30px; min-width:30px; border-radius:50%; background:#f4eefc; display:grid; place-items:center; font-size:16px; color:#7b5ea8; }
   .task-group { display:flex; flex-direction:column; gap:8px; }
   .group-title { font-size:22px; line-height:1; letter-spacing:-.4px; font-weight:800; color:#1f2a32; }
@@ -1243,10 +1245,15 @@ var Ke = o`
   .manage-pin-form { display:grid; gap:10px; grid-template-columns:1fr 1fr auto; align-items:end; }
   .manage-pin-form > button { align-self:end; }
   .confetti-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
-  .confetti-cannon { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:64px; animation:cannon-pop 1.5s ease-out; }
-  .confetti-stream { position:absolute; inset:0; display:grid; place-items:center; font-size:34px; letter-spacing:16px; animation:confetti-rain 1.5s linear; }
-  @keyframes cannon-pop { 0% { transform:translate(-50%,-50%) scale(.6); opacity:0; } 15% { opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.1); opacity:0; } }
-  @keyframes confetti-rain { 0% { transform:translateY(-30px); opacity:0; } 10% { opacity:1; } 100% { transform:translateY(180px); opacity:0; } }
+  .confetti-piece { position:absolute; top:-10vh; font-size:30px; animation:confetti-fall 2s linear infinite; will-change:transform; }
+  .streamer-piece { position:absolute; top:-14vh; width:8px; height:46px; border-radius:4px; animation:streamer-fall 2.2s linear infinite; will-change:transform; }
+  @keyframes confetti-fall { 0% { transform:translateY(0) rotate(0deg); opacity:0; } 8% { opacity:1; } 100% { transform:translateY(125vh) rotate(340deg); opacity:1; } }
+  @keyframes streamer-fall { 0% { transform:translateY(0) rotate(-14deg); opacity:0; } 8% { opacity:1; } 50% { transform:translateY(62vh) rotate(16deg); } 100% { transform:translateY(130vh) rotate(-12deg); opacity:1; } }
+  .coin-overlay { position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; display:grid; place-items:center; }
+  .coin-rain-piece { position:absolute; top:-10vh; font-size:26px; animation:coin-rain-fall 1.8s linear infinite; will-change:transform; }
+  @keyframes coin-rain-fall { 0% { transform:translateY(0) rotate(0deg); opacity:0; } 10% { opacity:1; } 100% { transform:translateY(125vh) rotate(260deg); opacity:1; } }
+  .coin-hero { font-size:48px; animation:coin-hero-spin 2.6s ease-out forwards; will-change:transform; filter:drop-shadow(0 10px 24px rgba(24,18,12,.35)); }
+  @keyframes coin-hero-spin { 0% { transform:scale(.05) rotateY(0deg); opacity:0; } 15% { opacity:1; } 55% { transform:scale(4.2) rotateY(1080deg); } 85% { transform:scale(4.2) rotateY(1080deg); opacity:1; } 100% { transform:scale(4.6) rotateY(1080deg); opacity:0; } }
   .points-runup { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; width:min(92vw,560px); background:#fff; border:1px solid #e6d9ca; border-radius:14px; box-shadow:0 12px 28px rgba(24, 18, 12, .18); padding:10px 12px; display:grid; gap:8px; }
   .points-runup-person { display:flex; align-items:center; gap:8px; }
   .points-runup-person .avatar { width:26px; height:26px; min-width:26px; }
@@ -2085,7 +2092,7 @@ var Ye = [
 	}
 }, $ = class extends V {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = qe("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = qe("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.mealTitleQuery = "", this.haUsers = [], this.calendarSearch = "", this.celebrate = !1, this.choresManageOpen = !1, this.choresManageUnlocked = !1, this.choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = qe("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = qe("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.mealTitleQuery = "", this.haUsers = [], this.calendarSearch = "", this.celebrate = !1, this.coinCelebration = !1, this.choresManageOpen = !1, this.choresManageUnlocked = !1, this.choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = ze(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.page === "settings" && (this.settingsUnlocked = !1, this.pinCapabilites = void 0), e.malformed && (this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.")));
 		};
@@ -3083,14 +3090,62 @@ var Ye = [
 	personPointsTotal(e) {
 		return (this.data.chores.completions || []).filter((t) => t.person_id === e).reduce((e, t) => e + Number(t.points || 0), 0);
 	}
-	triggerCelebration(e, t, n) {
-		let r = t + Math.max(0, Number(n || 0));
-		this.celebrate = !0, this.pointsCelebration = void 0;
+	personCoinTotal(e) {
+		let t = Math.max(0, this.personPointsTotal(e));
+		return Math.floor(t / 5);
+	}
+	personRemainingPoints(e) {
+		return Math.max(0, this.personPointsTotal(e)) % 5;
+	}
+	playApplause(e) {
 		try {
-			new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {});
+			let t = window.AudioContext || window.webkitAudioContext;
+			if (!t) return;
+			let n = new t(), r = e ? 3.2 : 2.4, i = n.createGain();
+			i.gain.value = .6, i.connect(n.destination);
+			let a = (e) => {
+				let t = n.createBuffer(1, Math.ceil(n.sampleRate * e), n.sampleRate), r = t.getChannelData(0);
+				for (let e = 0; e < r.length; e++) r[e] = Math.random() * 2 - 1;
+				return t;
+			}, o = a(.06);
+			for (let e = 0; e < r - .3; e += .04 + Math.random() * .07) {
+				let t = n.createBufferSource();
+				t.buffer = o;
+				let a = n.createBiquadFilter();
+				a.type = "bandpass", a.frequency.value = 900 + Math.random() * 1600, a.Q.value = 1.2;
+				let s = n.createGain(), c = n.currentTime + e, l = (.1 + Math.random() * .25) * Math.min(1, (r - e) / .8);
+				s.gain.setValueAtTime(l, c), s.gain.exponentialRampToValueAtTime(.001, c + .055), t.connect(a), a.connect(s), s.connect(i), t.start(c);
+			}
+			let s = n.createBufferSource();
+			s.buffer = a(r);
+			let c = n.createBiquadFilter();
+			c.type = "bandpass", c.frequency.value = 500, c.Q.value = .6;
+			let l = n.createGain();
+			l.gain.setValueAtTime(1e-4, n.currentTime), l.gain.exponentialRampToValueAtTime(.18, n.currentTime + .35), l.gain.setValueAtTime(.18, n.currentTime + r - .8), l.gain.exponentialRampToValueAtTime(.001, n.currentTime + r), s.connect(c), c.connect(l), l.connect(i), s.start();
+			let u = e ? 4 : 2;
+			for (let e = 0; e < u; e++) {
+				let t = n.createOscillator();
+				t.type = "triangle";
+				let r = n.currentTime + .2 + e * .55 + Math.random() * .2;
+				t.frequency.setValueAtTime(320 + Math.random() * 120, r), t.frequency.exponentialRampToValueAtTime(640 + Math.random() * 160, r + .25), t.frequency.exponentialRampToValueAtTime(260, r + .55);
+				let a = n.createGain();
+				a.gain.setValueAtTime(1e-4, r), a.gain.exponentialRampToValueAtTime(.09, r + .1), a.gain.exponentialRampToValueAtTime(.001, r + .55), t.connect(a), a.connect(i), t.start(r), t.stop(r + .6);
+			}
+			setTimeout(() => {
+				n.close().catch(() => {});
+			}, (r + .3) * 1e3);
 		} catch {}
+	}
+	triggerCelebration(e, t, n) {
+		let r = t + Math.max(0, Number(n || 0)), i = Math.floor(Math.max(0, r) / 5) > Math.floor(Math.max(0, t) / 5);
+		this.celebrate = !0, this.coinCelebration = !1, this.pointsCelebration = void 0, this.playApplause(i);
+		let a = 2200, o = i ? 2600 : 0;
 		setTimeout(() => {
-			this.celebrate = !1, this.pointsCelebration = {
+			this.celebrate = !1, i && (this.coinCelebration = !0, setTimeout(() => {
+				this.coinCelebration = !1;
+			}, o));
+		}, a), setTimeout(() => {
+			this.pointsCelebration = {
 				personId: e,
 				from: t,
 				to: r,
@@ -3106,7 +3161,7 @@ var Ye = [
 				}, 200);
 			};
 			requestAnimationFrame(i);
-		}, 1500);
+		}, a + o);
 	}
 	async performCompletion(e, t) {
 		let n = t ? this.personPointsTotal(t) : 0;
@@ -3159,9 +3214,9 @@ var Ye = [
     </article>`;
 	}
 	personChoreCard(e, t, n, r) {
-		let i = t.filter((t) => this.choreVisibleForPerson(t, e.id)).filter((e) => !this.choreCompleted(e, r, n)), a = i.filter((e) => !e.schedule || e.schedule === "once"), o = i.filter((e) => e.schedule && e.schedule !== "once"), s = (this.data.chores.completions || []).filter((t) => t.person_id === e.id).reduce((e, t) => e + Number(t.points || 0), 0);
+		let i = t.filter((t) => this.choreVisibleForPerson(t, e.id)).filter((e) => !this.choreCompleted(e, r, n)), a = i.filter((e) => !e.schedule || e.schedule === "once"), o = i.filter((e) => e.schedule && e.schedule !== "once"), s = this.personRemainingPoints(e.id), c = this.personCoinTotal(e.id);
 		return M`<article class="surface person-task-card">
-      <header class="person-task-header">${this.avatar(e.id)}<div class="row-copy"><strong>${e.name}</strong></div><span class="points-badge">🏆 ${s}</span></header>
+      <header class="person-task-header">${this.avatar(e.id)}<div class="row-copy"><strong>${e.name}</strong></div><div class="points-stack"><span class="points-badge">🏆 ${s}</span><span class="coin-badge">🪙 ${c}</span></div></header>
       <div class="task-group"><span class="group-title">${this.s("Taakjes", "Taakjes")} (${a.length})</span>
         <div class="task-list">${a.length ? a.map((t) => this.choreTile(t, e.id, n, r, !1)) : M`<p class="muted task-empty">${this.s("No active chores", "Geen actieve taakjes")}</p>`}</div>
       </div>
@@ -3220,7 +3275,23 @@ var Ye = [
         ${this.freeChoreCard(r, t, n)}
       </div>
       <div class="surface history"><div class="surface-heading"><div><span class="eyebrow">${this.x("EVERY CONTRIBUTION COUNTS")}</span><h2>${this.x("Recent activity")}</h2></div></div>${t.length ? [...t].sort((e, t) => t.completed_at.localeCompare(e.completed_at)).slice(0, 30).map((t) => M`<div class="compact-row">${this.avatar(t.person_id)}<span class="row-copy"><strong>${this.person(t.person_id)?.name || this.x("Family member")}</strong><span class="muted">${t.note || e.find((e) => e.id === t.chore_id)?.title || (t.adjustment ? this.x("Manual adjustment") : this.x("Completed chore"))}</span></span></div>`) : this.empty("Nothing yet", "Completions will show up here.")}</div>
-      ${this.celebrate ? M`<div class="confetti-overlay" aria-hidden="true"><span class="confetti-cannon">🎊</span><span class="confetti-stream">🎉 ✨ 🎉 ✨ 🎉 ✨ 🎉</span></div>` : P}
+      ${this.celebrate ? M`<div class="confetti-overlay" aria-hidden="true">${Array.from({ length: 26 }, (e, t) => {
+			let n = [
+				"🎉",
+				"🎊",
+				"✨",
+				"🎈",
+				"🎀"
+			], r = t % 3 == 0, i = t * 37 % 100, a = t * 53 % 90 / 100, o = 1.6 + t * 29 % 80 / 100;
+			return r ? M`<span class="streamer-piece" style=${`left:${i}%;animation-delay:${a}s;animation-duration:${o}s;background:${[
+				"#f3ab66",
+				"#ce7238",
+				"#7cb686",
+				"#6d9bd1",
+				"#d16d9b"
+			][t % 5]}`}></span>` : M`<span class="confetti-piece" style=${`left:${i}%;animation-delay:${a}s;animation-duration:${o}s`}>${n[t % n.length]}</span>`;
+		})}</div>` : P}
+      ${this.coinCelebration ? M`<div class="coin-overlay" aria-hidden="true">${Array.from({ length: 14 }, (e, t) => M`<span class="coin-rain-piece" style=${`left:${t * 41 % 100}%;animation-delay:${t * 67 % 100 / 100}s;animation-duration:${1.4 + t * 31 % 70 / 100}s`}>🪙</span>`)}<span class="coin-hero">🪙</span></div>` : P}
       ${this.pointsCelebration ? M`<div class="points-runup"><div class="points-runup-person">${this.avatar(this.pointsCelebration.personId)}<strong>${this.person(this.pointsCelebration.personId)?.name || this.x("Family member")}</strong></div><div class="points-runup-track"><div class="points-runup-fill" style=${`width:${Math.round(this.pointsCelebration.progress * 100)}%`}></div></div><div class="points-runup-values"><span>${Math.round(this.pointsCelebration.from + (this.pointsCelebration.to - this.pointsCelebration.from) * this.pointsCelebration.progress)}</span><small>${this.s("total points", "totaal punten")}</small></div></div>` : P}
       ${this.pendingFreeCompletion ? M`<dialog open class="editor-dialog picker-dialog"><header class="dialog-heading"><h2>${this.s("Who completed this?", "Wie heeft dit afgerond?")}</h2></header><div class="dialog-content face-picker">${this.people.map((e) => M`<button class="face-option" @click=${() => this.chooseFreeCompletion(e.id)}>${this.avatar(e.id)}<span>${e.name}</span></button>`)}<button @click=${() => {
 			this.pendingFreeCompletion = void 0;
@@ -3758,6 +3829,6 @@ var Ye = [
 		this.styles = Ke;
 	}
 };
-Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "mealTitleQuery", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), Z([H()], $.prototype, "celebrate", void 0), Z([H()], $.prototype, "choresManageOpen", void 0), Z([H()], $.prototype, "choresManageUnlocked", void 0), Z([H()], $.prototype, "choresPinPersonId", void 0), Z([H()], $.prototype, "pendingFreeCompletion", void 0), Z([H()], $.prototype, "pointsCelebration", void 0), $ = Z([we("family-organizer-panel")], $);
+Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "mealTitleQuery", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), Z([H()], $.prototype, "celebrate", void 0), Z([H()], $.prototype, "coinCelebration", void 0), Z([H()], $.prototype, "choresManageOpen", void 0), Z([H()], $.prototype, "choresManageUnlocked", void 0), Z([H()], $.prototype, "choresPinPersonId", void 0), Z([H()], $.prototype, "pendingFreeCompletion", void 0), Z([H()], $.prototype, "pointsCelebration", void 0), $ = Z([we("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };

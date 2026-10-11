@@ -1,0 +1,13 @@
+Family Organizer 0.8.20
+
+Nieuw in deze versie:
+- Puntensysteem uitgebreid met muntjes: elke 5 behaalde punten worden automatisch omgezet naar 1 muntje (🪙).
+- Puntenweergave per persoon opgesplitst: 🏆 toont resterende punten richting volgende munt, 🪙 toont totaal verdiende muntjes.
+- Viering na afronden van taak volledig vernieuwd:
+  - confetti en slingers vallen verticaal van boven naar beneden (geen confettikanon meer),
+  - bij een nieuw verdiend muntje regenen kleine muntjes en verschijnt een grote draaiende munt naar voren in beeld.
+- Geluidseffect op het apparaat dat afvinkt verbeterd: hoorbaar klappen en juichen bij het behalen van punten/muntjes.
+
+Migratie/actie:
+- Geen extra configuratie nodig.
+- Ververs de browsercache na updaten (Ctrl+F5) om de nieuwe frontend-animaties direct te zien.

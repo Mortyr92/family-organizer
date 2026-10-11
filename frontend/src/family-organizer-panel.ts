@@ -161,6 +161,7 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private haUsers: Item[] = [];
   @state() private calendarSearch = "";
   @state() private celebrate = false;
+  @state() private coinCelebration = false;
   @state() private choresManageOpen = false;
   @state() private choresManageUnlocked = false;
   @state() private choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "";
@@ -847,13 +848,95 @@ export class FamilyOrganizerPanel extends LitElement {
   private personPointsTotal(personId: string) {
     return (this.data.chores.completions || []).filter((x: Item) => x.person_id === personId).reduce((n: number, x: Item) => n + Number(x.points || 0), 0);
   }
+  private personCoinTotal(personId: string) {
+    const points = Math.max(0, this.personPointsTotal(personId));
+    return Math.floor(points / 5);
+  }
+  private personRemainingPoints(personId: string) {
+    const points = Math.max(0, this.personPointsTotal(personId));
+    return points % 5;
+  }
+  private playApplause(withCheer: boolean) {
+    try {
+      const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctor) return;
+      const ctx = new Ctor();
+      const total = withCheer ? 3.2 : 2.4;
+      const master = ctx.createGain();
+      master.gain.value = 0.6;
+      master.connect(ctx.destination);
+      const noiseBuffer = (seconds: number) => {
+        const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * seconds), ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        return buffer;
+      };
+      // Clapping: many short filtered noise bursts at slightly random times.
+      const clapBuffer = noiseBuffer(0.06);
+      for (let t = 0; t < total - 0.3; t += 0.04 + Math.random() * 0.07) {
+        const src = ctx.createBufferSource();
+        src.buffer = clapBuffer;
+        const band = ctx.createBiquadFilter();
+        band.type = "bandpass";
+        band.frequency.value = 900 + Math.random() * 1600;
+        band.Q.value = 1.2;
+        const gain = ctx.createGain();
+        const when = ctx.currentTime + t;
+        const level = (0.1 + Math.random() * 0.25) * Math.min(1, (total - t) / 0.8);
+        gain.gain.setValueAtTime(level, when);
+        gain.gain.exponentialRampToValueAtTime(0.001, when + 0.055);
+        src.connect(band); band.connect(gain); gain.connect(master);
+        src.start(when);
+      }
+      // Cheering crowd: swelling filtered noise plus a few "woo" voice-like sweeps.
+      const cheerSrc = ctx.createBufferSource();
+      cheerSrc.buffer = noiseBuffer(total);
+      const cheerFilter = ctx.createBiquadFilter();
+      cheerFilter.type = "bandpass";
+      cheerFilter.frequency.value = 500;
+      cheerFilter.Q.value = 0.6;
+      const cheerGain = ctx.createGain();
+      cheerGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      cheerGain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.35);
+      cheerGain.gain.setValueAtTime(0.18, ctx.currentTime + total - 0.8);
+      cheerGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + total);
+      cheerSrc.connect(cheerFilter); cheerFilter.connect(cheerGain); cheerGain.connect(master);
+      cheerSrc.start();
+      const wooCount = withCheer ? 4 : 2;
+      for (let i = 0; i < wooCount; i++) {
+        const osc = ctx.createOscillator();
+        osc.type = "triangle";
+        const when = ctx.currentTime + 0.2 + i * 0.55 + Math.random() * 0.2;
+        osc.frequency.setValueAtTime(320 + Math.random() * 120, when);
+        osc.frequency.exponentialRampToValueAtTime(640 + Math.random() * 160, when + 0.25);
+        osc.frequency.exponentialRampToValueAtTime(260, when + 0.55);
+        const wooGain = ctx.createGain();
+        wooGain.gain.setValueAtTime(0.0001, when);
+        wooGain.gain.exponentialRampToValueAtTime(0.09, when + 0.1);
+        wooGain.gain.exponentialRampToValueAtTime(0.001, when + 0.55);
+        osc.connect(wooGain); wooGain.connect(master);
+        osc.start(when); osc.stop(when + 0.6);
+      }
+      setTimeout(() => { void ctx.close().catch(() => {}); }, (total + 0.3) * 1000);
+    } catch { /* ignore */ }
+  }
   private triggerCelebration(personId: string, from: number, points: number) {
     const to = from + Math.max(0, Number(points || 0));
+    const coinEarned = Math.floor(Math.max(0, to) / 5) > Math.floor(Math.max(0, from) / 5);
     this.celebrate = true;
+    this.coinCelebration = false;
     this.pointsCelebration = undefined;
-    try { new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {}); } catch { /* ignore */ }
+    this.playApplause(coinEarned);
+    const confettiDuration = 2200;
+    const coinDuration = coinEarned ? 2600 : 0;
     setTimeout(() => {
       this.celebrate = false;
+      if (coinEarned) {
+        this.coinCelebration = true;
+        setTimeout(() => { this.coinCelebration = false; }, coinDuration);
+      }
+    }, confettiDuration);
+    setTimeout(() => {
       this.pointsCelebration = { personId, from, to, progress: 0 };
       const start = performance.now();
       const duration = 1500;
@@ -864,7 +947,7 @@ export class FamilyOrganizerPanel extends LitElement {
         else setTimeout(() => { this.pointsCelebration = undefined; }, 200);
       };
       requestAnimationFrame(tick);
-    }, 1500);
+    }, confettiDuration + coinDuration);
   }
   private async performCompletion(chore: Item, personId: string) {
     const baseline = personId ? this.personPointsTotal(personId) : 0;
@@ -922,9 +1005,10 @@ export class FamilyOrganizerPanel extends LitElement {
       .filter((c: Item) => !this.choreCompleted(c, today, completions));
     const tasks = mine.filter((c: Item) => !c.schedule || c.schedule === "once");
     const routines = mine.filter((c: Item) => c.schedule && c.schedule !== "once");
-    const points = (this.data.chores.completions || []).filter((x: Item) => x.person_id === person.id).reduce((n: number, x: Item) => n + Number(x.points || 0), 0);
+    const points = this.personRemainingPoints(person.id);
+    const coins = this.personCoinTotal(person.id);
     return html`<article class="surface person-task-card">
-      <header class="person-task-header">${this.avatar(person.id)}<div class="row-copy"><strong>${person.name}</strong></div><span class="points-badge">🏆 ${points}</span></header>
+      <header class="person-task-header">${this.avatar(person.id)}<div class="row-copy"><strong>${person.name}</strong></div><div class="points-stack"><span class="points-badge">🏆 ${points}</span><span class="coin-badge">🪙 ${coins}</span></div></header>
       <div class="task-group"><span class="group-title">${this.s("Taakjes", "Taakjes")} (${tasks.length})</span>
         <div class="task-list">${tasks.length ? tasks.map((c: Item) => this.choreTile(c, person.id, completions, today, false)) : html`<p class="muted task-empty">${this.s("No active chores", "Geen actieve taakjes")}</p>`}</div>
       </div>
@@ -989,7 +1073,17 @@ export class FamilyOrganizerPanel extends LitElement {
         ${this.freeChoreCard(due, completions, today)}
       </div>
       <div class="surface history"><div class="surface-heading"><div><span class="eyebrow">${this.x("EVERY CONTRIBUTION COUNTS")}</span><h2>${this.x("Recent activity")}</h2></div></div>${completions.length ? [...completions].sort((a: Item, b: Item) => b.completed_at.localeCompare(a.completed_at)).slice(0, 30).map((completion: Item) => html`<div class="compact-row">${this.avatar(completion.person_id)}<span class="row-copy"><strong>${this.person(completion.person_id)?.name || this.x("Family member")}</strong><span class="muted">${completion.note || chores.find((c: Item) => c.id === completion.chore_id)?.title || (completion.adjustment ? this.x("Manual adjustment") : this.x("Completed chore"))}</span></span></div>`) : this.empty("Nothing yet", "Completions will show up here.")}</div>
-      ${this.celebrate ? html`<div class="confetti-overlay" aria-hidden="true"><span class="confetti-cannon">🎊</span><span class="confetti-stream">🎉 ✨ 🎉 ✨ 🎉 ✨ 🎉</span></div>` : nothing}
+      ${this.celebrate ? html`<div class="confetti-overlay" aria-hidden="true">${Array.from({ length: 26 }, (_, i) => {
+        const pieces = ["🎉", "🎊", "✨", "🎈", "🎀"];
+        const streamer = i % 3 === 0;
+        const left = ((i * 37) % 100);
+        const delay = ((i * 53) % 90) / 100;
+        const duration = 1.6 + ((i * 29) % 80) / 100;
+        return streamer
+          ? html`<span class="streamer-piece" style=${`left:${left}%;animation-delay:${delay}s;animation-duration:${duration}s;background:${["#f3ab66", "#ce7238", "#7cb686", "#6d9bd1", "#d16d9b"][i % 5]}`}></span>`
+          : html`<span class="confetti-piece" style=${`left:${left}%;animation-delay:${delay}s;animation-duration:${duration}s`}>${pieces[i % pieces.length]}</span>`;
+      })}</div>` : nothing}
+      ${this.coinCelebration ? html`<div class="coin-overlay" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => html`<span class="coin-rain-piece" style=${`left:${(i * 41) % 100}%;animation-delay:${((i * 67) % 100) / 100}s;animation-duration:${1.4 + ((i * 31) % 70) / 100}s`}>🪙</span>`)}<span class="coin-hero">🪙</span></div>` : nothing}
       ${this.pointsCelebration ? html`<div class="points-runup"><div class="points-runup-person">${this.avatar(this.pointsCelebration.personId)}<strong>${this.person(this.pointsCelebration.personId)?.name || this.x("Family member")}</strong></div><div class="points-runup-track"><div class="points-runup-fill" style=${`width:${Math.round(this.pointsCelebration.progress * 100)}%`}></div></div><div class="points-runup-values"><span>${Math.round(this.pointsCelebration.from + ((this.pointsCelebration.to - this.pointsCelebration.from) * this.pointsCelebration.progress))}</span><small>${this.s("total points", "totaal punten")}</small></div></div>` : nothing}
       ${this.pendingFreeCompletion ? html`<dialog open class="editor-dialog picker-dialog"><header class="dialog-heading"><h2>${this.s("Who completed this?", "Wie heeft dit afgerond?")}</h2></header><div class="dialog-content face-picker">${this.people.map((person: Item) => html`<button class="face-option" @click=${() => this.chooseFreeCompletion(person.id)}>${this.avatar(person.id)}<span>${person.name}</span></button>`)}<button @click=${() => { this.pendingFreeCompletion = undefined; }}>${this.t("cancel")}</button></div></dialog>` : nothing}
     </section>`;
