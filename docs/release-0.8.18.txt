@@ -1,0 +1,4 @@
+- Improve: person and free-task cards in Tasks & Routines are now significantly larger.
+- Layout: cards are about 50% wider and keep a larger default minimum height.
+- Behavior: each card now reserves visual room for roughly 6 entries total (3 tasks + 3 routines), even when empty.
+- UI: task icon keeps ratio and now scales to fill the full tile height vertically.

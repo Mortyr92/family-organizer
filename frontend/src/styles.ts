@@ -343,8 +343,8 @@ export const panelStyles = css`
   .manage-toggle { min-width:88px; font-size:13px; font-weight:700; border-radius:10px; background:#f4efe8; border:1px solid #e4d7c8; color:#5b4a38; }
   .pause-toggle { font-size:16px; width:38px; height:38px; border-radius:10px; background:#fff3e8; border:1px solid #f3d3b8; color:#c26a2e; }
   .paused-banner { background:#fff3e8; color:#c26a2e; border:1px solid #f3d3b8; border-radius:10px; padding:10px 16px; margin:10px 0 18px; font-weight:700; text-align:center; }
-  .person-task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin:16px 0 24px; }
-  .person-task-card { display:flex; flex-direction:column; gap:14px; padding:14px; background:#fff; border:1px solid #f1e7dc; border-radius:14px; box-shadow:0 4px 14px rgba(62, 37, 14, .06); }
+  .person-task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(450px,1fr)); gap:20px; margin:16px 0 24px; }
+  .person-task-card { display:flex; flex-direction:column; gap:14px; padding:16px; min-height:520px; background:#fff; border:1px solid #f1e7dc; border-radius:14px; box-shadow:0 4px 14px rgba(62, 37, 14, .06); }
   .free-task-card { border:1px solid #d9d0eb; background:#ffffff; }
   .person-task-header { display:flex; align-items:center; gap:10px; padding-bottom:4px; }
   .person-task-header .avatar { width:30px; height:30px; min-width:30px; }
@@ -353,20 +353,20 @@ export const panelStyles = css`
   .free-icon { width:30px; height:30px; min-width:30px; border-radius:50%; background:#f4eefc; display:grid; place-items:center; font-size:16px; color:#7b5ea8; }
   .task-group { display:flex; flex-direction:column; gap:8px; }
   .group-title { font-size:22px; line-height:1; letter-spacing:-.4px; font-weight:800; color:#1f2a32; }
-  .task-list { display:flex; flex-direction:column; gap:6px; min-height:16px; }
+  .task-list { display:flex; flex-direction:column; gap:6px; min-height:180px; }
   .task-empty { padding:8px 0; font-size:11px; }
-  .task-tile { display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:10px; background:#fff8f1; border:1px solid #f5dfc9; transition:background .2s,border-color .2s,box-shadow .2s; }
+  .task-tile { display:flex; align-items:stretch; gap:10px; min-height:56px; padding:0 9px 0 0; border-radius:10px; background:#fff8f1; border:1px solid #f5dfc9; transition:background .2s,border-color .2s,box-shadow .2s; }
   .task-tile.tile-routine { background:#eaf9fc; border-color:#d3edf3; }
   .task-tile.is-available.tile-task { background:#f5b782; border-color:#db8a4d; box-shadow:0 0 0 1px #db8a4d inset; }
   .task-tile.is-available.tile-routine { background:#66bde2; border-color:#2f88b4; box-shadow:0 0 0 1px #2f88b4 inset; }
-  .task-tile .task-icon { width:34px; height:34px; min-width:34px; border-radius:8px; background:#fff; color:#ce8447; display:grid; place-items:center; font-size:18px; border:1px solid #f0decf; overflow:hidden; }
-  .task-tile .task-icon ha-icon { --mdc-icon-size:20px; width:20px; height:20px; }
+  .task-tile .task-icon { align-self:stretch; width:56px; min-width:56px; border-radius:9px 0 0 9px; background:#fff; color:#ce8447; display:grid; place-items:center; font-size:18px; border-right:1px solid #f0decf; overflow:hidden; }
+  .task-tile .task-icon ha-icon { --mdc-icon-size:32px; width:32px; height:32px; }
   .task-tile .task-icon .chore-image { width:100%; height:100%; object-fit:cover; display:block; }
   .task-tile.tile-routine .task-icon { color:#4d8aa0; border-color:#d1e8ee; }
   .chore-image-preview { display:flex; align-items:center; gap:10px; }
   .chore-image-preview img { width:42px; height:42px; border-radius:10px; object-fit:cover; border:1px solid var(--line); background:var(--surface); }
   .chore-image-preview .subtle { padding:4px 0; }
-  .task-tile .task-main { min-width:0; flex:1; display:flex; flex-direction:column; gap:1px; }
+  .task-tile .task-main { min-width:0; flex:1; display:flex; justify-content:center; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
   .task-tile.is-available .task-title { color:#11222b; }
   .task-tile .task-meta { font-size:11px; color:#8d98a3; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
