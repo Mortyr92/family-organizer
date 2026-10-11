@@ -1561,6 +1561,12 @@ var Je = [
 		subtitle: "Small contributions. A happier home."
 	},
 	{
+		id: "treasury",
+		name: "Treasure Room",
+		icon: "🏆",
+		subtitle: "Trade your hard-earned coins for prizes."
+	},
+	{
 		id: "birthdays",
 		name: "Birthdays",
 		icon: "♡",

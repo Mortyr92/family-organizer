@@ -1,0 +1,1 @@
+- Fix: add the Treasure Room page to the navigation page registry, fixing a crash in render() ("Cannot read properties of undefined (reading 'id')") that left the panel blank/white after opening.

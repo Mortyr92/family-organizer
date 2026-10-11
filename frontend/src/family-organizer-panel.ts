@@ -28,6 +28,7 @@ const pages = [
   { id: "lists", name: "Lists", icon: "☑", subtitle: "To-do, shopping and grocery lists, all in one place." },
   { id: "recipes", name: "Meals", icon: "♧", subtitle: "Good food worth making again." },
   { id: "chores", name: "Tasks & Routines", icon: "✓", subtitle: "Small contributions. A happier home." },
+  { id: "treasury", name: "Treasure Room", icon: "🏆", subtitle: "Trade your hard-earned coins for prizes." },
   { id: "birthdays", name: "Birthdays", icon: "♡", subtitle: "Never miss a chance to celebrate." },
   { id: "settings", name: "Settings", icon: "⚙", subtitle: "Make your organizer feel like home." },
 ];
