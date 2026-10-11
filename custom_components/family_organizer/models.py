@@ -170,6 +170,7 @@ class Chore(Model):
     retry_minutes: int = 60
     daypart: str = "custom"
     expires_at: str | None = None
+    continuous: bool = False
 
     @property
     def assignee_id(self) -> str | None:

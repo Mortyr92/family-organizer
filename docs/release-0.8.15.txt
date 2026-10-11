@@ -1,0 +1,3 @@
+- New: added a "Continuous task" option for Tasks & Routines.
+- Behavior: when a continuous task is checked off, it is marked done briefly and then becomes available again automatically after 20 seconds.
+- Improve: visibility and availability flows from recent Tasks & Routines updates are preserved.

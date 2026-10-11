@@ -461,9 +461,16 @@ export class FamilyOrganizerPanel extends LitElement {
     } else if (kind === "chore") {
       resource = "chores";
       const isFree = checked("is_free");
-      patch = { ...patch, title: text("title"), description: text("description"), icon: text("icon"), points: number("points"), assignee_ids: isFree ? [] : values.getAll("assignee_ids"), rotate: checked("rotate"), schedule: text("schedule"), weekdays: values.getAll("weekdays").map(Number), month_day: number("month_day"), interval_days: number("interval_days"), due_date: text("due_date") || null, due_time: text("due_time") || null, created: item.created || iso(new Date()), shared: checked("shared"), is_free: isFree, retry_allowed: checked("retry_allowed"), retry_minutes: number("retry_minutes") || 60, daypart: text("daypart") || "custom", expires_at: isFree ? (text("expires_at") || null) : null };
+      patch = { ...patch, title: text("title"), description: text("description"), icon: text("icon"), points: number("points"), assignee_ids: isFree ? [] : values.getAll("assignee_ids"), rotate: checked("rotate"), schedule: text("schedule"), weekdays: values.getAll("weekdays").map(Number), month_day: number("month_day"), interval_days: number("interval_days"), due_date: text("due_date") || null, due_time: text("due_time") || null, created: item.created || iso(new Date()), shared: checked("shared"), is_free: isFree, retry_allowed: checked("retry_allowed"), retry_minutes: number("retry_minutes") || 60, daypart: text("daypart") || "custom", expires_at: isFree ? (text("expires_at") || null) : null, continuous: checked("continuous") };
       if (patch.schedule === "weekly" && !patch.weekdays.length) { this.error = this.tm("Choose at least one weekday."); return; }
       if (!isFree && !patch.assignee_ids.length) { this.error = this.tm("Choose at least one family member."); return; }
+      if (patch.rotate && !isFree) {
+        const startPersonId = text("rotation_start_person_id");
+        if (!startPersonId) { this.error = this.s("Choose who the routine starts with.", "Kies bij wie de routine begint."); return; }
+        const idx = patch.assignee_ids.indexOf(startPersonId);
+        if (idx < 0) { this.error = this.s("Start person must be one of the selected family members.", "De startpersoon moet bij de gekozen familieleden horen."); return; }
+        patch.rotation_index = idx;
+      }
       if (patch.schedule === "monthly" && [29, 30, 31].includes(patch.month_day)) { this.notice = this.tm("Heads up: this routine will not appear in months without that day."); }
     } else if (kind === "points") {
       await this.action(() => this._hass!.callWS({ type: "family_organizer/adjust_points", person_id: text("person_id"), points: number("points"), note: text("note") }), this.languageCode === "nl" ? "Punten aangepast" : "Points adjusted", true); return;
@@ -772,13 +779,31 @@ export class FamilyOrganizerPanel extends LitElement {
     return html`<ha-icon .icon=${chore.icon || "mdi:check-circle-outline"} aria-hidden="true"></ha-icon><span class="chore-icon-fallback" aria-hidden="true">✓</span>`;
   }
   private choreCompleted(chore: Item, day: string, completions: Item[]) {
-    return completions.find((x: Item) => x.chore_id === chore.id && !x.adjustment && iso(new Date(x.completed_at)) === day);
+    const completion = completions.find((x: Item) => x.chore_id === chore.id && !x.adjustment && iso(new Date(x.completed_at)) === day);
+    if (!completion || !chore.continuous) return completion;
+    const completedAt = new Date(completion.completed_at).getTime();
+    return (Date.now() - completedAt) < 20000 ? completion : undefined;
   }
-  private choreOwn(chore: Item, ids: string[]) {
+  private choreAssigneeIds(chore: Item) {
+    return chore.assignee_ids || (chore.assignee_id ? [chore.assignee_id] : []);
+  }
+  private activeChorePersonId(chore: Item) {
+    const ids = this.choreAssigneeIds(chore);
+    if (!ids.length) return "";
+    if (!chore.rotate) return ids[0];
+    return ids[(Number(chore.rotation_index) || 0) % ids.length] || ids[0];
+  }
+  private choreVisibleForPerson(chore: Item, personId: string) {
+    if (chore.is_free) return false;
+    if (chore.rotate) return this.activeChorePersonId(chore) === personId;
+    return this.choreAssigneeIds(chore).includes(personId);
+  }
+  private choreOwn(chore: Item) {
+    const ids = chore.rotate ? [this.activeChorePersonId(chore)] : this.choreAssigneeIds(chore);
     return this.me && (ids.includes(this.me.id) || [this.me.id, this._hass?.user?.id].includes(chore.creator_id));
   }
-  private choreCanComplete(chore: Item, ids: string[]) {
-    return this.can("complete_any_chore") || (this.can("complete_own_chores") && this.choreOwn(chore, ids));
+  private choreCanComplete(chore: Item) {
+    return this.can("complete_any_chore") || (this.can("complete_own_chores") && this.choreOwn(chore));
   }
   private statusLabel(status: string) {
     const labels: Record<string, [string, string]> = {
@@ -844,12 +869,12 @@ export class FamilyOrganizerPanel extends LitElement {
     await this.action(() => this._hass!.callWS({ type: "family_organizer/settings", settings: { chores_paused: !this.choresPaused() } }), this.s("Updated", "Bijgewerkt"));
   }
   private choreTile(chore: Item, personId: string | undefined, completions: Item[], today: string, isFree: boolean) {
-    const ids = chore.assignee_ids || (chore.assignee_id ? [chore.assignee_id] : []);
     const completion = this.choreCompleted(chore, today, completions);
     const status = choreStatus(chore, today, new Date(), this.settingsData.chore_dayparts || DEFAULT_DAYPARTS, !!completion);
-    const canComplete = isFree ? this.can("manage_chores") || this.can("complete_own_chores") || this.can("complete_any_chore") : this.choreCanComplete(chore, ids);
+    const canComplete = isFree ? this.can("manage_chores") || this.can("complete_own_chores") || this.can("complete_any_chore") : this.choreCanComplete(chore);
     const isRoutine = chore.schedule && chore.schedule !== "once";
-    return html`<article class=${`task-tile ${isRoutine ? "tile-routine" : "tile-task"} status-${status}`}>
+    const isAvailable = status === "active" || status === "retry";
+    return html`<article class=${`task-tile ${isRoutine ? "tile-routine" : "tile-task"} ${isAvailable ? "is-available" : ""} status-${status}`}>
       <span class="task-icon" aria-hidden="true">${this.choreIcon(chore)}</span>
       <div class="task-main">
         <strong class="task-title">${chore.title || this.s("Untitled task", "Naamloos taakje")}</strong>
@@ -862,7 +887,7 @@ export class FamilyOrganizerPanel extends LitElement {
   }
   private personChoreCard(person: Item, chores: Item[], completions: Item[], today: string) {
     const mine = chores
-      .filter((c: Item) => !c.is_free && (c.assignee_ids || (c.assignee_id ? [c.assignee_id] : [])).includes(person.id))
+      .filter((c: Item) => this.choreVisibleForPerson(c, person.id))
       .filter((c: Item) => !this.choreCompleted(c, today, completions));
     const tasks = mine.filter((c: Item) => !c.schedule || c.schedule === "once");
     const routines = mine.filter((c: Item) => c.schedule && c.schedule !== "once");
@@ -903,10 +928,22 @@ export class FamilyOrganizerPanel extends LitElement {
         </div>
       </div>
       ${this.choresManageOpen ? html`<section class="surface chores-manage-panel">
-        ${this.choresManageUnlocked ? html`<div class="manage-actions">
-          ${this.addButton("New chore", "chore", true)}
-          ${this.addButton(this.s("Adjust points", "Punten aanpassen"), "points", true)}
-        </div>` : html`${(() => {
+        ${this.choresManageUnlocked ? html`${(() => {
+          const managed = [...chores].sort((a: Item, b: Item) => `${a.title || ""}`.localeCompare(`${b.title || ""}`));
+          const assigneeNames = (chore: Item) => {
+            const ids = chore.assignee_ids || (chore.assignee_id ? [chore.assignee_id] : []);
+            if (chore.is_free || !ids.length) return this.s("Vrij op te pakken", "Vrij op te pakken");
+            return ids.map((id: string) => this.person(id)?.name || this.x("Family member")).join(", ");
+          };
+          return html`<div class="manage-actions">
+            ${this.addButton("New chore", "chore", true)}
+            ${this.addButton(this.s("Adjust points", "Punten aanpassen"), "points", true)}
+          </div>
+          <div class="manage-existing">
+            <h3>${this.s("Existing tasks & routines", "Bestaande taakjes en routines")}</h3>
+            ${managed.length ? html`<div class="manage-list">${managed.map((chore: Item) => html`<article class="manage-item ${chore.schedule && chore.schedule !== "once" ? "routine" : "task"}"><div class="row-copy"><strong>${chore.title || this.s("Untitled task", "Naamloos taakje")}</strong><small class="muted">${(chore.schedule && chore.schedule !== "once") ? this.s("Routine", "Routine") : this.s("Task", "Taakje")} · ${assigneeNames(chore)}</small></div><div class="manage-item-actions"><button class="icon-button" aria-label=${`${this.x("Edit")} ${chore.title || this.s("task", "taakje")}`} @click=${() => this.openEditor("chore", chore)}>✎</button><button class="icon-button danger" aria-label=${`${this.x("Delete")} ${chore.title || this.s("task", "taakje")}`} @click=${() => this.confirmDelete("chores", chore)}>×</button></div></article>`)}</div>` : html`<p class="muted">${this.s("No tasks or routines yet.", "Nog geen taakjes of routines.")}</p>`}
+          </div>`;
+        })()}` : html`${(() => {
           const admins = this.choresAdmins();
           return admins.length ? html`<form class="manage-pin-form" @submit=${(e: SubmitEvent) => void this.verifyChoresPin(e)}>
             <label>${this.t("family_member")}<select name="person" @change=${(e: Event) => this.switchChoresPinPerson((e.target as HTMLSelectElement).value)}>${admins.map((person: Item) => html`<option value=${person.id} ?selected=${person.id === this.choresPinPersonId}>${person.name}</option>`)}</select></label>
@@ -964,7 +1001,15 @@ export class FamilyOrganizerPanel extends LitElement {
     const groceries = (this.data.groceries.items || []).filter((x: Item) => !x.checked && (!selectedPersonId || !x.assignee_id || x.assignee_id === selectedPersonId));
     const todoListIds = new Set((this.data.groceries.lists || []).filter((l: Item) => l.list_type === "todo").map((l: Item) => l.id));
     const todos = (this.data.groceries.items || []).filter((x: Item) => todoListIds.has(x.list_id) && !x.checked && (!selectedPersonId || !x.assignee_id || x.assignee_id === selectedPersonId));
-    const chores = (this.data.chores.items || []).filter((c: Item) => choreDue(c, today) && matchesPerson(c.assignee_ids || [])), completions = this.data.chores.completions || [];
+    const chores = (this.data.chores.items || []).filter((c: Item) => {
+      if (!choreDue(c, today)) return false;
+      if (c.is_free) return true;
+      if (c.rotate) {
+        const active = this.activeChorePersonId(c);
+        return !selectedPersonId || !active || active === selectedPersonId;
+      }
+      return matchesPerson(this.choreAssigneeIds(c));
+    }), completions = this.data.chores.completions || [];
     const personLabel = selectedPerson?.name || this.s("Family overview", "Gezinsoverzicht");
     return html`<section class="today-page person-day-page">
       <div class="today-member-strip person-day-strip">
@@ -1088,12 +1133,18 @@ export class FamilyOrganizerPanel extends LitElement {
       ${this.select("Schedule", "schedule", item.schedule || "once", [["once", "One time"], ["daily", "Daily"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["custom", "Custom interval"], ...(item.schedule?.startsWith("weekly:") ? [[item.schedule, "Keep existing weekdays"] as [string, string]] : [])])}
       ${item.is_free ? nothing : this.personChecks("assignee_ids", item.assignee_ids || (item.assignee_id ? [item.assignee_id] : []))}
       <label class="check full"><input name="rotate" type="checkbox" ?checked=${!!item.rotate}>${this.x("Rotate between assignees after each completion")}</label>
+      ${item.is_free ? nothing : html`${(() => {
+        const assignees = item.assignee_ids || (item.assignee_id ? [item.assignee_id] : []);
+        const current = assignees.length ? (assignees[(Number(item.rotation_index) || 0) % assignees.length] || assignees[0]) : this.me?.id || "";
+        return html`<label class="full">${this.s("Starts with", "Begint bij")}<select name="rotation_start_person_id"><option value="">${this.s("Choose a family member", "Kies een familielid")}</option>${this.people.map((person: Item) => html`<option value=${person.id} ?selected=${person.id === current}>${person.name}</option>`)}</select></label>`;
+      })()}`}
       <fieldset class="full"><legend>${this.x("Weekdays (weekly schedule)")}</legend><div class="checkbox-group">${Array.from({ length: 7 }, (_, i) => html`<label class="check"><input name="weekdays" type="checkbox" value=${i} ?checked=${(item.weekdays || []).includes(i)}>${this.date(shift("2026-06-01", i), { weekday: "long" })}</label>`)}</div></fieldset>
       ${this.field("Day of month (monthly)", "month_day", item.month_day || 1, "number", true, { min: 1, max: 31 })}${this.field("Every N days (custom)", "interval_days", item.interval_days || 2, "number", true, { min: 1, max: 365 })}
       ${this.select("Time of day (routine)", "daypart", item.daypart || "custom", [["morning", this.s("Morning (07:00–11:59)", "Ochtend (07:00–11:59)")], ["afternoon", this.s("Afternoon (12:00–17:59)", "Middag (12:00–17:59)")], ["evening", this.s("Evening (18:00–23:59)", "Avond (18:00–23:59)")], ["custom", this.s("Custom", "Aangepast")]])}
       ${this.field(item.is_free ? this.s("Expires on (free task)", "Vervalt op (vrij taakje)") : this.s("Due date (one time)", "Vervaldatum (eenmalig)"), item.is_free ? "expires_at" : "due_date", (item.is_free ? item.expires_at : item.due_date) || this.selectedDay, "date")}
       ${this.field("Due time", "due_time", item.due_time, "time")}
       <label class="check full"><input name="retry_allowed" type="checkbox" ?checked=${!!item.retry_allowed}>${this.s("Allow a retry window after the deadline", "Herkansing toegestaan na de deadline")}</label>
+      <label class="check full"><input name="continuous" type="checkbox" ?checked=${!!item.continuous}>${this.s("Continuous task (available again 20 seconds after completion)", "Voortdurende taak (na 20 seconden weer beschikbaar)")}</label>
       ${this.field(this.s("Retry window (minutes)", "Herkansingsvenster (minuten)"), "retry_minutes", item.retry_minutes || 60, "number", true, { min: 1, step: 1 })}
       ${this.textarea("Description", "description", item.description)}${this.shared(item)}`;
     if (kind === "points") return html`<label>${this.x("Family member")}<select name="person_id">${this.peopleOptions()}</select></label>${this.field("Points (negative to subtract)", "points", "", "number", true, { step: 1 })}${this.field("Reason", "note", "", "text", true)}`;
