@@ -26,6 +26,8 @@ DEFAULT_SETTINGS = {
     "daily_agenda_time": "",
     "floating_navigation": False,
     "chores_paused": False,
+    "chore_completion_sound_enabled": True,
+    "chore_completion_sound_data": "",
     "chore_dayparts": {
         "morning": {"start": "07:00", "end": "11:59"},
         "afternoon": {"start": "12:00", "end": "17:59"},
@@ -41,5 +43,5 @@ SETTING_KEYS = (
     "default_grocery_list_id", "meal_slots", "competition_default",
     "language", "stores", "reminders_enabled", "default_reminder_minutes",
     "notify_service", "daily_agenda_time", "floating_navigation",
-    "chores_paused", "chore_dayparts",
+    "chores_paused", "chore_completion_sound_enabled", "chore_completion_sound_data", "chore_dayparts",
 )

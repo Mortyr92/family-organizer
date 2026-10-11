@@ -262,6 +262,8 @@ class Settings(Model):
     language: str = "en"
     stores: list[str] = field(default_factory=list)
     sync_interval: int = 30
+    chore_completion_sound_enabled: bool = True
+    chore_completion_sound_data: str = ""
 
 
 OrganizerSettings = Settings

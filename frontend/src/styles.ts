@@ -368,6 +368,9 @@ export const panelStyles = css`
   .chore-image-preview { display:flex; align-items:center; gap:10px; }
   .chore-image-preview img { width:42px; height:42px; border-radius:10px; object-fit:cover; border:1px solid var(--line); background:var(--surface); }
   .chore-image-preview .subtle { padding:4px 0; }
+  .completion-sound-preview { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .completion-sound-preview audio { flex:1; min-width:200px; max-width:100%; }
+  .completion-sound-preview .subtle { padding:4px 0; }
   .task-tile .task-main { min-width:0; flex:1; display:flex; justify-content:center; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
   .task-tile.is-available .task-title { color:#11222b; }

@@ -1216,6 +1216,9 @@ var Ke = o`
   .chore-image-preview { display:flex; align-items:center; gap:10px; }
   .chore-image-preview img { width:42px; height:42px; border-radius:10px; object-fit:cover; border:1px solid var(--line); background:var(--surface); }
   .chore-image-preview .subtle { padding:4px 0; }
+  .completion-sound-preview { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .completion-sound-preview audio { flex:1; min-width:200px; max-width:100%; }
+  .completion-sound-preview .subtle { padding:4px 0; }
   .task-tile .task-main { min-width:0; flex:1; display:flex; justify-content:center; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
   .task-tile.is-available .task-title { color:#11222b; }
@@ -2387,6 +2390,47 @@ var Ye = [
 			}
 		};
 	}
+	async pickCompletionSound(e) {
+		if (!this.editor) return;
+		let t = e.target, n = t.files?.[0];
+		if (n) {
+			if (!(n.type === "audio/mpeg" || n.name.toLowerCase().endsWith(".mp3"))) {
+				this.error = this.s("Please choose an MP3 file.", "Kies een MP3-bestand."), t.value = "";
+				return;
+			}
+			if (n.size > 15e5) {
+				this.error = this.s("Audio clip too large (max 1.5 MB).", "Audioclip is te groot (max 1,5 MB)."), t.value = "";
+				return;
+			}
+			try {
+				let e = await new Promise((e, t) => {
+					let r = new FileReader();
+					r.onload = () => e(String(r.result || "")), r.onerror = () => t(/* @__PURE__ */ Error("read_failed")), r.readAsDataURL(n);
+				});
+				if (!e.startsWith("data:audio/mpeg;base64,")) throw Error("invalid_audio");
+				this.editor = {
+					...this.editor,
+					item: {
+						...this.editor.item,
+						chore_completion_sound_data: e
+					}
+				}, this.notice = this.s("Sound selected", "Geluid geselecteerd"), this.error = "";
+			} catch {
+				this.error = this.s("Could not read audio file.", "Kon het audiobestand niet lezen.");
+			} finally {
+				t.value = "";
+			}
+		}
+	}
+	clearCompletionSound() {
+		this.editor &&= {
+			...this.editor,
+			item: {
+				...this.editor.item,
+				chore_completion_sound_data: ""
+			}
+		};
+	}
 	async saveEditor(e) {
 		if (e.preventDefault(), !this.editor || this.saving) return;
 		let t = e.currentTarget, n = new FormData(t), r = Object.fromEntries(n), { kind: i, item: a } = this.editor, o = "", s = "items", c = { ...a }, l = (e) => Number(r[e]) || 0, u = (e) => String(r[e] || "").trim(), d = (e) => n.has(e);
@@ -2617,7 +2661,7 @@ var Ye = [
 				"competition_default",
 				"language",
 				"theme"
-			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.show_calendar_day_view = d("show_calendar_day_view"), e.show_calendar_week_view = d("show_calendar_week_view"), e.show_calendar_export = d("show_calendar_export"), e.sync_interval = l("sync_interval"), e.reminders_enabled = d("reminders_enabled"), e.default_reminder_minutes = l("default_reminder_minutes"), e.notify_service = u("notify_service"), e.daily_agenda_time = u("daily_agenda_time"), e.meal_slots = n.getAll("meal_slots").map((e) => String(e)), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), e.chore_dayparts = {
+			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.show_calendar_day_view = d("show_calendar_day_view"), e.show_calendar_week_view = d("show_calendar_week_view"), e.show_calendar_export = d("show_calendar_export"), e.sync_interval = l("sync_interval"), e.reminders_enabled = d("reminders_enabled"), e.default_reminder_minutes = l("default_reminder_minutes"), e.notify_service = u("notify_service"), e.daily_agenda_time = u("daily_agenda_time"), e.chore_completion_sound_enabled = d("chore_completion_sound_enabled"), e.chore_completion_sound_data = u("chore_completion_sound_data"), e.meal_slots = n.getAll("meal_slots").map((e) => String(e)), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), e.chore_dayparts = {
 				morning: {
 					start: u("daypart_morning_start") || "07:00",
 					end: u("daypart_morning_end") || "11:59"
@@ -3098,6 +3142,13 @@ var Ye = [
 		return Math.max(0, this.personPointsTotal(e)) % 5;
 	}
 	playApplause(e) {
+		if (this.settingsData.chore_completion_sound_enabled === !1) return;
+		let t = String(this.settingsData.chore_completion_sound_data || "").trim();
+		if (t) try {
+			let e = new Audio(t);
+			e.currentTime = 0, e.play().catch(() => {});
+			return;
+		} catch {}
 		try {
 			let t = window.AudioContext || window.webkitAudioContext;
 			if (!t) return;
@@ -3816,6 +3867,12 @@ var Ye = [
 		})}
       ${this.field("Notify service (e.g. mobile_app_phone)", "notify_service", t.notify_service || "", "text", !1, { placeholder: "Leave empty for Home Assistant notifications" })}
       ${this.field("Daily agenda time (optional)", "daily_agenda_time", t.daily_agenda_time || "", "time")}
+      <fieldset class="full permissions"><legend>${this.s("Task completion sound", "Geluid bij taak afronden")}</legend>
+        <label class="check full"><input name="chore_completion_sound_enabled" type="checkbox" ?checked=${t.chore_completion_sound_enabled !== !1}>${this.s("Play applause/cheering when a task is completed", "Speel applaus/gejuich af als een taak is afgerond")}</label>
+        <input name="chore_completion_sound_data" type="hidden" .value=${t.chore_completion_sound_data || ""}>
+        <label class="full">${this.s("Upload custom short MP3 sound", "Upload eigen kort MP3-geluid")}<input name="completion_sound_upload" type="file" accept=".mp3,audio/mpeg" @change=${(e) => void this.pickCompletionSound(e)}></label>
+        ${t.chore_completion_sound_data ? M`<div class="completion-sound-preview full"><audio controls preload="none" src=${t.chore_completion_sound_data}></audio><button type="button" class="subtle" @click=${() => this.clearCompletionSound()}>${this.s("Remove sound", "Geluid verwijderen")}</button></div>` : M`<p class="muted full">${this.s("Leave empty to use built-in applause and cheering.", "Leeg laten om ingebouwd applaus en gejuich te gebruiken.")}</p>`}
+      </fieldset>
       <fieldset class="full permissions"><legend>${this.s("Tasks & Routines dayparts", "Taakjes & Routines dagdelen")}</legend>
         <label>${this.s("Morning start", "Ochtend begin")}<input name="daypart_morning_start" type="time" .value=${this.settingsData.chore_dayparts?.morning?.start || "07:00"}></label>
         <label>${this.s("Morning end", "Ochtend einde")}<input name="daypart_morning_end" type="time" .value=${this.settingsData.chore_dayparts?.morning?.end || "11:59"}></label>

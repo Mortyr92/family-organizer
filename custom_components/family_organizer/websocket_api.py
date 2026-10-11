@@ -175,6 +175,16 @@ def _validate_settings(values: dict) -> dict:
         result["floating_navigation"] = bool(result["floating_navigation"])
     if "chores_paused" in result:
         result["chores_paused"] = bool(result["chores_paused"])
+    if "chore_completion_sound_enabled" in result:
+        result["chore_completion_sound_enabled"] = bool(result["chore_completion_sound_enabled"])
+    if "chore_completion_sound_data" in result:
+        value = str(result["chore_completion_sound_data"] or "").strip()
+        if value:
+            if not value.startswith("data:audio/mpeg;base64,"):
+                raise vol.Invalid("Completion sound must be an MP3 data URL")
+            if len(value) > 2100000:
+                raise vol.Invalid("Completion sound is too large")
+        result["chore_completion_sound_data"] = value
     if "chore_dayparts" in result:
         dayparts = result["chore_dayparts"] or {}
         if not isinstance(dayparts, dict):

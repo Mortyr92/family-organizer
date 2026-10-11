@@ -440,6 +440,43 @@ export class FamilyOrganizerPanel extends LitElement {
     if (!this.editor) return;
     this.editor = { ...this.editor, item: { ...this.editor.item, chore_image: null } };
   }
+  private async pickCompletionSound(event: Event) {
+    if (!this.editor) return;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const isMp3 = file.type === "audio/mpeg" || file.name.toLowerCase().endsWith(".mp3");
+    if (!isMp3) {
+      this.error = this.s("Please choose an MP3 file.", "Kies een MP3-bestand.");
+      input.value = "";
+      return;
+    }
+    if (file.size > 1500000) {
+      this.error = this.s("Audio clip too large (max 1.5 MB).", "Audioclip is te groot (max 1,5 MB).");
+      input.value = "";
+      return;
+    }
+    try {
+      const sound = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("read_failed"));
+        reader.readAsDataURL(file);
+      });
+      if (!sound.startsWith("data:audio/mpeg;base64,")) throw new Error("invalid_audio");
+      this.editor = { ...this.editor, item: { ...this.editor.item, chore_completion_sound_data: sound } };
+      this.notice = this.s("Sound selected", "Geluid geselecteerd");
+      this.error = "";
+    } catch {
+      this.error = this.s("Could not read audio file.", "Kon het audiobestand niet lezen.");
+    } finally {
+      input.value = "";
+    }
+  }
+  private clearCompletionSound() {
+    if (!this.editor) return;
+    this.editor = { ...this.editor, item: { ...this.editor.item, chore_completion_sound_data: "" } };
+  }
   private async saveEditor(event: SubmitEvent) {
     event.preventDefault();
     if (!this.editor || this.saving) return;
@@ -532,6 +569,8 @@ export class FamilyOrganizerPanel extends LitElement {
       settings.default_reminder_minutes = number("default_reminder_minutes");
       settings.notify_service = text("notify_service");
       settings.daily_agenda_time = text("daily_agenda_time");
+      settings.chore_completion_sound_enabled = checked("chore_completion_sound_enabled");
+      settings.chore_completion_sound_data = text("chore_completion_sound_data");
       settings.meal_slots = values.getAll("meal_slots").map(value => String(value));
       settings.stores = text("stores").split(",").map(x => x.trim()).filter(Boolean);
       settings.chore_dayparts = {
@@ -857,6 +896,18 @@ export class FamilyOrganizerPanel extends LitElement {
     return points % 5;
   }
   private playApplause(withCheer: boolean) {
+    if (this.settingsData.chore_completion_sound_enabled === false) return;
+    const customSound = String(this.settingsData.chore_completion_sound_data || "").trim();
+    if (customSound) {
+      try {
+        const clip = new Audio(customSound);
+        clip.currentTime = 0;
+        void clip.play().catch(() => {});
+        return;
+      } catch {
+        // fall back to synthesized applause
+      }
+    }
     try {
       const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return;
@@ -1310,6 +1361,12 @@ export class FamilyOrganizerPanel extends LitElement {
       ${this.field("Default reminder (minutes before)", "default_reminder_minutes", item.default_reminder_minutes ?? 15, "number", true, { min: 0, max: 10080, step: 1 })}
       ${this.field("Notify service (e.g. mobile_app_phone)", "notify_service", item.notify_service || "", "text", false, { placeholder: "Leave empty for Home Assistant notifications" })}
       ${this.field("Daily agenda time (optional)", "daily_agenda_time", item.daily_agenda_time || "", "time")}
+      <fieldset class="full permissions"><legend>${this.s("Task completion sound", "Geluid bij taak afronden")}</legend>
+        <label class="check full"><input name="chore_completion_sound_enabled" type="checkbox" ?checked=${item.chore_completion_sound_enabled !== false}>${this.s("Play applause/cheering when a task is completed", "Speel applaus/gejuich af als een taak is afgerond")}</label>
+        <input name="chore_completion_sound_data" type="hidden" .value=${item.chore_completion_sound_data || ""}>
+        <label class="full">${this.s("Upload custom short MP3 sound", "Upload eigen kort MP3-geluid")}<input name="completion_sound_upload" type="file" accept=".mp3,audio/mpeg" @change=${(e: Event) => void this.pickCompletionSound(e)}></label>
+        ${item.chore_completion_sound_data ? html`<div class="completion-sound-preview full"><audio controls preload="none" src=${item.chore_completion_sound_data}></audio><button type="button" class="subtle" @click=${() => this.clearCompletionSound()}>${this.s("Remove sound", "Geluid verwijderen")}</button></div>` : html`<p class="muted full">${this.s("Leave empty to use built-in applause and cheering.", "Leeg laten om ingebouwd applaus en gejuich te gebruiken.")}</p>`}
+      </fieldset>
       <fieldset class="full permissions"><legend>${this.s("Tasks & Routines dayparts", "Taakjes & Routines dagdelen")}</legend>
         <label>${this.s("Morning start", "Ochtend begin")}<input name="daypart_morning_start" type="time" .value=${this.settingsData.chore_dayparts?.morning?.start || "07:00"}></label>
         <label>${this.s("Morning end", "Ochtend einde")}<input name="daypart_morning_end" type="time" .value=${this.settingsData.chore_dayparts?.morning?.end || "11:59"}></label>

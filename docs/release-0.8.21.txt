@@ -1,0 +1,4 @@
+- Feature: task completion sound can now be turned on/off in Settings > Preferences.
+- Feature: upload your own short MP3 clip for task completion sound with preview and remove controls.
+- Validation: completion sound uploads are now restricted to MP3 format.
+- UX: when no custom clip is set, built-in applause/cheering remains the fallback sound.
