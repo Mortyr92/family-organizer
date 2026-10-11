@@ -1,0 +1,1 @@
+- Fix: restore the icon and image fields in the chore form so uploaded task images are saved and shown again.

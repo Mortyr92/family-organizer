@@ -3910,7 +3910,7 @@ var Je = [
 		if (e === "chore") return N`${this.field("Chore title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Points", "points", t.points ?? 5, "number", !0, {
 			min: 0,
 			step: 1
-		})}
+		})}${this.field("Icon (MDI name)", "icon", t.icon || "mdi:check-circle-outline")}${this.field("Icon image URL (optional)", "chore_image", t.chore_image, "url")}
       <label class="full">${this.s("Upload icon image", "Upload icoonafbeelding")}<input name="chore_image_upload" type="file" accept="image/*" @change=${(e) => void this.pickChoreImage(e)}></label>
       ${t.chore_image ? N`<div class="chore-image-preview full"><img src=${t.chore_image} alt="" loading="lazy"><button type="button" class="subtle" @click=${() => this.clearChoreImage()}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : N`<p class="muted full">${this.s("Choose an image from this device or paste an image URL.", "Kies een afbeelding van dit apparaat of plak een afbeelding-URL.")}</p>`}
       <label class="check full"><input name="is_free" type="checkbox" ?checked=${!!t.is_free}>${this.s("Free to pick up by anyone", "Vrij, door iedereen op te pakken")}</label>
