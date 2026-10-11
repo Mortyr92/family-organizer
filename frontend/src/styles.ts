@@ -363,6 +363,9 @@ export const panelStyles = css`
   .task-tile .task-icon ha-icon { --mdc-icon-size:20px; width:20px; height:20px; }
   .task-tile .task-icon .chore-image { width:100%; height:100%; object-fit:cover; display:block; }
   .task-tile.tile-routine .task-icon { color:#4d8aa0; border-color:#d1e8ee; }
+  .chore-image-preview { display:flex; align-items:center; gap:10px; }
+  .chore-image-preview img { width:42px; height:42px; border-radius:10px; object-fit:cover; border:1px solid var(--line); background:var(--surface); }
+  .chore-image-preview .subtle { padding:4px 0; }
   .task-tile .task-main { min-width:0; flex:1; display:flex; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
   .task-tile.is-available .task-title { color:#11222b; }

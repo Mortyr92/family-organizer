@@ -411,6 +411,34 @@ export class FamilyOrganizerPanel extends LitElement {
     if (user) { if (!item.name) item.name = user.name; if (user.picture) item.profile_picture = user.picture; }
     this.editor = { ...this.editor, item };
   }
+  private async pickChoreImage(event: Event) {
+    if (!this.editor) return;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      this.error = this.s("Please choose an image file.", "Kies een afbeeldingsbestand.");
+      input.value = "";
+      return;
+    }
+    try {
+      const image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("read_failed"));
+        reader.readAsDataURL(file);
+      });
+      this.editor = { ...this.editor, item: { ...this.editor.item, chore_image: image } };
+      this.notice = this.s("Image selected", "Afbeelding geselecteerd");
+      this.error = "";
+    } catch {
+      this.error = this.s("Could not read image file.", "Kon het afbeeldingsbestand niet lezen.");
+    }
+  }
+  private clearChoreImage() {
+    if (!this.editor) return;
+    this.editor = { ...this.editor, item: { ...this.editor.item, chore_image: null } };
+  }
   private async saveEditor(event: SubmitEvent) {
     event.preventDefault();
     if (!this.editor || this.saving) return;
@@ -1056,7 +1084,7 @@ export class FamilyOrganizerPanel extends LitElement {
   }
 
   private field(label: string, name: string, value: unknown = "", type = "text", required = false, extra: Item = {}) {
-    return html`<label>${this.x(label)}<input name=${name} type=${type} .value=${String(value ?? "")} ?required=${required} min=${extra.min ?? nothing} max=${extra.max ?? nothing} step=${extra.step ?? nothing} placeholder=${extra.placeholder ? this.x(extra.placeholder) : nothing} list=${extra.list ?? nothing} ?autofocus=${extra.autofocus || false}></label>`;
+    return html`<label>${this.x(label)}<input name=${name} type=${type} .value=${String(value ?? "")} ?required=${required} min=${extra.min ?? nothing} max=${extra.max ?? nothing} step=${extra.step ?? nothing} placeholder=${extra.placeholder ? this.x(extra.placeholder) : nothing} list=${extra.list ?? nothing} accept=${extra.accept ?? nothing} ?autofocus=${extra.autofocus || false}></label>`;
   }
   private select(label: string, name: string, value: string, options: [string, string][]) {
     const id = `editor-${name}`;
@@ -1132,6 +1160,8 @@ export class FamilyOrganizerPanel extends LitElement {
       return html`${this.field("Date", "day", item.day || this.selectedDay, "date", true)}${this.select("Meal slot", "slot", item.slot || item.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || ["breakfast", "lunch", "dinner"]).map((slot: string) => [slot, slot]))}<div class="form-field full meal-title-field"><label for="editor-title">${this.x("Meal or recipe name")}</label><input id="editor-title" name="title" type="text" .value=${query} required autocomplete="off" placeholder=${this.x("Type to search your recipes…")} @input=${(e: Event) => { this.mealTitleQuery = (e.target as HTMLInputElement).value; }}>${suggestions.length ? html`<ul class="meal-title-suggestions">${suggestions.map((r: Item) => html`<li><button type="button" @click=${(e: Event) => { const input = (e.currentTarget as HTMLElement).closest(".meal-title-field")?.querySelector("input") as HTMLInputElement; if (input) input.value = r.title; this.mealTitleQuery = r.title; }}>${r.title}</button></li>`)}</ul>` : nothing}</div>${this.field("Servings", "servings", item.servings || 4, "number", true, { min: 1, step: 1 })}`;
     }
     if (kind === "chore") return html`${this.field("Chore title", "title", item.title, "text", true, { autofocus: true })}${this.field("Points", "points", item.points ?? 5, "number", true, { min: 0, step: 1 })}${this.field("Icon (MDI name)", "icon", item.icon || "mdi:check-circle-outline")}${this.field("Icon image URL (optional)", "chore_image", item.chore_image, "url")}
+      <label class="full">${this.s("Upload icon image", "Upload icoonafbeelding")}<input name="chore_image_upload" type="file" accept="image/*" @change=${(e: Event) => void this.pickChoreImage(e)}></label>
+      ${item.chore_image ? html`<div class="chore-image-preview full"><img src=${item.chore_image} alt="" loading="lazy"><button type="button" class="subtle" @click=${() => this.clearChoreImage()}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : html`<p class="muted full">${this.s("Choose an image from this device or paste an image URL.", "Kies een afbeelding van dit apparaat of plak een afbeelding-URL.")}</p>`}
       <label class="check full"><input name="is_free" type="checkbox" ?checked=${!!item.is_free}>${this.s("Free to pick up by anyone", "Vrij, door iedereen op te pakken")}</label>
       ${this.select("Schedule", "schedule", item.schedule || "once", [["once", "One time"], ["daily", "Daily"], ["weekly", "Weekly"], ["monthly", "Monthly"], ["custom", "Custom interval"], ...(item.schedule?.startsWith("weekly:") ? [[item.schedule, "Keep existing weekdays"] as [string, string]] : [])])}
       ${item.is_free ? nothing : this.personChecks("assignee_ids", item.assignee_ids || (item.assignee_id ? [item.assignee_id] : []))}

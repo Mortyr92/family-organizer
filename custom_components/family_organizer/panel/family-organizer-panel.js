@@ -1211,6 +1211,9 @@ var Ke = o`
   .task-tile .task-icon ha-icon { --mdc-icon-size:20px; width:20px; height:20px; }
   .task-tile .task-icon .chore-image { width:100%; height:100%; object-fit:cover; display:block; }
   .task-tile.tile-routine .task-icon { color:#4d8aa0; border-color:#d1e8ee; }
+  .chore-image-preview { display:flex; align-items:center; gap:10px; }
+  .chore-image-preview img { width:42px; height:42px; border-radius:10px; object-fit:cover; border:1px solid var(--line); background:var(--surface); }
+  .chore-image-preview .subtle { padding:4px 0; }
   .task-tile .task-main { min-width:0; flex:1; display:flex; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
   .task-tile.is-available .task-title { color:#11222b; }
@@ -2343,6 +2346,40 @@ var Ye = [
 			item: n
 		};
 	}
+	async pickChoreImage(e) {
+		if (!this.editor) return;
+		let t = e.target, n = t.files?.[0];
+		if (n) {
+			if (!n.type.startsWith("image/")) {
+				this.error = this.s("Please choose an image file.", "Kies een afbeeldingsbestand."), t.value = "";
+				return;
+			}
+			try {
+				let e = await new Promise((e, t) => {
+					let r = new FileReader();
+					r.onload = () => e(String(r.result || "")), r.onerror = () => t(/* @__PURE__ */ Error("read_failed")), r.readAsDataURL(n);
+				});
+				this.editor = {
+					...this.editor,
+					item: {
+						...this.editor.item,
+						chore_image: e
+					}
+				}, this.notice = this.s("Image selected", "Afbeelding geselecteerd"), this.error = "";
+			} catch {
+				this.error = this.s("Could not read image file.", "Kon het afbeeldingsbestand niet lezen.");
+			}
+		}
+	}
+	clearChoreImage() {
+		this.editor &&= {
+			...this.editor,
+			item: {
+				...this.editor.item,
+				chore_image: null
+			}
+		};
+	}
 	async saveEditor(e) {
 		if (e.preventDefault(), !this.editor || this.saving) return;
 		let t = e.currentTarget, n = new FormData(t), r = Object.fromEntries(n), { kind: i, item: a } = this.editor, o = "", s = "items", c = { ...a }, l = (e) => Number(r[e]) || 0, u = (e) => String(r[e] || "").trim(), d = (e) => n.has(e);
@@ -3340,7 +3377,7 @@ var Ye = [
 		}}><span aria-hidden="true">${e === "auto" ? "◐" : e === "light" ? "☼" : "☾"}</span>${e === "auto" ? (this.languageCode, "Auto") : e === "light" ? this.languageCode === "nl" ? "Licht" : "Light" : this.languageCode === "nl" ? "Donker" : "Dark"}</button>`)}</div><hr><span class="eyebrow">${this.languageCode === "nl" ? "AGENDA-KOPPELINGEN" : "CALENDAR CONNECTIONS"}</span><h3>${this.languageCode === "nl" ? "Houd agenda’s in sync" : "Keep calendars in sync"}</h3><p class="muted">${this.languageCode === "nl" ? "Bronnen en inloggegevens worden veilig in Home Assistant beheerd, nooit in dit paneel." : "Sources and credentials are managed securely in Home Assistant, never in this panel."}</p><a class="button-link" href="/config/integrations/integration/family_organizer">${this.languageCode === "nl" ? "Open integratie-instellingen" : "Open integration settings"} →</a><p class="muted">${this.languageCode === "nl" ? "Instellingen → Apparaten & diensten → Family Organizer → Configureren." : "Settings → Devices & services → Family Organizer → Configure."}</p>${(this.data.calendar.sources || []).map((e) => M`<div class="compact-row"><span class="event-dot" style=${`background:${this.color(e.color)}`}></span><strong>${e.name}</strong><span class="muted">${e.enabled === !1 ? this.languageCode === "nl" ? "Uitgeschakeld" : "Disabled" : this.languageCode === "nl" ? "Verbonden" : "Connected"}</span></div>`)}</article></div></section>`;
 	}
 	field(e, t, n = "", r = "text", i = !1, a = {}) {
-		return M`<label>${this.x(e)}<input name=${t} type=${r} .value=${String(n ?? "")} ?required=${i} min=${a.min ?? P} max=${a.max ?? P} step=${a.step ?? P} placeholder=${a.placeholder ? this.x(a.placeholder) : P} list=${a.list ?? P} ?autofocus=${a.autofocus || !1}></label>`;
+		return M`<label>${this.x(e)}<input name=${t} type=${r} .value=${String(n ?? "")} ?required=${i} min=${a.min ?? P} max=${a.max ?? P} step=${a.step ?? P} placeholder=${a.placeholder ? this.x(a.placeholder) : P} list=${a.list ?? P} accept=${a.accept ?? P} ?autofocus=${a.autofocus || !1}></label>`;
 	}
 	select(e, t, n, r) {
 		let i = `editor-${t}`;
@@ -3581,6 +3618,8 @@ var Ye = [
 			min: 0,
 			step: 1
 		})}${this.field("Icon (MDI name)", "icon", t.icon || "mdi:check-circle-outline")}${this.field("Icon image URL (optional)", "chore_image", t.chore_image, "url")}
+      <label class="full">${this.s("Upload icon image", "Upload icoonafbeelding")}<input name="chore_image_upload" type="file" accept="image/*" @change=${(e) => void this.pickChoreImage(e)}></label>
+      ${t.chore_image ? M`<div class="chore-image-preview full"><img src=${t.chore_image} alt="" loading="lazy"><button type="button" class="subtle" @click=${() => this.clearChoreImage()}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : M`<p class="muted full">${this.s("Choose an image from this device or paste an image URL.", "Kies een afbeelding van dit apparaat of plak een afbeelding-URL.")}</p>`}
       <label class="check full"><input name="is_free" type="checkbox" ?checked=${!!t.is_free}>${this.s("Free to pick up by anyone", "Vrij, door iedereen op te pakken")}</label>
       ${this.select("Schedule", "schedule", t.schedule || "once", [
 			["once", "One time"],

@@ -1,0 +1,4 @@
+- New: chore/task icon image can now be uploaded directly from your local device in the chore editor.
+- Improve: added image preview and remove option while editing a chore.
+- Keep: existing image URL option remains supported.
+- UI: uploaded image uses the same icon slot/size as the regular chore icon.
