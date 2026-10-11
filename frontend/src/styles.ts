@@ -344,8 +344,8 @@ export const panelStyles = css`
   .pause-toggle { font-size:16px; width:38px; height:38px; border-radius:10px; background:#fff3e8; border:1px solid #f3d3b8; color:#c26a2e; }
   .paused-banner { background:#fff3e8; color:#c26a2e; border:1px solid #f3d3b8; border-radius:10px; padding:10px 16px; margin:10px 0 18px; font-weight:700; text-align:center; }
   .person-task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(450px,1fr)); gap:20px; margin:16px 0 24px; }
-  .person-task-card { display:flex; flex-direction:column; gap:14px; padding:16px; min-height:520px; background:#fff; border:1px solid #f1e7dc; border-radius:14px; box-shadow:0 4px 14px rgba(62, 37, 14, .06); }
-  .free-task-card { border:1px solid #d9d0eb; background:#ffffff; }
+  .person-task-card { display:flex; flex-direction:column; gap:14px; padding:16px; min-height:520px; background:var(--surface); border:1px solid #f1e7dc; border-radius:14px; box-shadow:0 4px 14px rgba(62, 37, 14, .06); }
+  .free-task-card { border:1px solid #d9d0eb; background:var(--surface); }
   .person-task-header { display:flex; align-items:center; gap:10px; padding-bottom:4px; }
   .person-task-header .avatar { width:30px; height:30px; min-width:30px; }
   .person-task-header .row-copy strong { font-size:16px; font-weight:800; letter-spacing:-.2px; }
@@ -359,7 +359,7 @@ export const panelStyles = css`
   .task-tile.tile-routine { background:#eaf9fc; border-color:#d3edf3; }
   .task-tile.is-available.tile-task { background:#f5b782; border-color:#db8a4d; box-shadow:0 0 0 1px #db8a4d inset; }
   .task-tile.is-available.tile-routine { background:#66bde2; border-color:#2f88b4; box-shadow:0 0 0 1px #2f88b4 inset; }
-  .task-tile .task-icon { align-self:stretch; width:56px; min-width:56px; border-radius:9px 0 0 9px; background:#fff; color:#ce8447; display:grid; place-items:center; font-size:18px; border-right:1px solid #f0decf; overflow:hidden; }
+  .task-tile .task-icon { align-self:stretch; width:56px; min-width:56px; border-radius:9px 0 0 9px; background:color-mix(in srgb,var(--surface) 88%,#fff); color:#ce8447; display:grid; place-items:center; font-size:18px; border-right:1px solid #f0decf; overflow:hidden; }
   .task-tile .task-icon ha-icon { --mdc-icon-size:32px; width:32px; height:32px; }
   .task-tile .task-icon .chore-image { width:100%; height:100%; object-fit:cover; display:block; }
   .task-tile.tile-routine .task-icon { color:#4d8aa0; border-color:#d1e8ee; }
@@ -371,7 +371,7 @@ export const panelStyles = css`
   .task-tile.is-available .task-title { color:#11222b; }
   .task-tile .task-meta { font-size:11px; color:#8d98a3; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .task-tile.is-available .task-meta { color:#213745; font-weight:600; }
-  .task-action { min-width:24px; width:24px; height:24px; padding:0; border-radius:999px; border:1px solid #f1d9bf; background:#fff; color:#d38a52; font-size:14px; box-shadow:none; }
+  .task-action { align-self:stretch; width:56px; min-width:56px; padding:0; border-radius:999px; border:1px solid #f1d9bf; background:color-mix(in srgb,var(--surface) 90%,#fff); color:#d38a52; font-size:20px; box-shadow:none; margin:0; }
   .task-tile.is-available .task-action { border-color:#1f6f98; color:#1f6f98; }
   .status-active .status-pill, .status-pill.status-active { background:color-mix(in srgb,var(--green) 16%,var(--surface)); color:var(--green); }
   .status-upcoming .status-pill, .status-pill.status-upcoming { background:color-mix(in srgb,#64748b 16%,var(--surface)); color:#64748b; }

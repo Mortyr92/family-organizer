@@ -1,0 +1,3 @@
+- Improve: the chore check button is now a circular control that stretches the full tile height.
+- Fix: dark mode task/routine cards no longer show hard white backgrounds.
+- Theme: person and free-task cards now follow the active surface color in dark mode.
