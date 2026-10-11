@@ -1,0 +1,6 @@
+- Feature: added a new Schatkamer (Treasure Room) page with trophy navigation icon.
+- Feature: rewards are shown as large square tiles with prize name, image, and coin cost visualization.
+- Feature: select a family member at the top to preview affordability; owned coins are shown in gold and missing coins are greyed out.
+- Feature: family members can buy rewards when they have enough coins; purchases now deduct points server-side (5 points per coin).
+- Feature: added PIN-protected reward management to add/edit/delete prizes, set coin cost, and upload prize images.
+- Backend: introduced a dedicated buy_reward websocket command with balance validation and persisted purchase adjustments.

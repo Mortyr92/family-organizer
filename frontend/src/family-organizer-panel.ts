@@ -120,6 +120,7 @@ const pageText: Record<string, { en: [string, string]; nl: [string, string] }> =
   chores: { en: ["Tasks & Routines", "Small contributions. A happier home."], nl: ["Taakjes & Routines", "Kleine bijdragen, een fijner thuis."] },
   lists: { en: ["Lists", "To-do, shopping and grocery lists, all in one place."], nl: ["Lijstjes", "Taken, boodschappen en winkellijstjes, allemaal op \u00e9\u00e9n plek."] },
   birthdays: { en: ["Birthdays", "Never miss a chance to celebrate."], nl: ["Verjaardagen", "Mis nooit een moment om te vieren."] },
+  treasury: { en: ["Treasure Room", "Trade your hard-earned coins for prizes."], nl: ["Schatkamer", "Wissel je verdiende muntjes in voor prijzen."] },
   contacts: { en: ["Contacts", "The people who keep your family running."], nl: ["Contacten", "De mensen die je gezin draaiende houden."] },
   settings: { en: ["Settings", "Make your organizer feel like home."], nl: ["Instellingen", "Maak je organizer helemaal van jullie."] },
 };
@@ -165,6 +166,9 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private choresManageOpen = false;
   @state() private choresManageUnlocked = false;
   @state() private choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "";
+  @state() private treasuryManageOpen = false;
+  @state() private treasuryManageUnlocked = false;
+  @state() private treasuryPersonId = "";
   @state() private pendingFreeCompletion?: Item;
   @state() private pointsCelebration?: { personId: string; from: number; to: number; progress: number };
   private _hass?: Hass;
@@ -440,6 +444,39 @@ export class FamilyOrganizerPanel extends LitElement {
     if (!this.editor) return;
     this.editor = { ...this.editor, item: { ...this.editor.item, chore_image: null } };
   }
+  private async pickRewardImage(event: Event) {
+    if (!this.editor) return;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      this.error = this.s("Please choose an image file.", "Kies een afbeeldingsbestand.");
+      input.value = "";
+      return;
+    }
+    if (file.size > 1500000) {
+      this.error = this.s("Image too large (max 1.5 MB).", "Afbeelding is te groot (max 1,5 MB).");
+      input.value = "";
+      return;
+    }
+    try {
+      const image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("read_failed"));
+        reader.readAsDataURL(file);
+      });
+      this.editor = { ...this.editor, item: { ...this.editor.item, image } };
+      this.notice = this.s("Image selected", "Afbeelding geselecteerd");
+      this.error = "";
+    } catch {
+      this.error = this.s("Could not read image file.", "Kon het afbeeldingsbestand niet lezen.");
+    }
+  }
+  private clearRewardImage() {
+    if (!this.editor) return;
+    this.editor = { ...this.editor, item: { ...this.editor.item, image: null } };
+  }
   private async pickCompletionSound(event: Event) {
     if (!this.editor) return;
     const input = event.target as HTMLInputElement;
@@ -540,6 +577,10 @@ export class FamilyOrganizerPanel extends LitElement {
       if (patch.schedule === "monthly" && [29, 30, 31].includes(patch.month_day)) { this.notice = this.tm("Heads up: this routine will not appear in months without that day."); }
     } else if (kind === "points") {
       await this.action(() => this._hass!.callWS({ type: "family_organizer/adjust_points", person_id: text("person_id"), points: number("points"), note: text("note") }), this.languageCode === "nl" ? "Punten aangepast" : "Points adjusted", true); return;
+    } else if (kind === "reward") {
+      resource = "chores"; collection = "rewards";
+      patch = { ...patch, name: text("name"), coins: Math.max(1, number("coins")), image: item.image || text("image") || null };
+      if (!patch.name) { this.error = this.s("Give the prize a name.", "Geef de prijs een naam."); return; }
     } else if (kind === "recipe") {
       resource = "recipes";
       const ingredients = mergeIngredients(text("ingredients"), item.ingredients || []);
@@ -603,7 +644,7 @@ export class FamilyOrganizerPanel extends LitElement {
     const bottomNavPages = pages.filter(page => page.id !== "today");
     const navSections = [
       { label: this.x("Plan"), description: this.s("Calendar, daily planning and meals.", "Agenda, dagplanning en maaltijden."), pages: ["today", "calendar", "recipes"] },
-      { label: this.x("Household"), description: this.s("Lists and chores.", "Lijstjes en klussen."), pages: ["lists", "chores"] },
+      { label: this.x("Household"), description: this.s("Lists, chores and rewards.", "Lijstjes, klussen en beloningen."), pages: ["lists", "chores", "treasury"] },
       { label: this.x("Keep in touch"), description: this.s("Birthdays and settings.", "Verjaardagen en instellingen."), pages: ["birthdays", "settings"] },
     ] as const;
     return html`<div class="app" data-theme=${effective} data-bottom-nav=${bottomNavigation}>
@@ -654,6 +695,7 @@ export class FamilyOrganizerPanel extends LitElement {
       case "chores": return this.chores();
       case "recipes": return this.recipes();
       case "birthdays": return this.birthdays();
+      case "treasury": return this.treasury();
       default: return this.settingsUnlocked ? this.settings() : this.settingsPinGate();
     }
   }
@@ -1082,6 +1124,100 @@ export class FamilyOrganizerPanel extends LitElement {
       </div>
     </article>`;
   }
+  private toggleTreasuryManage() {
+    const next = !this.treasuryManageOpen;
+    this.treasuryManageOpen = next;
+    if (!next) this.treasuryManageUnlocked = false;
+  }
+  private async verifyTreasuryPin(event: SubmitEvent) {
+    event.preventDefault();
+    if (!this._hass || !this.choresPinPersonId) return;
+    const form = event.currentTarget as HTMLFormElement;
+    const pin = String(new FormData(form).get("pin") || "").trim();
+    if (!/^\d{4,8}$/.test(pin)) { this.error = this.tm("Enter a 4 to 8 digit PIN."); return; }
+    this.error = "";
+    this.saving = true;
+    try {
+      const person = this.people.find((p: Item) => p.id === this.choresPinPersonId);
+      if (!person || !["parent", "parent_admin"].includes(person.role)) {
+        this.error = this.s("Choose a parent or family administrator.", "Kies een ouder of gezinsbeheerder.");
+        return;
+      }
+      await this._hass.callWS<Item>({ type: "family_organizer/verify_pin", person_id: this.choresPinPersonId, pin });
+      this.treasuryManageUnlocked = true;
+      localStorage.setItem("family-organizer-chores-person-id", this.choresPinPersonId);
+    } catch (error) { this.error = this.message(error); }
+    finally { this.saving = false; }
+  }
+  private async buyReward(reward: Item) {
+    if (!this.treasuryPersonId) {
+      this.notice = this.s("Choose a family member first.", "Kies eerst een familielid.");
+      return;
+    }
+    const person = this.person(this.treasuryPersonId);
+    const cost = Math.max(0, Number(reward.coins) || 0);
+    if (this.personCoinTotal(this.treasuryPersonId) < cost) {
+      this.error = this.s("Not enough coins for this prize yet.", "Nog niet genoeg muntjes voor deze prijs.");
+      return;
+    }
+    const sure = window.confirm(this.s(
+      `Buy "${reward.name}" for ${cost} coins for ${person?.name || ""}?`,
+      `"${reward.name}" kopen voor ${cost} muntjes voor ${person?.name || ""}?`
+    ));
+    if (!sure) return;
+    await this.action(
+      () => this._hass!.callWS({ type: "family_organizer/buy_reward", reward_id: reward.id, person_id: this.treasuryPersonId }),
+      this.s("Prize bought! Enjoy!", "Prijs gekocht! Veel plezier!"),
+      false,
+    );
+  }
+  private rewardCoins(reward: Item) {
+    const cost = Math.max(0, Number(reward.coins) || 0);
+    const owned = this.treasuryPersonId ? Math.min(cost, Math.max(0, this.personCoinTotal(this.treasuryPersonId))) : 0;
+    return html`<div class="reward-coins" aria-label=${`${cost} ${this.s("coins", "muntjes")}`}>${Array.from({ length: cost }, (_, i) => html`<span class=${i < owned ? "reward-coin owned" : "reward-coin missing"} aria-hidden="true">🪙</span>`)}</div>`;
+  }
+  private treasury() {
+    const rewards = [...(this.data.chores.rewards || [])].sort((a: Item, b: Item) => (Number(a.coins) || 0) - (Number(b.coins) || 0) || `${a.name || ""}`.localeCompare(`${b.name || ""}`));
+    const selected = this.treasuryPersonId;
+    const coins = selected ? this.personCoinTotal(selected) : 0;
+    return html`<section class="treasury">
+      <div class="section-toolbar tasks-toolbar"><div><span class="eyebrow">${this.s("TREASURE ROOM", "SCHATKAMER")}</span><h2>${this.s("Treasure Room", "Schatkamer")}</h2></div>
+        <div class="toolbar-actions">
+          <button class="icon-button manage-toggle" @click=${() => this.toggleTreasuryManage()}>${this.s("Manage", "Beheer")}</button>
+        </div>
+      </div>
+      ${this.treasuryManageOpen ? html`<section class="surface chores-manage-panel">
+        ${this.treasuryManageUnlocked ? html`<div class="manage-actions">
+            ${this.addButton(this.s("New prize", "Nieuwe prijs"), "reward", true)}
+          </div>
+          <div class="manage-existing">
+            <h3>${this.s("Existing prizes", "Bestaande prijzen")}</h3>
+            ${rewards.length ? html`<div class="manage-list">${rewards.map((reward: Item) => html`<article class="manage-item"><div class="row-copy"><strong>${reward.name || this.s("Untitled prize", "Naamloze prijs")}</strong><small class="muted">${Number(reward.coins) || 0} ${this.s("coins", "muntjes")}</small></div><div class="manage-item-actions"><button class="icon-button" aria-label=${`${this.x("Edit")} ${reward.name || ""}`} @click=${() => this.openEditor("reward", reward)}>✎</button><button class="icon-button danger" aria-label=${`${this.x("Delete")} ${reward.name || ""}`} @click=${() => this.confirmDelete("chores", reward, "rewards")}>×</button></div></article>`)}</div>` : html`<p class="muted">${this.s("No prizes yet.", "Nog geen prijzen.")}</p>`}
+          </div>` : html`${(() => {
+          const admins = this.choresAdmins();
+          return admins.length ? html`<form class="manage-pin-form" @submit=${(e: SubmitEvent) => void this.verifyTreasuryPin(e)}>
+            <label>${this.t("family_member")}<select name="person" @change=${(e: Event) => this.switchChoresPinPerson((e.target as HTMLSelectElement).value)}>${admins.map((person: Item) => html`<option value=${person.id} ?selected=${person.id === this.choresPinPersonId}>${person.name}</option>`)}</select></label>
+            <label>${this.t("pin")}<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8"></label>
+            <button class="primary" type="submit" ?disabled=${this.saving}>${this.s("Unlock management", "Beheer ontgrendelen")}</button>
+          </form>` : html`<p class="muted">${this.s("No parent/admin profile is available yet.", "Er is nog geen ouder/beheerder-profiel beschikbaar.")}</p>`;
+        })()}`}
+      </section>` : nothing}
+      <div class="treasury-people">
+        <div class="person-day-strip-avatars">${this.people.map((person: Item) => html`<button class=${selected === person.id ? "person-pick active" : "person-pick"} style=${`--person-color:${this.color(person.color)}`} aria-pressed=${selected === person.id} title=${person.name} @click=${() => { this.treasuryPersonId = selected === person.id ? "" : person.id; }}>${this.avatar(person.id)}</button>`)}</div>
+        ${selected ? html`<p class="treasury-balance">${this.person(selected)?.name || ""}: <strong>${coins}</strong> ${this.s("coins", "muntjes")}</p>` : html`<p class="muted">${this.s("Pick a family member to see how close they are to each prize.", "Kies een familielid om te zien hoe dichtbij elke prijs is.")}</p>`}
+      </div>
+      ${rewards.length ? html`<div class="treasury-grid">${rewards.map((reward: Item) => {
+        const cost = Math.max(0, Number(reward.coins) || 0);
+        const affordable = !!selected && coins >= cost;
+        return html`<article class=${affordable ? "reward-tile affordable" : "reward-tile"}>
+          <h3 class="reward-name">${reward.name || this.s("Prize", "Prijs")}</h3>
+          <div class="reward-image">${reward.image ? html`<img src=${reward.image} alt=${reward.name || ""} loading="lazy" referrerpolicy="no-referrer">` : html`<span class="reward-placeholder" aria-hidden="true">🏆</span>`}</div>
+          ${this.rewardCoins(reward)}
+          <button class="primary reward-buy" ?disabled=${!selected || !affordable || this.saving} @click=${() => void this.buyReward(reward)}>${affordable ? this.s("Buy", "Kopen") : this.s(`${cost} coins`, `${cost} muntjes`)}</button>
+        </article>`;
+      })}</div>` : this.empty("No prizes yet", "Add prizes through the manage button above.")}
+    </section>`;
+  }
   private chores() {
     const chores = this.data.chores.items || [], completions = this.data.chores.completions || [];
     const today = iso(new Date());
@@ -1252,8 +1388,8 @@ export class FamilyOrganizerPanel extends LitElement {
   private dialog() {
     const { kind, item } = this.editor!;
     const titles: Item = this.languageCode === "nl"
-      ? { quick: "Wat wil je toevoegen?", "event-detail": item.title, event: item.id ? "Afspraakreeks bewerken" : "Afspraak toevoegen", grocery: item.id ? "Item bewerken" : "Item toevoegen", list: item.id ? "Lijst bewerken" : "Lijst maken", contact: item.id ? "Contact bewerken" : "Contact toevoegen", "recipe-import": "Recept van internet importeren", meal: item.id ? "Geplande maaltijd bewerken" : "Maaltijd plannen", chore: item.id ? "Klus bewerken" : "Klus inplannen", points: "Gezinspunten aanpassen", recipe: item.id ? "Recept bewerken" : "Favoriet recept opslaan", categories: "Receptcategorieën", category: item.id ? "Categorie bewerken" : "Categorie maken", "calendar-categories": "Agendacategorieën", "calendar-category": item.id ? "Agendacategorie bewerken" : "Agendacategorie maken", person: item.id ? "Familielid bewerken" : "Familielid toevoegen", preferences: "Weergave & standaarden", delete: "Dit item verwijderen?" }
-      : { quick: "What would you like to add?", "event-detail": item.title, event: item.id ? "Edit event series" : "Add an event", grocery: item.id ? "Edit item" : "Add item", list: item.id ? "Edit list" : "Create a list", contact: item.id ? "Edit contact" : "Add a contact", "recipe-import": "Import a recipe from the web", meal: item.id ? "Edit planned meal" : "Plan a meal", chore: item.id ? "Edit chore" : "Schedule a chore", points: "Adjust family points", recipe: item.id ? "Edit recipe" : "Save a favorite recipe", categories: "Recipe categories", category: item.id ? "Edit category" : "Create a category", "calendar-categories": "Calendar categories", "calendar-category": item.id ? "Edit calendar category" : "Create a calendar category", person: item.id ? "Edit family member" : "Add a family member", preferences: "Display & defaults", delete: "Delete this item?" };
+      ? { quick: "Wat wil je toevoegen?", "event-detail": item.title, event: item.id ? "Afspraakreeks bewerken" : "Afspraak toevoegen", grocery: item.id ? "Item bewerken" : "Item toevoegen", list: item.id ? "Lijst bewerken" : "Lijst maken", contact: item.id ? "Contact bewerken" : "Contact toevoegen", "recipe-import": "Recept van internet importeren", meal: item.id ? "Geplande maaltijd bewerken" : "Maaltijd plannen", chore: item.id ? "Klus bewerken" : "Klus inplannen", points: "Gezinspunten aanpassen", reward: item.id ? "Prijs bewerken" : "Prijs toevoegen", recipe: item.id ? "Recept bewerken" : "Favoriet recept opslaan", categories: "Receptcategorieën", category: item.id ? "Categorie bewerken" : "Categorie maken", "calendar-categories": "Agendacategorieën", "calendar-category": item.id ? "Agendacategorie bewerken" : "Agendacategorie maken", person: item.id ? "Familielid bewerken" : "Familielid toevoegen", preferences: "Weergave & standaarden", delete: "Dit item verwijderen?" }
+      : { quick: "What would you like to add?", "event-detail": item.title, event: item.id ? "Edit event series" : "Add an event", grocery: item.id ? "Edit item" : "Add item", list: item.id ? "Edit list" : "Create a list", contact: item.id ? "Edit contact" : "Add a contact", "recipe-import": "Import a recipe from the web", meal: item.id ? "Edit planned meal" : "Plan a meal", chore: item.id ? "Edit chore" : "Schedule a chore", points: "Adjust family points", reward: item.id ? "Edit prize" : "Add a prize", recipe: item.id ? "Edit recipe" : "Save a favorite recipe", categories: "Recipe categories", category: item.id ? "Edit category" : "Create a category", "calendar-categories": "Calendar categories", "calendar-category": item.id ? "Edit calendar category" : "Create a calendar category", person: item.id ? "Edit family member" : "Add a family member", preferences: "Display & defaults", delete: "Delete this item?" };
     const isForm = !["quick", "event-detail", "categories", "calendar-categories"].includes(kind);
     return html`<dialog class=${`editor-dialog ${kind === "event-detail" ? "detail-dialog" : ""}`} aria-labelledby="dialog-title" @cancel=${(e: Event) => { e.preventDefault(); this.closeEditor(); }} @click=${(e: MouseEvent) => { if (e.target === e.currentTarget) { const box = (e.currentTarget as HTMLElement).getBoundingClientRect(); if (e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom) this.closeEditor(); } }}>
       <header class="dialog-heading"><div><span class="eyebrow">FAMILY ORGANIZER</span><h2 id="dialog-title">${titles[kind]}</h2></div><button type="button" class="icon-button" aria-label=${this.t("close_dialog")} ?disabled=${this.saving} @click=${() => this.closeEditor()}>×</button></header>
@@ -1304,7 +1440,10 @@ export class FamilyOrganizerPanel extends LitElement {
       const suggestions = query.trim() ? recipes.filter((r: Item) => r.title.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8) : [];
       return html`${this.field("Date", "day", item.day || this.selectedDay, "date", true)}${this.select("Meal slot", "slot", item.slot || item.meal || (this.settingsData.meal_slots || ["dinner"])[0], (this.settingsData.meal_slots || ["breakfast", "lunch", "dinner"]).map((slot: string) => [slot, slot]))}<div class="form-field full meal-title-field"><label for="editor-title">${this.x("Meal or recipe name")}</label><input id="editor-title" name="title" type="text" .value=${query} required autocomplete="off" placeholder=${this.x("Type to search your recipes…")} @input=${(e: Event) => { this.mealTitleQuery = (e.target as HTMLInputElement).value; }}>${suggestions.length ? html`<ul class="meal-title-suggestions">${suggestions.map((r: Item) => html`<li><button type="button" @click=${(e: Event) => { const input = (e.currentTarget as HTMLElement).closest(".meal-title-field")?.querySelector("input") as HTMLInputElement; if (input) input.value = r.title; this.mealTitleQuery = r.title; }}>${r.title}</button></li>`)}</ul>` : nothing}</div>${this.field("Servings", "servings", item.servings || 4, "number", true, { min: 1, step: 1 })}`;
     }
-    if (kind === "chore") return html`${this.field("Chore title", "title", item.title, "text", true, { autofocus: true })}${this.field("Points", "points", item.points ?? 5, "number", true, { min: 0, step: 1 })}${this.field("Icon (MDI name)", "icon", item.icon || "mdi:check-circle-outline")}${this.field("Icon image URL (optional)", "chore_image", item.chore_image, "url")}
+    if (kind === "reward") return html`${this.field(this.s("Prize name", "Naam van de prijs"), "name", item.name, "text", true, { autofocus: true })}${this.field(this.s("Cost (coins)", "Kosten (muntjes)"), "coins", item.coins ?? 1, "number", true, { min: 1, step: 1 })}${this.field(this.s("Image URL (optional)", "Afbeeldings-URL (optioneel)"), "image", typeof item.image === "string" && !item.image.startsWith("data:") ? item.image : "", "url")}
+      <label class="full">${this.s("Upload image", "Afbeelding uploaden")}<input name="reward_image_upload" type="file" accept="image/*" @change=${(e: Event) => void this.pickRewardImage(e)}></label>
+      ${item.image ? html`<div class="chore-image-preview full"><img src=${item.image} alt="" loading="lazy"><button type="button" class="subtle" @click=${() => this.clearRewardImage()}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : html`<p class="muted full">${this.s("Choose an image from this device or paste an image URL.", "Kies een afbeelding van dit apparaat of plak een afbeelding-URL.")}</p>`}`;
+    if (kind === "chore") return html`${this.field("Chore title", "title", item.title, "text", true, { autofocus: true })}
       <label class="full">${this.s("Upload icon image", "Upload icoonafbeelding")}<input name="chore_image_upload" type="file" accept="image/*" @change=${(e: Event) => void this.pickChoreImage(e)}></label>
       ${item.chore_image ? html`<div class="chore-image-preview full"><img src=${item.chore_image} alt="" loading="lazy"><button type="button" class="subtle" @click=${() => this.clearChoreImage()}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : html`<p class="muted full">${this.s("Choose an image from this device or paste an image URL.", "Kies een afbeelding van dit apparaat of plak een afbeelding-URL.")}</p>`}
       <label class="check full"><input name="is_free" type="checkbox" ?checked=${!!item.is_free}>${this.s("Free to pick up by anyone", "Vrij, door iedereen op te pakken")}</label>

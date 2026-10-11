@@ -70,6 +70,7 @@ def migrate_payload(name: str, version: int, data: Any) -> dict[str, Any]:
     if name == "chores":
         result.setdefault("completions", [])
         result.setdefault("point_adjustments", [])
+        result.setdefault("rewards", [])
         for chore in result["items"]:
             if "assignee_ids" not in chore:
                 chore["assignee_ids"] = [chore["assignee_id"]] if chore.get("assignee_id") else []

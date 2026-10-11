@@ -32,7 +32,7 @@ _COLLECTIONS = {
     "people": {"items"},
     "calendar": {"items", "sources", "categories"},
     "groceries": {"items", "lists", "meal_slots", "meal_plans"},
-    "chores": {"items", "completions", "point_adjustments"},
+    "chores": {"items", "completions", "point_adjustments", "rewards"},
     "recipes": {"items", "categories"},
     "contacts": {"items"},
     "settings": {"items"},
@@ -641,6 +641,56 @@ async def ws_adjust_points(hass, connection, msg):
     connection.send_result(msg["id"], adjustment)
 
 
+@websocket_api.websocket_command({
+    vol.Required("type"): f"{DOMAIN}/buy_reward",
+    vol.Required("reward_id"): str,
+    vol.Required("person_id"): str,
+})
+@websocket_api.async_response
+async def ws_buy_reward(hass, connection, msg):
+    manager = _manager(hass)
+    settings, people = _settings(manager), _people(manager)
+    if not can_view(_user(connection), settings, people):
+        raise vol.Invalid("User is not linked to a family person")
+    reward = next(
+        (value for value in manager["chores"].data.get("rewards", []) if value.get("id") == msg["reward_id"]),
+        None,
+    )
+    if reward is None:
+        connection.send_error(msg["id"], "not_found", "Reward not found")
+        return
+    person = next(
+        (value for value in people.get("items", []) if value.get("id") == msg["person_id"]),
+        None,
+    )
+    if person is None:
+        connection.send_error(msg["id"], "not_found", "Person not found")
+        return
+    cost_coins = max(0, int(reward.get("coins", 0)))
+    cost_points = cost_coins * 5
+    total_points = sum(
+        int(value.get("points", 0))
+        for value in manager["chores"].data.get("completions", [])
+        if value.get("person_id") == msg["person_id"]
+    )
+    if total_points < cost_points:
+        connection.send_error(msg["id"], "insufficient_points", "Not enough coins for this reward")
+        return
+    purchase = {
+        "id": uuid4().hex, "chore_id": "", "person_id": msg["person_id"],
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+        "points": -cost_points, "note": reward.get("name", ""),
+        "adjustment": True, "reward_id": reward["id"],
+    }
+    manager["chores"].data.setdefault("completions", []).append(purchase)
+    await manager["chores"].async_save()
+    hass.bus.async_fire(EVENT_UPDATED, {
+        "resource": "chores", "collection": "completions",
+        "operation": "purchase", "item": purchase,
+    })
+    connection.send_result(msg["id"], purchase)
+
+
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/subscribe"})
 @callback
 def ws_subscribe(hass, connection, msg):
@@ -776,7 +826,7 @@ async def ws_ha_users(hass, connection, msg):
 def async_register(hass):
     for command in (
         ws_list, ws_create, ws_update, ws_delete, ws_recipe_to_groceries,
-        ws_complete_chore, ws_uncomplete_chore, ws_adjust_points, ws_subscribe, ws_settings,
+        ws_complete_chore, ws_uncomplete_chore, ws_adjust_points, ws_buy_reward, ws_subscribe, ws_settings,
         ws_verify_pin, ws_import_recipe, ws_ha_users,
     ):
         websocket_api.async_register_command(hass, command)

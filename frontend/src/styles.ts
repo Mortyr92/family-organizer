@@ -371,6 +371,20 @@ export const panelStyles = css`
   .completion-sound-preview { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .completion-sound-preview audio { flex:1; min-width:200px; max-width:100%; }
   .completion-sound-preview .subtle { padding:4px 0; }
+  .treasury { display:flex; flex-direction:column; gap:16px; }
+  .treasury-people { display:flex; flex-direction:column; gap:6px; }
+  .treasury-balance { margin:0; font-size:15px; }
+  .treasury-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+  .reward-tile { display:flex; flex-direction:column; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:16px; text-align:center; }
+  .reward-tile.affordable { border-color:#d9a43a; box-shadow:0 0 0 2px rgba(217,164,58,.25); }
+  .reward-name { margin:0; font-size:18px; font-weight:800; }
+  .reward-image { aspect-ratio:1 / 1; border-radius:14px; overflow:hidden; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; background:var(--surface-2, #f6f3ee); }
+  .reward-image img { width:100%; height:100%; object-fit:cover; display:block; }
+  .reward-placeholder { font-size:64px; }
+  .reward-coins { display:flex; flex-wrap:wrap; justify-content:center; gap:2px; font-size:20px; line-height:1; }
+  .reward-coin.missing { filter:grayscale(1); opacity:.35; }
+  .reward-coin.owned { filter:none; opacity:1; text-shadow:0 0 6px rgba(217,164,58,.6); }
+  .reward-buy { margin-top:auto; }
   .task-tile .task-main { min-width:0; flex:1; display:flex; justify-content:center; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
   .task-tile.is-available .task-title { color:#11222b; }

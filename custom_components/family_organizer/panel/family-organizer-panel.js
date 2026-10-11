@@ -1219,6 +1219,20 @@ var Ke = o`
   .completion-sound-preview { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .completion-sound-preview audio { flex:1; min-width:200px; max-width:100%; }
   .completion-sound-preview .subtle { padding:4px 0; }
+  .treasury { display:flex; flex-direction:column; gap:16px; }
+  .treasury-people { display:flex; flex-direction:column; gap:6px; }
+  .treasury-balance { margin:0; font-size:15px; }
+  .treasury-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+  .reward-tile { display:flex; flex-direction:column; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:16px; text-align:center; }
+  .reward-tile.affordable { border-color:#d9a43a; box-shadow:0 0 0 2px rgba(217,164,58,.25); }
+  .reward-name { margin:0; font-size:18px; font-weight:800; }
+  .reward-image { aspect-ratio:1 / 1; border-radius:14px; overflow:hidden; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; background:var(--surface-2, #f6f3ee); }
+  .reward-image img { width:100%; height:100%; object-fit:cover; display:block; }
+  .reward-placeholder { font-size:64px; }
+  .reward-coins { display:flex; flex-wrap:wrap; justify-content:center; gap:2px; font-size:20px; line-height:1; }
+  .reward-coin.missing { filter:grayscale(1); opacity:.35; }
+  .reward-coin.owned { filter:none; opacity:1; text-shadow:0 0 6px rgba(217,164,58,.6); }
+  .reward-buy { margin-top:auto; }
   .task-tile .task-main { min-width:0; flex:1; display:flex; justify-content:center; flex-direction:column; gap:1px; }
   .task-tile .task-title { display:block; min-width:0; font-size:20px; line-height:1.05; font-weight:800; color:#1f2a32; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.3px; }
   .task-tile.is-available .task-title { color:#11222b; }
@@ -2085,6 +2099,10 @@ var Ye = [
 		en: ["Birthdays", "Never miss a chance to celebrate."],
 		nl: ["Verjaardagen", "Mis nooit een moment om te vieren."]
 	},
+	treasury: {
+		en: ["Treasure Room", "Trade your hard-earned coins for prizes."],
+		nl: ["Schatkamer", "Wissel je verdiende muntjes in voor prijzen."]
+	},
 	contacts: {
 		en: ["Contacts", "The people who keep your family running."],
 		nl: ["Contacten", "De mensen die je gezin draaiende houden."]
@@ -2095,7 +2113,7 @@ var Ye = [
 	}
 }, $ = class extends V {
 	constructor(...e) {
-		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = qe("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = qe("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.mealTitleQuery = "", this.haUsers = [], this.calendarSearch = "", this.celebrate = !1, this.coinCelebration = !1, this.choresManageOpen = !1, this.choresManageUnlocked = !1, this.choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
+		super(...e), this.page = "today", this.data = {}, this.selectedDay = U(/* @__PURE__ */ new Date()), this.calendarView = "list", this.personFilter = /* @__PURE__ */ new Set(), this.listId = "default", this.contactQuery = "", this.groceryAssignee = "", this.groupStores = !1, this.mealWeek = 0, this.scorePeriod = "week", this.recipeSearch = "", this.recipeCategory = "", this.recipeId = "", this.servings = {}, this.selectedIngredients = {}, this.routes = {}, this.theme = localStorage.getItem("family-organizer-theme") || "auto", this.error = "", this.calendarOverlay = null, this.hiddenCalendarSources = qe("family-organizer-hidden-calendar-sources"), this.hiddenCalendarCategories = qe("family-organizer-hidden-calendar-categories"), this.notice = "", this.pinPersonId = localStorage.getItem("family-organizer-person-id") || "", this.todayPersonId = localStorage.getItem("family-organizer-today-person-id") || "", this.settingsPinPersonId = localStorage.getItem("family-organizer-settings-person-id") || "", this.settingsUnlocked = !1, this.loading = !0, this.saving = !1, this.mealTitleQuery = "", this.haUsers = [], this.calendarSearch = "", this.celebrate = !1, this.coinCelebration = !1, this.choresManageOpen = !1, this.choresManageUnlocked = !1, this.choresPinPersonId = localStorage.getItem("family-organizer-chores-person-id") || "", this.treasuryManageOpen = !1, this.treasuryManageUnlocked = !1, this.treasuryPersonId = "", this.subscribing = !1, this.initialized = !1, this.loadSequence = 0, this.readRoute = () => {
 			let e = ze(location.hash);
 			e && (this.page = e.page, this.recipeId = e.recipeId, e.page === "settings" && (this.settingsUnlocked = !1, this.pinCapabilites = void 0), e.malformed && (this.notice = this.tm("This recipe link is malformed. Showing your cookbook instead.")));
 		};
@@ -2390,6 +2408,44 @@ var Ye = [
 			}
 		};
 	}
+	async pickRewardImage(e) {
+		if (!this.editor) return;
+		let t = e.target, n = t.files?.[0];
+		if (n) {
+			if (!n.type.startsWith("image/")) {
+				this.error = this.s("Please choose an image file.", "Kies een afbeeldingsbestand."), t.value = "";
+				return;
+			}
+			if (n.size > 15e5) {
+				this.error = this.s("Image too large (max 1.5 MB).", "Afbeelding is te groot (max 1,5 MB)."), t.value = "";
+				return;
+			}
+			try {
+				let e = await new Promise((e, t) => {
+					let r = new FileReader();
+					r.onload = () => e(String(r.result || "")), r.onerror = () => t(/* @__PURE__ */ Error("read_failed")), r.readAsDataURL(n);
+				});
+				this.editor = {
+					...this.editor,
+					item: {
+						...this.editor.item,
+						image: e
+					}
+				}, this.notice = this.s("Image selected", "Afbeelding geselecteerd"), this.error = "";
+			} catch {
+				this.error = this.s("Could not read image file.", "Kon het afbeeldingsbestand niet lezen.");
+			}
+		}
+	}
+	clearRewardImage() {
+		this.editor &&= {
+			...this.editor,
+			item: {
+				...this.editor.item,
+				image: null
+			}
+		};
+	}
 	async pickCompletionSound(e) {
 		if (!this.editor) return;
 		let t = e.target, n = t.files?.[0];
@@ -2601,6 +2657,16 @@ var Ye = [
 				note: u("note")
 			}), this.languageCode === "nl" ? "Punten aangepast" : "Points adjusted", !0);
 			return;
+		} else if (i === "reward") {
+			if (o = "chores", s = "rewards", c = {
+				...c,
+				name: u("name"),
+				coins: Math.max(1, l("coins")),
+				image: a.image || u("image") || null
+			}, !c.name) {
+				this.error = this.s("Give the prize a name.", "Geef de prijs een naam.");
+				return;
+			}
 		} else if (i === "recipe") {
 			o = "recipes";
 			let e = Ne(u("ingredients"), a.ingredients || []);
@@ -2715,8 +2781,12 @@ var Ye = [
 			},
 			{
 				label: this.x("Household"),
-				description: this.s("Lists and chores.", "Lijstjes en klussen."),
-				pages: ["lists", "chores"]
+				description: this.s("Lists, chores and rewards.", "Lijstjes, klussen en beloningen."),
+				pages: [
+					"lists",
+					"chores",
+					"treasury"
+				]
 			},
 			{
 				label: this.x("Keep in touch"),
@@ -2783,6 +2853,7 @@ var Ye = [
 			case "chores": return this.chores();
 			case "recipes": return this.recipes();
 			case "birthdays": return this.birthdays();
+			case "treasury": return this.treasury();
 			default: return this.settingsUnlocked ? this.settings() : this.settingsPinGate();
 		}
 	}
@@ -3288,6 +3359,96 @@ var Ye = [
       </div>
     </article>`;
 	}
+	toggleTreasuryManage() {
+		let e = !this.treasuryManageOpen;
+		this.treasuryManageOpen = e, e || (this.treasuryManageUnlocked = !1);
+	}
+	async verifyTreasuryPin(e) {
+		if (e.preventDefault(), !this._hass || !this.choresPinPersonId) return;
+		let t = e.currentTarget, n = String(new FormData(t).get("pin") || "").trim();
+		if (!/^\d{4,8}$/.test(n)) {
+			this.error = this.tm("Enter a 4 to 8 digit PIN.");
+			return;
+		}
+		this.error = "", this.saving = !0;
+		try {
+			let e = this.people.find((e) => e.id === this.choresPinPersonId);
+			if (!e || !["parent", "parent_admin"].includes(e.role)) {
+				this.error = this.s("Choose a parent or family administrator.", "Kies een ouder of gezinsbeheerder.");
+				return;
+			}
+			await this._hass.callWS({
+				type: "family_organizer/verify_pin",
+				person_id: this.choresPinPersonId,
+				pin: n
+			}), this.treasuryManageUnlocked = !0, localStorage.setItem("family-organizer-chores-person-id", this.choresPinPersonId);
+		} catch (e) {
+			this.error = this.message(e);
+		} finally {
+			this.saving = !1;
+		}
+	}
+	async buyReward(e) {
+		if (!this.treasuryPersonId) {
+			this.notice = this.s("Choose a family member first.", "Kies eerst een familielid.");
+			return;
+		}
+		let t = this.person(this.treasuryPersonId), n = Math.max(0, Number(e.coins) || 0);
+		if (this.personCoinTotal(this.treasuryPersonId) < n) {
+			this.error = this.s("Not enough coins for this prize yet.", "Nog niet genoeg muntjes voor deze prijs.");
+			return;
+		}
+		window.confirm(this.s(`Buy "${e.name}" for ${n} coins for ${t?.name || ""}?`, `"${e.name}" kopen voor ${n} muntjes voor ${t?.name || ""}?`)) && await this.action(() => this._hass.callWS({
+			type: "family_organizer/buy_reward",
+			reward_id: e.id,
+			person_id: this.treasuryPersonId
+		}), this.s("Prize bought! Enjoy!", "Prijs gekocht! Veel plezier!"), !1);
+	}
+	rewardCoins(e) {
+		let t = Math.max(0, Number(e.coins) || 0), n = this.treasuryPersonId ? Math.min(t, Math.max(0, this.personCoinTotal(this.treasuryPersonId))) : 0;
+		return M`<div class="reward-coins" aria-label=${`${t} ${this.s("coins", "muntjes")}`}>${Array.from({ length: t }, (e, t) => M`<span class=${t < n ? "reward-coin owned" : "reward-coin missing"} aria-hidden="true">🪙</span>`)}</div>`;
+	}
+	treasury() {
+		let e = [...this.data.chores.rewards || []].sort((e, t) => (Number(e.coins) || 0) - (Number(t.coins) || 0) || `${e.name || ""}`.localeCompare(`${t.name || ""}`)), t = this.treasuryPersonId, n = t ? this.personCoinTotal(t) : 0;
+		return M`<section class="treasury">
+      <div class="section-toolbar tasks-toolbar"><div><span class="eyebrow">${this.s("TREASURE ROOM", "SCHATKAMER")}</span><h2>${this.s("Treasure Room", "Schatkamer")}</h2></div>
+        <div class="toolbar-actions">
+          <button class="icon-button manage-toggle" @click=${() => this.toggleTreasuryManage()}>${this.s("Manage", "Beheer")}</button>
+        </div>
+      </div>
+      ${this.treasuryManageOpen ? M`<section class="surface chores-manage-panel">
+        ${this.treasuryManageUnlocked ? M`<div class="manage-actions">
+            ${this.addButton(this.s("New prize", "Nieuwe prijs"), "reward", !0)}
+          </div>
+          <div class="manage-existing">
+            <h3>${this.s("Existing prizes", "Bestaande prijzen")}</h3>
+            ${e.length ? M`<div class="manage-list">${e.map((e) => M`<article class="manage-item"><div class="row-copy"><strong>${e.name || this.s("Untitled prize", "Naamloze prijs")}</strong><small class="muted">${Number(e.coins) || 0} ${this.s("coins", "muntjes")}</small></div><div class="manage-item-actions"><button class="icon-button" aria-label=${`${this.x("Edit")} ${e.name || ""}`} @click=${() => this.openEditor("reward", e)}>✎</button><button class="icon-button danger" aria-label=${`${this.x("Delete")} ${e.name || ""}`} @click=${() => this.confirmDelete("chores", e, "rewards")}>×</button></div></article>`)}</div>` : M`<p class="muted">${this.s("No prizes yet.", "Nog geen prijzen.")}</p>`}
+          </div>` : M`${(() => {
+			let e = this.choresAdmins();
+			return e.length ? M`<form class="manage-pin-form" @submit=${(e) => void this.verifyTreasuryPin(e)}>
+            <label>${this.t("family_member")}<select name="person" @change=${(e) => this.switchChoresPinPerson(e.target.value)}>${e.map((e) => M`<option value=${e.id} ?selected=${e.id === this.choresPinPersonId}>${e.name}</option>`)}</select></label>
+            <label>${this.t("pin")}<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8"></label>
+            <button class="primary" type="submit" ?disabled=${this.saving}>${this.s("Unlock management", "Beheer ontgrendelen")}</button>
+          </form>` : M`<p class="muted">${this.s("No parent/admin profile is available yet.", "Er is nog geen ouder/beheerder-profiel beschikbaar.")}</p>`;
+		})()}`}
+      </section>` : P}
+      <div class="treasury-people">
+        <div class="person-day-strip-avatars">${this.people.map((e) => M`<button class=${t === e.id ? "person-pick active" : "person-pick"} style=${`--person-color:${this.color(e.color)}`} aria-pressed=${t === e.id} title=${e.name} @click=${() => {
+			this.treasuryPersonId = t === e.id ? "" : e.id;
+		}}>${this.avatar(e.id)}</button>`)}</div>
+        ${t ? M`<p class="treasury-balance">${this.person(t)?.name || ""}: <strong>${n}</strong> ${this.s("coins", "muntjes")}</p>` : M`<p class="muted">${this.s("Pick a family member to see how close they are to each prize.", "Kies een familielid om te zien hoe dichtbij elke prijs is.")}</p>`}
+      </div>
+      ${e.length ? M`<div class="treasury-grid">${e.map((e) => {
+			let r = Math.max(0, Number(e.coins) || 0), i = !!t && n >= r;
+			return M`<article class=${i ? "reward-tile affordable" : "reward-tile"}>
+          <h3 class="reward-name">${e.name || this.s("Prize", "Prijs")}</h3>
+          <div class="reward-image">${e.image ? M`<img src=${e.image} alt=${e.name || ""} loading="lazy" referrerpolicy="no-referrer">` : M`<span class="reward-placeholder" aria-hidden="true">🏆</span>`}</div>
+          ${this.rewardCoins(e)}
+          <button class="primary reward-buy" ?disabled=${!t || !i || this.saving} @click=${() => void this.buyReward(e)}>${i ? this.s("Buy", "Kopen") : this.s(`${r} coins`, `${r} muntjes`)}</button>
+        </article>`;
+		})}</div>` : this.empty("No prizes yet", "Add prizes through the manage button above.")}
+    </section>`;
+	}
 	chores() {
 		let e = this.data.chores.items || [], t = this.data.chores.completions || [], n = U(/* @__PURE__ */ new Date()), r = e.filter((e) => Be(e, n, this.choresPaused()));
 		return M`<section class="tasks-routines">
@@ -3536,6 +3697,7 @@ var Ye = [
 			meal: t.id ? "Geplande maaltijd bewerken" : "Maaltijd plannen",
 			chore: t.id ? "Klus bewerken" : "Klus inplannen",
 			points: "Gezinspunten aanpassen",
+			reward: t.id ? "Prijs bewerken" : "Prijs toevoegen",
 			recipe: t.id ? "Recept bewerken" : "Favoriet recept opslaan",
 			categories: "Receptcategorieën",
 			category: t.id ? "Categorie bewerken" : "Categorie maken",
@@ -3555,6 +3717,7 @@ var Ye = [
 			meal: t.id ? "Edit planned meal" : "Plan a meal",
 			chore: t.id ? "Edit chore" : "Schedule a chore",
 			points: "Adjust family points",
+			reward: t.id ? "Edit prize" : "Add a prize",
 			recipe: t.id ? "Edit recipe" : "Save a favorite recipe",
 			categories: "Recipe categories",
 			category: t.id ? "Edit category" : "Create a category",
@@ -3736,10 +3899,13 @@ var Ye = [
 				step: 1
 			})}`;
 		}
-		if (e === "chore") return M`${this.field("Chore title", "title", t.title, "text", !0, { autofocus: !0 })}${this.field("Points", "points", t.points ?? 5, "number", !0, {
-			min: 0,
+		if (e === "reward") return M`${this.field(this.s("Prize name", "Naam van de prijs"), "name", t.name, "text", !0, { autofocus: !0 })}${this.field(this.s("Cost (coins)", "Kosten (muntjes)"), "coins", t.coins ?? 1, "number", !0, {
+			min: 1,
 			step: 1
-		})}${this.field("Icon (MDI name)", "icon", t.icon || "mdi:check-circle-outline")}${this.field("Icon image URL (optional)", "chore_image", t.chore_image, "url")}
+		})}${this.field(this.s("Image URL (optional)", "Afbeeldings-URL (optioneel)"), "image", typeof t.image == "string" && !t.image.startsWith("data:") ? t.image : "", "url")}
+      <label class="full">${this.s("Upload image", "Afbeelding uploaden")}<input name="reward_image_upload" type="file" accept="image/*" @change=${(e) => void this.pickRewardImage(e)}></label>
+      ${t.image ? M`<div class="chore-image-preview full"><img src=${t.image} alt="" loading="lazy"><button type="button" class="subtle" @click=${() => this.clearRewardImage()}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : M`<p class="muted full">${this.s("Choose an image from this device or paste an image URL.", "Kies een afbeelding van dit apparaat of plak een afbeelding-URL.")}</p>`}`;
+		if (e === "chore") return M`${this.field("Chore title", "title", t.title, "text", !0, { autofocus: !0 })}
       <label class="full">${this.s("Upload icon image", "Upload icoonafbeelding")}<input name="chore_image_upload" type="file" accept="image/*" @change=${(e) => void this.pickChoreImage(e)}></label>
       ${t.chore_image ? M`<div class="chore-image-preview full"><img src=${t.chore_image} alt="" loading="lazy"><button type="button" class="subtle" @click=${() => this.clearChoreImage()}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : M`<p class="muted full">${this.s("Choose an image from this device or paste an image URL.", "Kies een afbeelding van dit apparaat of plak een afbeelding-URL.")}</p>`}
       <label class="check full"><input name="is_free" type="checkbox" ?checked=${!!t.is_free}>${this.s("Free to pick up by anyone", "Vrij, door iedereen op te pakken")}</label>
@@ -3886,6 +4052,6 @@ var Ye = [
 		this.styles = Ke;
 	}
 };
-Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "mealTitleQuery", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), Z([H()], $.prototype, "celebrate", void 0), Z([H()], $.prototype, "coinCelebration", void 0), Z([H()], $.prototype, "choresManageOpen", void 0), Z([H()], $.prototype, "choresManageUnlocked", void 0), Z([H()], $.prototype, "choresPinPersonId", void 0), Z([H()], $.prototype, "pendingFreeCompletion", void 0), Z([H()], $.prototype, "pointsCelebration", void 0), $ = Z([we("family-organizer-panel")], $);
+Z([H()], $.prototype, "page", void 0), Z([H()], $.prototype, "data", void 0), Z([H()], $.prototype, "selectedDay", void 0), Z([H()], $.prototype, "calendarView", void 0), Z([H()], $.prototype, "personFilter", void 0), Z([H()], $.prototype, "listId", void 0), Z([H()], $.prototype, "contactQuery", void 0), Z([H()], $.prototype, "groceryAssignee", void 0), Z([H()], $.prototype, "groupStores", void 0), Z([H()], $.prototype, "mealWeek", void 0), Z([H()], $.prototype, "scorePeriod", void 0), Z([H()], $.prototype, "recipeSearch", void 0), Z([H()], $.prototype, "recipeCategory", void 0), Z([H()], $.prototype, "recipeId", void 0), Z([H()], $.prototype, "servings", void 0), Z([H()], $.prototype, "selectedIngredients", void 0), Z([H()], $.prototype, "routes", void 0), Z([H()], $.prototype, "theme", void 0), Z([H()], $.prototype, "error", void 0), Z([H()], $.prototype, "calendarOverlay", void 0), Z([H()], $.prototype, "hiddenCalendarSources", void 0), Z([H()], $.prototype, "hiddenCalendarCategories", void 0), Z([H()], $.prototype, "notice", void 0), Z([H()], $.prototype, "pinPersonId", void 0), Z([H()], $.prototype, "todayPersonId", void 0), Z([H()], $.prototype, "settingsPinPersonId", void 0), Z([H()], $.prototype, "settingsUnlocked", void 0), Z([H()], $.prototype, "pinCapabilites", void 0), Z([H()], $.prototype, "loading", void 0), Z([H()], $.prototype, "saving", void 0), Z([H()], $.prototype, "editor", void 0), Z([H()], $.prototype, "mealTitleQuery", void 0), Z([H()], $.prototype, "haUsers", void 0), Z([H()], $.prototype, "calendarSearch", void 0), Z([H()], $.prototype, "celebrate", void 0), Z([H()], $.prototype, "coinCelebration", void 0), Z([H()], $.prototype, "choresManageOpen", void 0), Z([H()], $.prototype, "choresManageUnlocked", void 0), Z([H()], $.prototype, "choresPinPersonId", void 0), Z([H()], $.prototype, "treasuryManageOpen", void 0), Z([H()], $.prototype, "treasuryManageUnlocked", void 0), Z([H()], $.prototype, "treasuryPersonId", void 0), Z([H()], $.prototype, "pendingFreeCompletion", void 0), Z([H()], $.prototype, "pointsCelebration", void 0), $ = Z([we("family-organizer-panel")], $);
 //#endregion
 export { $ as FamilyOrganizerPanel };
