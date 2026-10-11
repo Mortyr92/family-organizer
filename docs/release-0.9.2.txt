@@ -1,0 +1,1 @@
+- Fix: restore the Points field in the chore form so points can be set when creating or editing a task.
