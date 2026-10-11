@@ -1,0 +1,1 @@
+- Fix: guard the custom element registration so the panel no longer crashes with "family-organizer-panel has already been used with this registry" when Home Assistant loads the panel script twice.

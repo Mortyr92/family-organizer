@@ -1,7 +1,7 @@
 {
   "name": "family-organizer-frontend",
   "private": true,
-  "version": "0.8.22",
+  "version": "0.9.0",
   "type": "module",
   "scripts": {
     "build": "vite build",

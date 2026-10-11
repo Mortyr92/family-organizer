@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { state } from "lit/decorators.js";
 import { calendarDates, calendarPayload, choreDue, choreStatus, DEFAULT_DAYPARTS, dayDate, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStart, weekStartIndex, type Item } from "./helpers";
 import { panelStyles } from "./styles";
 
@@ -125,7 +125,6 @@ const pageText: Record<string, { en: [string, string]; nl: [string, string] }> =
   settings: { en: ["Settings", "Make your organizer feel like home."], nl: ["Instellingen", "Maak je organizer helemaal van jullie."] },
 };
 
-@customElement("family-organizer-panel")
 export class FamilyOrganizerPanel extends LitElement {
   @state() private page = "today";
   @state() private data: Record<string, Item> = {};
@@ -1517,5 +1516,8 @@ export class FamilyOrganizerPanel extends LitElement {
     return nothing;
   }
   static styles = panelStyles;
+}
+if (!customElements.get("family-organizer-panel")) {
+  customElements.define("family-organizer-panel", FamilyOrganizerPanel);
 }
 declare global { interface HTMLElementTagNameMap { "family-organizer-panel": FamilyOrganizerPanel } }
