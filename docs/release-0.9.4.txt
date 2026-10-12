@@ -1,0 +1,1 @@
+- Add: a new `family-organizer-card` custom Lovelace card that embeds the full Family Organizer experience, so it can be set as the default dashboard per device/user (including the Companion app).
