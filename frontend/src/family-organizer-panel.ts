@@ -1521,4 +1521,31 @@ export class FamilyOrganizerPanel extends LitElement {
 if (!customElements.get("family-organizer-panel")) {
   customElements.define("family-organizer-panel", FamilyOrganizerPanel);
 }
+
+export class FamilyOrganizerCard extends HTMLElement {
+  private _panel?: FamilyOrganizerPanel;
+  private _hass?: Hass;
+  setConfig(_config: Item) {
+    if (!this._panel) {
+      this._panel = document.createElement("family-organizer-panel");
+      this._panel.style.display = "block";
+      this._panel.style.minHeight = "100vh";
+      this.appendChild(this._panel);
+      if (this._hass) this._panel.hass = this._hass;
+    }
+  }
+  set hass(value: Hass) {
+    this._hass = value;
+    if (this._panel) this._panel.hass = value;
+  }
+  getCardSize() { return 12; }
+}
+if (!customElements.get("family-organizer-card")) {
+  customElements.define("family-organizer-card", FamilyOrganizerCard);
+}
+const customCards = ((window as unknown as { customCards?: Item[] }).customCards ??= []);
+if (!customCards.some(card => card.type === "family-organizer-card")) {
+  customCards.push({ type: "family-organizer-card", name: "Family Organizer", description: "Full Family Organizer experience as a dashboard card." });
+}
+
 declare global { interface HTMLElementTagNameMap { "family-organizer-panel": FamilyOrganizerPanel } }

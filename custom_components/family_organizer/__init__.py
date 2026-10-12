@@ -7,7 +7,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import voluptuous as vol
-from homeassistant.components import panel_custom
+from homeassistant.components import frontend, panel_custom
 from homeassistant.const import Platform
 from homeassistant.core import ServiceCall
 from homeassistant.exceptions import Unauthorized
@@ -93,6 +93,7 @@ async def _async_register_panel(hass):
         await hass.http.async_register_static_paths(
             [StaticPathConfig(url, str(bundle.parent), True) for url in static_urls]
         )
+    frontend.add_extra_js_url(hass, module_url, es5=False)
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="family-organizer-panel",
