@@ -719,8 +719,10 @@ function Be(e, t, n = !1) {
 	if (e.schedule === "weekly") {
 		let n = (e.weekdays || []).map(Number);
 		if (n.length) return n.includes((i.getDay() + 6) % 7);
-		let a = (e.completed || []).map((e) => String(e).slice(0, 10)).filter((e) => e <= t), o = a.length ? a.reduce((e, t) => e > t ? e : t) : r;
-		return Math.round((Date.UTC(i.getFullYear(), i.getMonth(), i.getDate()) - Date.UTC(W(o).getFullYear(), W(o).getMonth(), W(o).getDate())) / 864e5) % 7 == 0;
+		let r = (e.completed || []).map((e) => String(e).slice(0, 10)).filter((e) => e <= t);
+		if (!r.length) return !0;
+		let a = r.reduce((e, t) => e > t ? e : t);
+		return Math.round((Date.UTC(i.getFullYear(), i.getMonth(), i.getDate()) - Date.UTC(W(a).getFullYear(), W(a).getMonth(), W(a).getDate())) / 864e5) >= 7;
 	}
 	if (String(e.schedule).startsWith("weekly:")) return String(e.schedule).split(":")[1].split(",").includes(i.toLocaleDateString("en", { weekday: "long" }).toLowerCase());
 	if (e.schedule === "monthly") return i.getDate() === Number(e.month_day || W(r).getDate());

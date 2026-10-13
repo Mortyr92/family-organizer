@@ -1,0 +1,1 @@
+- Fix: weekly chores/routines with no weekday selected now stay visible (and overdue) every day until picked up or completed, instead of disappearing after a single missed day. Once completed, they hide for 7 days, then reappear and stay visible again until done.

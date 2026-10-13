@@ -47,11 +47,13 @@ def test_routine_due_respects_pause():
 def test_weekly_without_weekday_recurs_from_completion():
     chore = {"schedule": "weekly", "weekdays": [], "created": "2026-09-01"}
     assert chore_due(chore, date(2026, 9, 1))
-    assert not chore_due(chore, date(2026, 9, 5))
+    assert chore_due(chore, date(2026, 9, 5))
     chore["completed"] = ["2026-09-13T13:00:00"]
     assert not chore_due(chore, date(2026, 9, 14))
     assert not chore_due(chore, date(2026, 9, 19))
     assert chore_due(chore, date(2026, 9, 20))
+    assert chore_due(chore, date(2026, 9, 21))
+    assert chore_due(chore, date(2026, 10, 1))
 
 
 

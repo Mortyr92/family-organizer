@@ -119,9 +119,10 @@ export function choreDue(chore: Item, day: string, paused = false) {
     const weekdayList = (chore.weekdays || []).map(Number);
     if (weekdayList.length) return weekdayList.includes((date.getDay() + 6) % 7);
     const completed = ((chore.completed || []) as string[]).map(value => String(value).slice(0, 10)).filter(value => value <= day);
-    const anchor = completed.length ? completed.reduce((a, b) => (a > b ? a : b)) : created;
+    if (!completed.length) return true;
+    const anchor = completed.reduce((a, b) => (a > b ? a : b));
     const elapsedWeekly = Math.round((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(dayDate(anchor).getFullYear(), dayDate(anchor).getMonth(), dayDate(anchor).getDate())) / 86400000);
-    return elapsedWeekly % 7 === 0;
+    return elapsedWeekly >= 7;
   }
   if (String(chore.schedule).startsWith("weekly:")) return String(chore.schedule).split(":")[1].split(",").includes(date.toLocaleDateString("en", { weekday: "long" }).toLowerCase());
   if (chore.schedule === "monthly") return date.getDate() === Number(chore.month_day || dayDate(created).getDate());

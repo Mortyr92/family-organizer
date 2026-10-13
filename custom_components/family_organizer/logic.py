@@ -20,8 +20,10 @@ def chore_due(chore: dict, day: date, paused: bool = False) -> bool:
         if weekdays:
             return day.weekday() in weekdays
         completed = [value[:10] for value in chore.get("completed", []) if value[:10] <= day.isoformat()]
-        anchor = date.fromisoformat(max(completed)) if completed else created
-        return (day - anchor).days % 7 == 0
+        if not completed:
+            return True
+        anchor = date.fromisoformat(max(completed))
+        return (day - anchor).days >= 7
     if schedule.startswith("weekly:"):
         return day.strftime("%A").lower() in schedule.split(":", 1)[1].lower().split(",")
     if schedule == "monthly":
