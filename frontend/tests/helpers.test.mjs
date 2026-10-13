@@ -112,6 +112,15 @@ test("chore schedules respect the paused flag for routines but not one-time chor
   assert.equal(choreDue({ ...base, schedule: "daily" }, "2026-06-05", true), false);
   assert.equal(choreDue({ ...base, schedule: "once", due_date: "2026-06-05" }, "2026-06-05", true), true);
 });
+test("weekly chores without a weekday recur 7 days after completion", () => {
+  const base = { created: "2026-09-01", schedule: "weekly", weekdays: [] };
+  assert.equal(choreDue(base, "2026-09-01"), true);
+  assert.equal(choreDue(base, "2026-09-05"), false);
+  const afterCompletion = { ...base, completed: ["2026-09-13T13:00:00"] };
+  assert.equal(choreDue(afterCompletion, "2026-09-14"), false);
+  assert.equal(choreDue(afterCompletion, "2026-09-19"), false);
+  assert.equal(choreDue(afterCompletion, "2026-09-20"), true);
+});
 test("choreStatus mirrors backend behavior for upcoming, active, late, retry, expired and done", () => {
   assert.equal(choreStatus({}, "2026-06-30", new Date("2026-06-30T08:00:00"), DEFAULT_DAYPARTS, true), "done");
   const morning = { daypart: "morning" };

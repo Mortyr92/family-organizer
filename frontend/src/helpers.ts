@@ -115,7 +115,14 @@ export function choreDue(chore: Item, day: string, paused = false) {
   if (!chore.schedule || chore.schedule === "once") return day === (chore.due_date || created);
   if (paused) return false;
   if (chore.schedule === "daily") return true;
-  if (chore.schedule === "weekly") return (chore.weekdays || []).map(Number).includes((date.getDay() + 6) % 7);
+  if (chore.schedule === "weekly") {
+    const weekdayList = (chore.weekdays || []).map(Number);
+    if (weekdayList.length) return weekdayList.includes((date.getDay() + 6) % 7);
+    const completed = ((chore.completed || []) as string[]).map(value => String(value).slice(0, 10)).filter(value => value <= day);
+    const anchor = completed.length ? completed.reduce((a, b) => (a > b ? a : b)) : created;
+    const elapsedWeekly = Math.round((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(dayDate(anchor).getFullYear(), dayDate(anchor).getMonth(), dayDate(anchor).getDate())) / 86400000);
+    return elapsedWeekly % 7 === 0;
+  }
   if (String(chore.schedule).startsWith("weekly:")) return String(chore.schedule).split(":")[1].split(",").includes(date.toLocaleDateString("en", { weekday: "long" }).toLowerCase());
   if (chore.schedule === "monthly") return date.getDate() === Number(chore.month_day || dayDate(created).getDate());
   const interval = Math.max(1, Number(chore.interval_days || String(chore.schedule).split(":")[1]) || 1);

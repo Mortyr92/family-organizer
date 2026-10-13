@@ -1,0 +1,1 @@
+- Fix: weekly chores/routines with no weekday selected now correctly reappear exactly 7 calendar days after being checked off, instead of never becoming due again.

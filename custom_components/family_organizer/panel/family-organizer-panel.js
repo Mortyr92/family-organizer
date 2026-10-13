@@ -716,7 +716,12 @@ function Be(e, t, n = !1) {
 	if (!e.schedule || e.schedule === "once") return t === (e.due_date || r);
 	if (n) return !1;
 	if (e.schedule === "daily") return !0;
-	if (e.schedule === "weekly") return (e.weekdays || []).map(Number).includes((i.getDay() + 6) % 7);
+	if (e.schedule === "weekly") {
+		let n = (e.weekdays || []).map(Number);
+		if (n.length) return n.includes((i.getDay() + 6) % 7);
+		let a = (e.completed || []).map((e) => String(e).slice(0, 10)).filter((e) => e <= t), o = a.length ? a.reduce((e, t) => e > t ? e : t) : r;
+		return Math.round((Date.UTC(i.getFullYear(), i.getMonth(), i.getDate()) - Date.UTC(W(o).getFullYear(), W(o).getMonth(), W(o).getDate())) / 864e5) % 7 == 0;
+	}
 	if (String(e.schedule).startsWith("weekly:")) return String(e.schedule).split(":")[1].split(",").includes(i.toLocaleDateString("en", { weekday: "long" }).toLowerCase());
 	if (e.schedule === "monthly") return i.getDate() === Number(e.month_day || W(r).getDate());
 	let a = Math.max(1, Number(e.interval_days || String(e.schedule).split(":")[1]) || 1);

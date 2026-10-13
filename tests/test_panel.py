@@ -36,6 +36,14 @@ class PanelCustom:
         self.calls.append(kwargs)
 
 
+class Frontend:
+    def __init__(self):
+        self.extra_js_urls = []
+
+    def add_extra_js_url(self, hass, url, **kwargs):
+        self.extra_js_urls.append(url)
+
+
 class Hass:
     def __init__(self, http):
         self.http = http
@@ -68,8 +76,9 @@ def test_registration_compatibility_and_reload(monkeypatch, modern):
 
     hass = Hass(ModernHttp() if modern else LegacyHttp())
     panel = PanelCustom()
+    frontend = Frontend()
     register = load_function(
-        "_async_register_panel", panel_custom=panel, PANEL_URL="/family-organizer",
+        "_async_register_panel", panel_custom=panel, frontend=frontend, PANEL_URL="/family-organizer",
         PANEL_TITLE="Family Organizer", PANEL_ICON="mdi:home-heart",
     )
     asyncio.run(register(hass))
@@ -80,6 +89,7 @@ def test_registration_compatibility_and_reload(monkeypatch, modern):
     assert panel.calls[0]["module_url"] == URL
     assert panel.calls[0]["frontend_url_path"] == "family-organizer"
     assert panel.calls[0]["require_admin"] is False
+    assert frontend.extra_js_urls.count(URL) == 1
     assert "/0.1.0/" not in URL
 
 
@@ -97,7 +107,7 @@ def test_modern_registration_errors_are_not_hidden(monkeypatch):
             raise RuntimeError("registration failed")
 
     hass = Hass(Http())
-    register = load_function("_async_register_panel")
+    register = load_function("_async_register_panel", frontend=Frontend())
     with pytest.raises(RuntimeError, match="registration failed"):
         asyncio.run(register(hass))
     assert not hass.data["family_organizer"].get("panel_registered")
