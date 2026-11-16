@@ -1,0 +1,2 @@
+- Fix: restored the full Settings page layout so all preference sections are visible again.
+- Fix: reminders/settings summary and appearance/calendar connection cards are shown in the intended grid structure.
