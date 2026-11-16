@@ -173,6 +173,9 @@ class Chore(Model):
     daypart: str = "custom"
     expires_at: str | None = None
     continuous: bool = False
+    alarm_enabled: bool = False
+    alarm_minutes: int = 30
+    alarm_person_ids: list[str] = field(default_factory=list)
 
     @property
     def assignee_id(self) -> str | None:

@@ -2631,7 +2631,10 @@ var Ye = [
 				retry_minutes: l("retry_minutes") || 60,
 				daypart: u("daypart") || "custom",
 				expires_at: e && u("expires_at") || null,
-				continuous: d("continuous")
+				continuous: d("continuous"),
+				alarm_enabled: d("alarm_enabled"),
+				alarm_minutes: Math.max(1, l("alarm_minutes") || 30),
+				alarm_person_ids: e ? n.getAll("alarm_person_ids") : []
 			}, c.schedule === "weekly" && !c.weekdays.length) {
 				this.error = this.tm("Choose at least one weekday.");
 				return;
@@ -3960,6 +3963,15 @@ var Ye = [
 		])}
       ${this.field(t.is_free ? this.s("Expires on (free task)", "Vervalt op (vrij taakje)") : this.s("Due date (one time)", "Vervaldatum (eenmalig)"), t.is_free ? "expires_at" : "due_date", (t.is_free ? t.expires_at : t.due_date) || this.selectedDay, "date")}
       ${this.field("Due time", "due_time", t.due_time, "time")}
+      <fieldset class="full permissions"><legend>${this.s("Task alarm", "Taak-alarm")}</legend>
+        <label class="check full"><input name="alarm_enabled" type="checkbox" ?checked=${!!t.alarm_enabled}>${this.s("Send a reminder before this task/routine expires", "Stuur een herinnering voordat dit taakje/deze routine verloopt")}</label>
+        ${this.field(this.s("Alarm time (minutes before deadline)", "Alarmtijd (minuten voor deadline)"), "alarm_minutes", t.alarm_minutes ?? 30, "number", !0, {
+			min: 1,
+			max: 1440,
+			step: 1
+		})}
+        ${t.is_free ? M`<fieldset class="full"><legend>${this.s("Who gets this free-task alarm?", "Wie krijgt dit vrije-taakje alarm?")}</legend><div class="checkbox-group">${this.people.map((e) => M`<label class="check"><input name="alarm_person_ids" type="checkbox" value=${e.id} ?checked=${(t.alarm_person_ids || []).includes(e.id)}>${this.avatar(e.id)}${e.name}</label>`)}</div></fieldset>` : M`<p class="muted full">${this.s("Alarm goes to the linked device of the assigned family member(s).", "Alarm gaat naar het gekoppelde apparaat van de toegewezen gezinsleden.")}</p>`}
+      </fieldset>
       <label class="check full"><input name="retry_allowed" type="checkbox" ?checked=${!!t.retry_allowed}>${this.s("Allow a retry window after the deadline", "Herkansing toegestaan na de deadline")}</label>
       <label class="check full"><input name="continuous" type="checkbox" ?checked=${!!t.continuous}>${this.s("Continuous task (available again 20 seconds after completion)", "Voortdurende taak (na 20 seconden weer beschikbaar)")}</label>
       ${this.field(this.s("Retry window (minutes)", "Herkansingsvenster (minuten)"), "retry_minutes", t.retry_minutes || 60, "number", !0, {

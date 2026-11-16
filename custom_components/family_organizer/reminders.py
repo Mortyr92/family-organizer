@@ -1,14 +1,14 @@
 """Event reminders and the daily agenda digest."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta
 import logging
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import DOMAIN, EVENT_REMINDER
-from .logic import chore_overdue
+from .logic import DEFAULT_DAYPARTS, chore_due, chore_overdue
 from .models import parse_datetime
 from .recurrence import expand_occurrences
 
@@ -136,6 +136,7 @@ class ReminderScheduler:
                 continue
             self._sent.add(key)
             await self._deliver_list_reminder(reminder, settings)
+        await self._check_chore_alarms(now, settings)
         if settings.get("chore_overdue_notify_enabled"):
             await self._check_overdue_chores(now, settings)
         digest = settings.get("daily_agenda_time") or ""
@@ -164,7 +165,7 @@ class ReminderScheduler:
         await self._notify("Family Organizer reminder", message, settings, f"{DOMAIN}_{reminder.get('id')}")
         if settings.get("notify_assigned_people", True):
             assigned = [p for p in people if p.get("id") in (reminder.get("person_ids") or [])]
-            await self._notify_people("Family Organizer reminder", message, assigned, settings)
+            await self._notify_people("Family Organizer reminder", message, assigned)
 
     async def _deliver_list_reminder(self, reminder: dict, settings: dict) -> None:
         when = format_time(reminder["deadline"], str(settings.get("time_format", "24")))
@@ -201,21 +202,83 @@ class ReminderScheduler:
             _LOGGER.warning("notify.%s failed (%s)", service, err)
             return False
 
-    async def _notify_people(self, title: str, message: str, people: list[dict], settings: dict) -> None:
-        """Send a device notification to each person with a configured notify service."""
+    async def _notify_people(self, title: str, message: str, people: list[dict]) -> None:
+        """Send a device notification only to people with configured notify services."""
         for person in people:
             service = str(person.get("notify_service") or "").strip()
             if not service:
                 continue
-            if not await self._call_notify(service, title, message):
-                await self.hass.services.async_call(
-                    "persistent_notification", "create",
-                    {
-                        "title": title, "message": message,
-                        "notification_id": f"{DOMAIN}_person_{person.get('id')}",
-                    },
-                    blocking=False,
-                )
+            await self._call_notify(service, title, message)
+
+    def _chore_deadline(self, chore: dict, day: date, dayparts: dict, tzinfo) -> datetime | None:
+        due_time = chore.get("due_time")
+        if due_time:
+            try:
+                deadline_time = time.fromisoformat(due_time)
+            except ValueError:
+                return None
+        else:
+            daypart = chore.get("daypart") or "custom"
+            entry = (dayparts or {}).get(daypart) or (DEFAULT_DAYPARTS.get(daypart) or {})
+            end = entry.get("end") if isinstance(entry, dict) else None
+            deadline_time = time.fromisoformat(end) if end else None
+        if deadline_time is None:
+            return None
+        return datetime.combine(day, deadline_time, tzinfo=tzinfo)
+
+    def _chore_alarm_people(self, chore: dict, people: dict[str, dict]) -> list[dict]:
+        if chore.get("is_free"):
+            ids = [value for value in (chore.get("alarm_person_ids") or []) if value in people]
+            return [people[value] for value in ids]
+        ids = list(chore.get("assignee_ids") or [])
+        if ids and chore.get("rotate"):
+            ids = [ids[int(chore.get("rotation_index", 0)) % len(ids)]]
+        return [people[value] for value in ids if value in people]
+
+    async def _check_chore_alarms(self, now: datetime, settings: dict) -> None:
+        """Send optional pre-deadline alarms for chores and routines."""
+        chores = self.stores["chores"].data.get("items", [])
+        completions = self.stores["chores"].data.get("completions", [])
+        people = {p.get("id"): p for p in self.stores["people"].data.get("items", []) if p.get("id")}
+        dayparts = settings.get("chore_dayparts") or DEFAULT_DAYPARTS
+        today = now.date()
+        for chore in chores:
+            if not chore.get("alarm_enabled"):
+                continue
+            try:
+                if not chore_due(chore, today, bool(settings.get("chores_paused"))):
+                    continue
+            except (ValueError, TypeError):
+                continue
+            if any(
+                value.get("chore_id") == chore.get("id")
+                and not value.get("adjustment")
+                and value.get("completed_at", "")[:10] == today.isoformat()
+                for value in completions
+            ):
+                continue
+            deadline = self._chore_deadline(chore, today, dayparts, now.tzinfo)
+            if deadline is None:
+                continue
+            minutes = max(1, int(chore.get("alarm_minutes") or 30))
+            remind_at = deadline - timedelta(minutes=minutes)
+            if not (now <= remind_at < now + CHECK_INTERVAL):
+                continue
+            key = f"chore_alarm|{chore.get('id')}|{today.isoformat()}|{minutes}"
+            if key in self._sent:
+                continue
+            self._sent.add(key)
+            recipients = self._chore_alarm_people(chore, people)
+            if not recipients:
+                continue
+            message = str(chore.get("title") or "Task").strip() or "Task"
+            self.hass.bus.async_fire(EVENT_REMINDER, {
+                "chore_alarm": True, "chore_id": chore.get("id"),
+                "title": chore.get("title", ""),
+                "person_ids": [person.get("id") for person in recipients],
+                "message": message,
+            })
+            await self._notify_people("Family Organizer chore", message, recipients)
 
     async def _check_overdue_chores(self, now: datetime, settings: dict) -> None:
         """Notify the assignee (and an optional extra device) when a chore becomes overdue."""
@@ -242,7 +305,7 @@ class ReminderScheduler:
                 "chore_overdue": True, "chore_id": chore.get("id"),
                 "title": chore.get("title", ""), "person_ids": assignees, "message": message,
             })
-            await self._notify_people("Family Organizer chore", message, assigned_people, settings)
+            await self._notify_people("Family Organizer chore", message, assigned_people)
             extra = str(settings.get("chore_overdue_extra_service") or "").strip()
             if extra:
                 await self._call_notify(extra, "Family Organizer chore", message)

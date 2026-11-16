@@ -562,11 +562,15 @@ async def ws_complete_chore(hass, connection, msg):
     person = _person(manager, _user(connection))
     caps = capabilities_for(_user(connection), settings, people)
     completion_person = msg.get("person_id") or (person or {}).get("id")
+    person_ids = {value.get("id") for value in people.get("items", []) if value.get("id")}
+    if completion_person not in person_ids:
+        raise vol.Invalid("Invalid person")
     if not caps["complete_any_chore"]:
         check_capability(
             _user(connection), "chores", "complete_own_chores", settings, chore, people
         )
-        if completion_person != person["id"]:
+        # For free chores/routines, allow selecting who completed it.
+        if not chore.get("is_free") and completion_person != person["id"]:
             raise vol.Invalid("Cannot complete a chore for another person")
     completion = {
         "id": uuid4().hex,

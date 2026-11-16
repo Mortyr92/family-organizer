@@ -1,0 +1,5 @@
+- New: tasks and routines can now have an optional pre-deadline alarm.
+- New: custom alarm lead time in minutes per task/routine.
+- New: for free-to-pick tasks/routines you can select which family members receive the alarm.
+- New: alarm notifications are sent to each selected/assigned person's configured device notify service.
+- Improved: free task completion keeps the person selection flow and awards points to the selected person.
