@@ -23,6 +23,10 @@ DEFAULT_SETTINGS = {
     "reminders_enabled": True,
     "default_reminder_minutes": 15,
     "notify_service": "",
+    "notification_mode": "persistent",
+    "notify_assigned_people": True,
+    "chore_overdue_notify_enabled": False,
+    "chore_overdue_extra_service": "",
     "daily_agenda_time": "",
     "floating_navigation": False,
     "chores_paused": False,
@@ -43,5 +47,7 @@ SETTING_KEYS = (
     "default_grocery_list_id", "meal_slots", "competition_default",
     "language", "stores", "reminders_enabled", "default_reminder_minutes",
     "notify_service", "daily_agenda_time", "floating_navigation",
+    "notification_mode", "notify_assigned_people",
+    "chore_overdue_notify_enabled", "chore_overdue_extra_service",
     "chores_paused", "chore_completion_sound_enabled", "chore_completion_sound_data", "chore_dayparts",
 )

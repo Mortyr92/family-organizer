@@ -1,0 +1,5 @@
+- New: calendar sources now appear in Settings immediately after adding them, even before the first successful sync.
+- New: rename calendar sources (and set their color) from Settings → Calendar connections; custom names are no longer overwritten on sync.
+- New: choose how reminders are delivered in Settings — only in the companion app / Home Assistant, or as a real device notification via a notify service.
+- New: people linked to a calendar event automatically get a notification on their own device at the reminder time (per-person notify service, configurable per family member).
+- New: overdue tasks/routines can notify the assigned person and an optional extra device (e.g. a wall monitor).

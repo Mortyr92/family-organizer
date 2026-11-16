@@ -2703,7 +2703,16 @@ var Ye = [
 			icon: u("icon") || "🗒",
 			color: u("color") || "#64748b"
 		};
-		else if (i === "person") {
+		else if (i === "calendar-source") {
+			if (o = "calendar", s = "sources", c = {
+				...c,
+				name: u("name"),
+				color: u("color") || "#64748b"
+			}, !c.name) {
+				this.error = this.s("Give the calendar a name.", "Geef de agenda een naam.");
+				return;
+			}
+		} else if (i === "person") {
 			o = "people";
 			let e = {}, t = u("role"), n = t === "parent" || t === "parent_admin";
 			Xe.forEach((t) => {
@@ -2718,6 +2727,7 @@ var Ye = [
 				user_id: u("user_id") || null,
 				sync_picture: d("sync_picture"),
 				birthday: u("birthday") || null,
+				notify_service: u("notify_service"),
 				role: t,
 				permissions: e,
 				pin: n ? u("pin") : "",
@@ -2736,7 +2746,7 @@ var Ye = [
 				"competition_default",
 				"language",
 				"theme"
-			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.show_calendar_day_view = d("show_calendar_day_view"), e.show_calendar_week_view = d("show_calendar_week_view"), e.show_calendar_export = d("show_calendar_export"), e.sync_interval = l("sync_interval"), e.reminders_enabled = d("reminders_enabled"), e.default_reminder_minutes = l("default_reminder_minutes"), e.notify_service = u("notify_service"), e.daily_agenda_time = u("daily_agenda_time"), e.chore_completion_sound_enabled = d("chore_completion_sound_enabled"), e.chore_completion_sound_data = u("chore_completion_sound_data"), e.meal_slots = n.getAll("meal_slots").map((e) => String(e)), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), e.chore_dayparts = {
+			].forEach((t) => e[t] = u(t)), e.overview_collapsed = d("overview_collapsed"), e.show_calendar_day_view = d("show_calendar_day_view"), e.show_calendar_week_view = d("show_calendar_week_view"), e.show_calendar_export = d("show_calendar_export"), e.sync_interval = l("sync_interval"), e.reminders_enabled = d("reminders_enabled"), e.default_reminder_minutes = l("default_reminder_minutes"), e.notification_mode = u("notification_mode") || "persistent", e.notify_service = u("notify_service"), e.notify_assigned_people = d("notify_assigned_people"), e.chore_overdue_notify_enabled = d("chore_overdue_notify_enabled"), e.chore_overdue_extra_service = u("chore_overdue_extra_service"), e.daily_agenda_time = u("daily_agenda_time"), e.chore_completion_sound_enabled = d("chore_completion_sound_enabled"), e.chore_completion_sound_data = u("chore_completion_sound_data"), e.meal_slots = n.getAll("meal_slots").map((e) => String(e)), e.stores = u("stores").split(",").map((e) => e.trim()).filter(Boolean), e.chore_dayparts = {
 				morning: {
 					start: u("daypart_morning_start") || "07:00",
 					end: u("daypart_morning_end") || "11:59"
@@ -3656,17 +3666,14 @@ var Ye = [
 	settings() {
 		let e = this.settingsData;
 		return M`<section><div class="settings-intro"><span class="eyebrow">${this.languageCode === "nl" ? "JULLIE THUIS, JULLIE MANIER" : "YOUR HOME, YOUR WAY"}</span><h2>${this.languageCode === "nl" ? "Een plek voor iedereen" : "A place for everyone"}</h2><p class="muted">${this.languageCode === "nl" ? "Koppel familieleden aan Home Assistant-gebruikers, kies kleuren en bepaal wie wat mag beheren." : "Link family members to Home Assistant users, choose their colors and set what they can manage."}</p></div><div class="section-toolbar"><h3>${this.t("family_member")}${this.languageCode === "nl" ? "en" : "s"}</h3>${this.addButton(this.languageCode === "nl" ? "Persoon toevoegen" : "Add a person", "person", this.can("manage_people"))}</div><div class="people-grid">${this.people.length ? this.people.map((e) => M`<article class="surface person-card">${this.avatar(e.id)}<div class="row-copy"><h3>${e.name}</h3><p class="muted">${e.role === "parent_admin" ? this.t("role_admin") : e.role === "parent" ? this.t("role_parent") : this.t("role_child")} · ${e.user_id || e.ha_user_id ? this.t("ha_linked") : this.t("ha_not_linked")}</p><small class="muted">${Object.keys(e.permissions || {}).length} ${this.t("permission_overrides")}</small></div>${this.can("manage_people") ? M`<button @click=${() => this.openEditor("person", e)}>${this.languageCode === "nl" ? "Bewerken" : "Edit"}</button><button class="icon-button danger" aria-label=${`${this.languageCode === "nl" ? "Verwijder" : "Remove"} ${e.name}`} @click=${() => this.confirmDelete("people", e)}>×</button>` : P}</article>`) : this.empty(this.languageCode === "nl" ? "Welkom in je gezinsomgeving" : "Welcome to your family space", this.languageCode === "nl" ? "Voeg je eerste familielid toe en koppel het Home Assistant-account." : "Add your first family member and link their Home Assistant user ID.", this.addButton(this.languageCode === "nl" ? "Persoon toevoegen" : "Add a person", "person", this.can("manage_people")))}</div>
-      <div class="settings-grid"><article class="surface"><span class="eyebrow">${this.languageCode === "nl" ? "WEERGAVE & STANDAARDEN" : "DISPLAY & DEFAULTS"}</span><h3>${this.languageCode === "nl" ? "Stel jullie dagritme in" : "Set your everyday rhythm"}</h3><dl><div><dt>${this.languageCode === "nl" ? "Agenda" : "Calendar"}</dt><dd>${e.default_calendar_view || "list"} ${this.languageCode === "nl" ? "weergave" : "view"} · ${this.languageCode === "nl" ? "week start" : "week starts"} ${e.week_start || (this.languageCode === "nl" ? "volgens taal" : "by locale")}</dd></div><div><dt>${this.languageCode === "nl" ? "Dagoverzicht" : "Day overview"}</dt><dd>${e.overview_position || "right"} · ${e.overview_collapsed ? this.languageCode === "nl" ? "ingeklapt" : "collapsed" : this.languageCode === "nl" ? "uitgeklapt" : "expanded"}</dd></div><div><dt>${this.languageCode === "nl" ? "Tijd & taal" : "Time & language"}</dt><dd>${e.time_format || "24"} ${this.languageCode === "nl" ? "uur" : "hour"} · ${e.language || this.locale}</dd></div><div><dt>${this.languageCode === "nl" ? "Maaltijdvakken" : "Meal slots"}</dt><dd>${(e.meal_slots || []).join(", ")}</dd></div><div><dt>${this.languageCode === "nl" ? "Winkels" : "Stores"}</dt><dd>${(e.stores || []).join(", ") || (this.languageCode === "nl" ? "Nog geen winkels" : "No stores yet")}</dd></div><div><dt>${this.languageCode === "nl" ? "Boodschappen standaard" : "Grocery default"}</dt><dd>${this.groceryDefaultLabel(e.default_grocery_list_id)}</dd></div><div><dt>${this.languageCode === "nl" ? "Competitie" : "Competition"}</dt><dd>${e.competition_default || "week"}</dd></div><div><dt>${this.languageCode === "nl" ? "Sync-interval" : "Sync interval"}</dt><dd>${e.sync_interval || 30} ${this.languageCode === "nl" ? "minuten" : "minutes"}</dd></div><div><dt>${this.languageCode === "nl" ? "Herinneringen" : "Reminders"}</dt><dd>${e.reminders_enabled === !1 ? this.languageCode === "nl" ? "Uit" : "Off" : `${e.default_reminder_minutes ?? 15} min ${this.languageCode === "nl" ? "vooraf" : "before"} · ${e.notify_service ? `notify.${e.notify_service}` : this.languageCode === "nl" ? "HA-meldingen" : "HA notifications"}${e.daily_agenda_time ? ` · ${this.languageCode === "nl" ? "agenda om" : "agenda at"} ${e.daily_agenda_time}` : ""}`}</dd></div></dl>${this.addButton(this.languageCode === "nl" ? "Voorkeuren bewerken" : "Edit preferences", "preferences", this.can("manage_settings"), {
-			...e,
-			theme: this.theme
-		})}</article>
+      <div><dt>${this.languageCode === "nl" ? "Herinneringen" : "Reminders"}</dt><dd>${e.reminders_enabled === !1 ? this.languageCode === "nl" ? "Uit" : "Off" : `${e.default_reminder_minutes ?? 15} min ${this.languageCode === "nl" ? "vooraf" : "before"} · ${e.notification_mode === "notify" ? e.notify_service ? `notify.${e.notify_service}` : this.languageCode === "nl" ? "apparaatnotificatie" : "device notification" : (this.languageCode, "companion app")}${e.chore_overdue_notify_enabled ? ` · ${this.languageCode === "nl" ? "taakjes-meldingen aan" : "chore alerts on"}` : ""}${e.daily_agenda_time ? ` · ${this.languageCode === "nl" ? "agenda om" : "agenda at"} ${e.daily_agenda_time}` : ""}`}</dd></div>
       <article class="surface"><span class="eyebrow">${this.languageCode === "nl" ? "MAAK HET EIGEN" : "MAKE YOURSELF AT HOME"}</span><h3>${this.languageCode === "nl" ? "Uiterlijk" : "Appearance"}</h3><p class="muted">${this.languageCode === "nl" ? "Kies een uiterlijk voor dit apparaat. Auto volgt je Home Assistant-thema." : "Choose a look for this device. Auto follows your Home Assistant theme."}</p><div class="theme-options" role="group" aria-label=${this.languageCode === "nl" ? "Uiterlijk" : "Appearance"}>${[
 			"auto",
 			"light",
 			"dark"
 		].map((e) => M`<button class=${this.theme === e ? "active" : ""} aria-pressed=${this.theme === e} @click=${() => {
 			this.theme = e, localStorage.setItem("family-organizer-theme", e);
-		}}><span aria-hidden="true">${e === "auto" ? "◐" : e === "light" ? "☼" : "☾"}</span>${e === "auto" ? (this.languageCode, "Auto") : e === "light" ? this.languageCode === "nl" ? "Licht" : "Light" : this.languageCode === "nl" ? "Donker" : "Dark"}</button>`)}</div><hr><span class="eyebrow">${this.languageCode === "nl" ? "AGENDA-KOPPELINGEN" : "CALENDAR CONNECTIONS"}</span><h3>${this.languageCode === "nl" ? "Houd agenda’s in sync" : "Keep calendars in sync"}</h3><p class="muted">${this.languageCode === "nl" ? "Bronnen en inloggegevens worden veilig in Home Assistant beheerd, nooit in dit paneel." : "Sources and credentials are managed securely in Home Assistant, never in this panel."}</p><a class="button-link" href="/config/integrations/integration/family_organizer">${this.languageCode === "nl" ? "Open integratie-instellingen" : "Open integration settings"} →</a><p class="muted">${this.languageCode === "nl" ? "Instellingen → Apparaten & diensten → Family Organizer → Configureren." : "Settings → Devices & services → Family Organizer → Configure."}</p>${(this.data.calendar.sources || []).map((e) => M`<div class="compact-row"><span class="event-dot" style=${`background:${this.color(e.color)}`}></span><strong>${e.name}</strong><span class="muted">${e.enabled === !1 ? this.languageCode === "nl" ? "Uitgeschakeld" : "Disabled" : this.languageCode === "nl" ? "Verbonden" : "Connected"}</span></div>`)}</article></div></section>`;
+		}}><span aria-hidden="true">${e === "auto" ? "◐" : e === "light" ? "☼" : "☾"}</span>${e === "auto" ? (this.languageCode, "Auto") : e === "light" ? this.languageCode === "nl" ? "Licht" : "Light" : this.languageCode === "nl" ? "Donker" : "Dark"}</button>`)}</div><hr><span class="eyebrow">${this.languageCode === "nl" ? "AGENDA-KOPPELINGEN" : "CALENDAR CONNECTIONS"}</span><h3>${this.languageCode === "nl" ? "Houd agenda’s in sync" : "Keep calendars in sync"}</h3><p class="muted">${this.languageCode === "nl" ? "Bronnen en inloggegevens worden veilig in Home Assistant beheerd, nooit in dit paneel." : "Sources and credentials are managed securely in Home Assistant, never in this panel."}</p><a class="button-link" href="/config/integrations/integration/family_organizer">${this.languageCode === "nl" ? "Open integratie-instellingen" : "Open integration settings"} →</a><p class="muted">${this.languageCode === "nl" ? "Instellingen → Apparaten & diensten → Family Organizer → Configureren." : "Settings → Devices & services → Family Organizer → Configure."}</p>${(this.data.calendar.sources || []).map((e) => M`<div class="compact-row"><span class="event-dot" style=${`background:${this.color(e.color)}`}></span><strong>${e.name}</strong><span class="muted">${e.enabled === !1 ? this.languageCode === "nl" ? "Uitgeschakeld" : "Disabled" : this.languageCode === "nl" ? "Verbonden" : "Connected"}</span>${this.can("manage_calendar_all") ? M`<button class="icon-button" aria-label=${`${this.languageCode === "nl" ? "Bewerk" : "Edit"} ${e.name}`} @click=${() => this.openEditor("calendar-source", e)}>✎</button>` : P}</div>`)}</article></div></section>`;
 	}
 	field(e, t, n = "", r = "text", i = !1, a = {}) {
 		return M`<label>${this.x(e)}<input name=${t} type=${r} .value=${String(n ?? "")} ?required=${i} min=${a.min ?? P} max=${a.max ?? P} step=${a.step ?? P} placeholder=${a.placeholder ? this.x(a.placeholder) : P} list=${a.list ?? P} accept=${a.accept ?? P} ?autofocus=${a.autofocus || !1}></label>`;
@@ -3712,6 +3719,7 @@ var Ye = [
 			category: t.id ? "Categorie bewerken" : "Categorie maken",
 			"calendar-categories": "Agendacategorieën",
 			"calendar-category": t.id ? "Agendacategorie bewerken" : "Agendacategorie maken",
+			"calendar-source": "Agendakoppeling bewerken",
 			person: t.id ? "Familielid bewerken" : "Familielid toevoegen",
 			preferences: "Weergave & standaarden",
 			delete: "Dit item verwijderen?"
@@ -3732,6 +3740,7 @@ var Ye = [
 			category: t.id ? "Edit category" : "Create a category",
 			"calendar-categories": "Calendar categories",
 			"calendar-category": t.id ? "Edit calendar category" : "Create a calendar category",
+			"calendar-source": "Edit calendar connection",
 			person: t.id ? "Edit family member" : "Add a family member",
 			preferences: "Display & defaults",
 			delete: "Delete this item?"
@@ -3980,8 +3989,9 @@ var Ye = [
 			};
 			return M`${this.field("Category name", "name", t.name, "text", !0, { autofocus: !0 })}${this.select("Parent category", "parent_id", t.parent_id || "", [["", "Root category"], ...(this.data.recipes.categories || []).filter((t) => !e(t)).map((e) => [e.id, this.categoryPath(e)])])}`;
 		}
-		return e === "calendar-category" ? M`${this.field("Category name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Icon (emoji)", "icon", t.icon || "🗒")}<label>${this.x("Color")}<input name="color" type="color" .value=${t.color || "#64748b"}></label>` : e === "person" ? M`${this.haUserPicker(t)}${this.field("Name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Family color", "color", this.color(t.color), "color")}${this.field("Home Assistant user ID", "user_id", t.user_id || t.ha_user_id)}
+		return e === "calendar-category" ? M`${this.field("Category name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Icon (emoji)", "icon", t.icon || "🗒")}<label>${this.x("Color")}<input name="color" type="color" .value=${t.color || "#64748b"}></label>` : e === "calendar-source" ? M`${this.field("Calendar name", "name", t.name, "text", !0, { autofocus: !0 })}<label>${this.x("Color")}<input name="color" type="color" .value=${t.color || "#64748b"}></label><p class="muted full">${this.s("The URL and credentials stay in the Home Assistant integration settings.", "De URL en inloggegevens blijven in de Home Assistant-integratie-instellingen.")}</p>` : e === "person" ? M`${this.haUserPicker(t)}${this.field("Name", "name", t.name, "text", !0, { autofocus: !0 })}${this.field("Family color", "color", this.color(t.color), "color")}${this.field("Home Assistant user ID", "user_id", t.user_id || t.ha_user_id)}
       ${this.field("Profile picture URL", "profile_picture", t.profile_picture || t.avatar_url, "url")}${this.field("Birthday", "birthday", t.birthday, "date")}
+      ${this.field("Notify service for this person (e.g. mobile_app_phone)", "notify_service", t.notify_service || "", "text", !1, { placeholder: "Leave empty for no personal device notifications" })}
       ${this.select("Role preset", "role", t.role || "child", [["parent", "Parent (all rights)"], ["child", "Child (limited rights)"]])}
       ${t.role === "parent" ? M`${this.field("PIN code (4-8 digits)", "pin", "", "password", !t.id, {
 			inputmode: "numeric",
@@ -4043,7 +4053,13 @@ var Ye = [
 			max: 10080,
 			step: 1
 		})}
+      ${this.select("Notification delivery", "notification_mode", t.notification_mode || "persistent", [["persistent", this.languageCode === "nl" ? "Alleen melding in companion app / Home Assistant" : "Only in companion app / Home Assistant"], ["notify", this.languageCode === "nl" ? "Echte notificatie op apparaat (notify service)" : "Real device notification (notify service)"]])}
       ${this.field("Notify service (e.g. mobile_app_phone)", "notify_service", t.notify_service || "", "text", !1, { placeholder: "Leave empty for Home Assistant notifications" })}
+      <label class="check full"><input name="notify_assigned_people" type="checkbox" ?checked=${t.notify_assigned_people !== !1}>${this.s("Also notify people linked to an event on their own device (set per person)", "Stuur personen gekoppeld aan een afspraak ook automatisch een notificatie op hun eigen apparaat (per persoon instelbaar)")}</label>
+      <fieldset class="full permissions"><legend>${this.s("Overdue tasks", "Verlopende taakjes")}</legend>
+        <label class="check full"><input name="chore_overdue_notify_enabled" type="checkbox" ?checked=${!!t.chore_overdue_notify_enabled}>${this.s("Notify the assigned person when a task becomes overdue", "Stuur de toegewezen persoon een melding als een taakje verloopt")}</label>
+        ${this.field("Extra device for overdue tasks (e.g. wallmonitor)", "chore_overdue_extra_service", t.chore_overdue_extra_service || "", "text", !1, { placeholder: "notify service, optional" })}
+      </fieldset>
       ${this.field("Daily agenda time (optional)", "daily_agenda_time", t.daily_agenda_time || "", "time")}
       <fieldset class="full permissions"><legend>${this.s("Task completion sound", "Geluid bij taak afronden")}</legend>
         <label class="check full"><input name="chore_completion_sound_enabled" type="checkbox" ?checked=${t.chore_completion_sound_enabled !== !1}>${this.s("Play applause/cheering when a task is completed", "Speel applaus/gejuich af als een taak is afgerond")}</label>

@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import DOMAIN, EVENT_REMINDER
+from .logic import chore_overdue
 from .models import parse_datetime
 from .recurrence import expand_occurrences
 
@@ -135,6 +136,8 @@ class ReminderScheduler:
                 continue
             self._sent.add(key)
             await self._deliver_list_reminder(reminder, settings)
+        if settings.get("chore_overdue_notify_enabled"):
+            await self._check_overdue_chores(now, settings)
         digest = settings.get("daily_agenda_time") or ""
         if digest and now.strftime("%H:%M") == digest and self._agenda_day != now.date().isoformat():
             self._agenda_day = now.date().isoformat()
@@ -159,6 +162,9 @@ class ReminderScheduler:
             "person_ids": reminder.get("person_ids") or [], "people": names, "message": message,
         })
         await self._notify("Family Organizer reminder", message, settings, f"{DOMAIN}_{reminder.get('id')}")
+        if settings.get("notify_assigned_people", True):
+            assigned = [p for p in people if p.get("id") in (reminder.get("person_ids") or [])]
+            await self._notify_people("Family Organizer reminder", message, assigned, settings)
 
     async def _deliver_list_reminder(self, reminder: dict, settings: dict) -> None:
         when = format_time(reminder["deadline"], str(settings.get("time_format", "24")))
@@ -172,16 +178,71 @@ class ReminderScheduler:
         await self._notify("Family Organizer reminder", message, settings, f"{DOMAIN}_list_{reminder['id']}")
 
     async def _notify(self, title: str, message: str, settings: dict, notification_id: str) -> None:
-        service = str(settings.get("notify_service") or "").strip()
-        if service and self.hass.services.has_service("notify", service):
-            try:
-                await self.hass.services.async_call(
-                    "notify", service, {"title": title, "message": message}, blocking=True
-                )
+        if str(settings.get("notification_mode", "persistent")) == "notify":
+            service = str(settings.get("notify_service") or "").strip()
+            if await self._call_notify(service, title, message):
                 return
-            except Exception as err:  # noqa: BLE001 - fall back to a persistent notification
-                _LOGGER.warning("notify.%s failed (%s); using a persistent notification", service, err)
         await self.hass.services.async_call(
             "persistent_notification", "create",
             {"title": title, "message": message, "notification_id": notification_id}, blocking=False,
         )
+
+    async def _call_notify(self, service: str, title: str, message: str) -> bool:
+        """Call a notify service; return True when it was delivered."""
+        service = str(service or "").strip().removeprefix("notify.")
+        if not service or not self.hass.services.has_service("notify", service):
+            return False
+        try:
+            await self.hass.services.async_call(
+                "notify", service, {"title": title, "message": message}, blocking=True
+            )
+            return True
+        except Exception as err:  # noqa: BLE001 - fall back to a persistent notification
+            _LOGGER.warning("notify.%s failed (%s)", service, err)
+            return False
+
+    async def _notify_people(self, title: str, message: str, people: list[dict], settings: dict) -> None:
+        """Send a device notification to each person with a configured notify service."""
+        for person in people:
+            service = str(person.get("notify_service") or "").strip()
+            if not service:
+                continue
+            if not await self._call_notify(service, title, message):
+                await self.hass.services.async_call(
+                    "persistent_notification", "create",
+                    {
+                        "title": title, "message": message,
+                        "notification_id": f"{DOMAIN}_person_{person.get('id')}",
+                    },
+                    blocking=False,
+                )
+
+    async def _check_overdue_chores(self, now: datetime, settings: dict) -> None:
+        """Notify the assignee (and an optional extra device) when a chore becomes overdue."""
+        chores = self.stores["chores"].data.get("items", [])
+        people = {p.get("id"): p for p in self.stores["people"].data.get("items", [])}
+        day = now.date()
+        for chore in chores:
+            try:
+                if not chore_overdue(chore, day, now):
+                    continue
+            except (ValueError, TypeError):
+                continue
+            key = f"chore_overdue|{chore.get('id')}|{day.isoformat()}"
+            if key in self._sent:
+                continue
+            self._sent.add(key)
+            assignees = chore.get("assignee_ids") or []
+            if assignees and chore.get("rotate"):
+                assignees = [assignees[int(chore.get("rotation_index", 0)) % len(assignees)]]
+            assigned_people = [people[pid] for pid in assignees if pid in people]
+            names = ", ".join(p.get("name", "") for p in assigned_people)
+            message = f"{chore.get('title', 'Chore')} is overdue" + (f" ({names})" if names else "") + "."
+            self.hass.bus.async_fire(EVENT_REMINDER, {
+                "chore_overdue": True, "chore_id": chore.get("id"),
+                "title": chore.get("title", ""), "person_ids": assignees, "message": message,
+            })
+            await self._notify_people("Family Organizer chore", message, assigned_people, settings)
+            extra = str(settings.get("chore_overdue_extra_service") or "").strip()
+            if extra:
+                await self._call_notify(extra, "Family Organizer chore", message)

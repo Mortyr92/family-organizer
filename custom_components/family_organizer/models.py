@@ -31,6 +31,7 @@ class Person(Model):
     role: str = "child"
     user_id: str | None = None
     birthday: str | None = None
+    notify_service: str = ""
     permissions: dict[str, bool] = field(default_factory=dict)
     pin_hash: str | None = None
 

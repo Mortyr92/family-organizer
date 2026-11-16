@@ -65,15 +65,20 @@ class CalendarSyncCoordinator(DataUpdateCoordinator):
                 response.raise_for_status()
                 return [await response.text()]
 
-    def _upsert_source(self, calendar_type: str) -> str:
+    def _upsert_source(self, calendar_type: str) -> tuple[str, bool]:
         """Ensure a calendar source entry exists for this config entry."""
         source_id = self.entry.entry_id
         sources = self.stores["calendar"].data.setdefault("sources", [])
         existing = next((source for source in sources if source.get("id") == source_id), None)
         if existing:
-            existing["name"] = self.entry.title or existing.get("name") or "Calendar"
+            changed = existing.get("source_type") != calendar_type
+            # Keep user-defined names; only fill in a fallback when missing.
+            if not existing.get("name"):
+                existing["name"] = self.entry.title or "Calendar"
+                changed = True
             existing["source_type"] = calendar_type
         else:
+            changed = True
             sources.append({
                 "id": source_id,
                 "name": self.entry.title or "Calendar",
@@ -81,7 +86,7 @@ class CalendarSyncCoordinator(DataUpdateCoordinator):
                 "enabled": True,
                 "color": "#64748b",
             })
-        return source_id
+        return source_id, changed
 
     async def _async_update_data(self):
         url = self._config("calendar_url")
@@ -91,7 +96,14 @@ class CalendarSyncCoordinator(DataUpdateCoordinator):
         use_caldav = calendar_type == "caldav" or (
             calendar_type == "auto" and not url.lower().split("?")[0].endswith(".ics")
         )
-        source_id = self._upsert_source("caldav" if use_caldav else "ics")
+        source_id, source_changed = self._upsert_source("caldav" if use_caldav else "ics")
+        if source_changed:
+            # Persist the source right away so it shows up in settings even
+            # when the first synchronization attempt fails.
+            await self.stores["calendar"].async_save()
+            self.hass.bus.async_fire(EVENT_UPDATED, {
+                "resource": "calendar", "operation": "source", "count": 1
+            })
         try:
             payloads = await self._payloads(url, use_caldav)
             parsed = await asyncio.gather(*(

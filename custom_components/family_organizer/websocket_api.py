@@ -137,6 +137,13 @@ def _sanitize_item(resource: str, item: dict) -> dict:
     return item
 
 
+def _clean_notify_service(value) -> str:
+    service = str(value or "").strip()
+    if service and not vol.Match(r"^(notify\.)?[a-z0-9_]+$")(service):
+        raise vol.Invalid("Invalid notify service")
+    return service.removeprefix("notify.")
+
+
 def _validate_settings(values: dict) -> dict:
     result = {key: value for key, value in values.items() if key in SETTING_KEYS}
     enums = {
@@ -166,6 +173,18 @@ def _validate_settings(values: dict) -> dict:
         if service and not vol.Match(r"^(notify\.)?[a-z0-9_]+$")(service):
             raise vol.Invalid("Invalid notify service")
         result["notify_service"] = service.removeprefix("notify.")
+    if "notification_mode" in result:
+        if result["notification_mode"] not in ("persistent", "notify"):
+            raise vol.Invalid("Invalid notification_mode")
+    if "notify_assigned_people" in result:
+        result["notify_assigned_people"] = bool(result["notify_assigned_people"])
+    if "chore_overdue_notify_enabled" in result:
+        result["chore_overdue_notify_enabled"] = bool(result["chore_overdue_notify_enabled"])
+    if "chore_overdue_extra_service" in result:
+        service = str(result["chore_overdue_extra_service"] or "").strip()
+        if service and not vol.Match(r"^(notify\.)?[a-z0-9_]+$")(service):
+            raise vol.Invalid("Invalid chore overdue notify service")
+        result["chore_overdue_extra_service"] = service.removeprefix("notify.")
     if "daily_agenda_time" in result:
         value = str(result["daily_agenda_time"] or "").strip()
         if value and not vol.Match(r"^([01]\d|2[0-3]):[0-5]\d$")(value):
@@ -308,6 +327,7 @@ async def _mutate(hass, connection, msg, operation):
             item["sync_picture"] = bool(item.get("sync_picture")) and bool(item.get("user_id"))
             if item["sync_picture"]:
                 item["profile_picture"] = _ha_user_pictures(hass).get(item["user_id"]) or item["profile_picture"]
+            item["notify_service"] = _clean_notify_service(item.get("notify_service"))
             item["permissions"] = {
                 key: value for key, value in item.get("permissions", {}).items()
                 if key in capabilities_for(user, settings, people) and isinstance(value, bool)
@@ -356,6 +376,8 @@ async def _mutate(hass, connection, msg, operation):
                         raise vol.Invalid("Cannot assign an event to another person")
             if resource == "people":
                 patch.pop("ha_user_id", None)
+                if "notify_service" in patch:
+                    patch["notify_service"] = _clean_notify_service(patch["notify_service"])
                 if "role" in patch and patch["role"] not in ("parent_admin", "parent", "child"):
                     raise vol.Invalid("Invalid role")
                 if "permissions" in patch:
