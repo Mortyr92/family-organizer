@@ -108,6 +108,38 @@ export function organizerRoute(hash: string) {
   try { return { page: match[1], recipeId: match[1] === "recipes" ? decodeURIComponent(match[2] || "") : "", malformed: false }; }
   catch { return { page: match[1], recipeId: "", malformed: true }; }
 }
+/** Reserved recipe route (`#fo/recipes/book`) that opens the recipe book instead of a recipe. */
+export const RECIPE_BOOK_ROUTE = "book";
+export const RECENT_RECIPE_COUNT = 10;
+/** Newest recipes first. Recipes are stored in the order they were added. */
+export function latestRecipes(recipes: Item[], limit = RECENT_RECIPE_COUNT) {
+  return limit > 0 ? recipes.slice(-limit).reverse() : [];
+}
+/**
+ * Recipe book chapters: one per category that holds recipes, in category tree order, followed by a
+ * chapter with an empty id for recipes without a (known) category. Recipes are sorted by title.
+ */
+export function recipeChapters(recipes: Item[], categories: Item[]) {
+  const known = new Set<string>(categories.map(category => category.id));
+  const ordered: { id: string; title: string }[] = [], seen = new Set<string>();
+  const visit = (category: Item, path: string[]) => {
+    if (seen.has(category.id)) return;
+    seen.add(category.id);
+    const names = [...path, String(category.name || "")];
+    ordered.push({ id: category.id, title: names.join(" / ") });
+    categories.filter(child => child.parent_id === category.id).forEach(child => visit(child, names));
+  };
+  categories.filter(category => !category.parent_id || !known.has(category.parent_id)).forEach(category => visit(category, []));
+  // Categories caught in a parent cycle have no root; never drop their recipes from the book.
+  categories.forEach(category => visit(category, []));
+  const byTitle = (a: Item, b: Item) => String(a.title || "").localeCompare(String(b.title || ""), undefined, { sensitivity: "base" });
+  const chapters = ordered
+    .map(chapter => ({ ...chapter, recipes: recipes.filter(recipe => (recipe.category_ids || []).includes(chapter.id)).sort(byTitle) }))
+    .filter(chapter => chapter.recipes.length);
+  const uncategorized = recipes.filter(recipe => !(recipe.category_ids || []).some((id: string) => known.has(id))).sort(byTitle);
+  if (uncategorized.length) chapters.push({ id: "", title: "", recipes: uncategorized });
+  return chapters;
+}
 export function choreDue(chore: Item, day: string, paused = false) {
   const created = String(chore.created || chore.due_date || day).slice(0, 10);
   if (day < created) return false;

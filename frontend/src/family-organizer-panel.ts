@@ -1,6 +1,7 @@
 import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { state } from "lit/decorators.js";
-import { calendarDates, calendarPayload, choreDue, choreStatus, DEFAULT_DAYPARTS, dayDate, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStart, weekStartIndex, type Item } from "./helpers";
+import { keyed } from "lit/directives/keyed.js";
+import { calendarDates, calendarPayload, choreDue, choreStatus, DEFAULT_DAYPARTS, dayDate, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, latestRecipes, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, recipeChapters, RECIPE_BOOK_ROUTE, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStart, weekStartIndex, type Item } from "./helpers";
 import { panelStyles } from "./styles";
 
 type Hass = {
@@ -66,6 +67,11 @@ const i18nMessages: Record<string, Record<string, string>> = {
     "Enter at least one meal slot.": "Kies minimaal één maaltijdslot.",
     "Enter a valid language code, such as en, de or fr.": "Kies een geldige taalcode, zoals en of nl.",
     "Could not download the page": "Kon de pagina niet downloaden",
+    "Could not download the image: the request timed out": "Kon de afbeelding niet downloaden: het duurde te lang",
+    "Could not download the image": "Kon de afbeelding niet downloaden",
+    "Could not save the image": "Kon de afbeelding niet opslaan",
+    "The image is not a supported picture (JPEG, PNG, GIF, WebP or AVIF)": "De afbeelding heeft geen ondersteund formaat (JPEG, PNG, GIF, WebP of AVIF)",
+    "The image is larger than": "De afbeelding is groter dan",
     "No recipe data was found on that page. Try copying it in manually.": "Er is geen receptdata gevonden op die pagina. Voeg het recept handmatig toe.",
   },
 };
@@ -141,6 +147,10 @@ export class FamilyOrganizerPanel extends LitElement {
   @state() private recipeSearch = "";
   @state() private recipeCategory = "";
   @state() private recipeId = "";
+  @state() private recipeBook = false;
+  @state() private recipeFromBook = false;
+  @state() private bookPage = 0;
+  @state() private bookSingle = false;
   @state() private servings: Record<string, number> = {};
   @state() private selectedIngredients: Record<string, Set<number>> = {};
   @state() private routes: Record<string, Record<string, string>> = {};
@@ -178,6 +188,23 @@ export class FamilyOrganizerPanel extends LitElement {
   private loadSequence = 0;
   private returnFocus?: HTMLElement;
   private localOverview?: boolean;
+  private bookTurn: "" | "next" | "prev" = "";
+  private bookPageCount = 0;
+  private bookTouch?: { x: number; y: number };
+  // Below this width the recipe book shows one page at a time instead of a two-page spread.
+  private bookMedia = window.matchMedia("(max-width:900px)");
+  private syncBookLayout = () => { this.bookTurn = ""; this.bookSingle = this.bookMedia.matches; };
+  private bookTouchStart = { passive: true, handleEvent: (event: TouchEvent) => {
+    const touch = event.touches[0];
+    this.bookTouch = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : undefined;
+  } };
+  private bookTouchEnd = { passive: true, handleEvent: (event: TouchEvent) => {
+    const start = this.bookTouch, touch = event.changedTouches[0];
+    this.bookTouch = undefined;
+    if (!start || !touch) return;
+    const dx = touch.clientX - start.x, dy = touch.clientY - start.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 2) this.turnBook(dx < 0 ? 1 : -1);
+  } };
 
   set hass(value: Hass) {
     const first = !this._hass;
@@ -188,6 +215,8 @@ export class FamilyOrganizerPanel extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     window.addEventListener("hashchange", this.readRoute);
+    this.bookMedia.addEventListener("change", this.syncBookLayout);
+    this.syncBookLayout();
     this.readRoute();
     if (this._hass) void this.load();
   }
@@ -199,12 +228,13 @@ export class FamilyOrganizerPanel extends LitElement {
     this.unsubscribe?.();
     this.unsubscribe = undefined;
     window.removeEventListener("hashchange", this.readRoute);
+    this.bookMedia.removeEventListener("change", this.syncBookLayout);
     super.disconnectedCallback();
   }
   private readRoute = () => {
     const route = organizerRoute(location.hash);
     if (route) {
-      this.page = route.page; this.recipeId = route.recipeId;
+      this.page = route.page; this.showRecipeRoute(route.recipeId);
       if (route.page === "settings") {
         this.settingsUnlocked = false;
         this.pinCapabilites = undefined;
@@ -213,12 +243,18 @@ export class FamilyOrganizerPanel extends LitElement {
     }
   };
   private navigate(page: string, id = "") {
-    this.page = page; this.recipeId = id;
+    this.page = page; this.showRecipeRoute(id);
     if (page === "settings") {
       this.settingsUnlocked = false;
       this.pinCapabilites = undefined;
     }
     location.hash = `fo/${page}${id ? `/${encodeURIComponent(id)}` : ""}`;
+  }
+  private showRecipeRoute(id: string) {
+    this.recipeBook = this.page === "recipes" && id === RECIPE_BOOK_ROUTE;
+    this.recipeId = this.recipeBook ? "" : id;
+    if (!this.recipeId) this.recipeFromBook = false;
+    this.bookTurn = "";
   }
   private get settingsData() { return this.data.settings || {}; }
   private get languageCode() { return this.settingsData.language === "nl" ? "nl" : "en"; }
@@ -444,6 +480,14 @@ export class FamilyOrganizerPanel extends LitElement {
     if (!this.editor) return;
     this.editor = { ...this.editor, item: { ...this.editor.item, chore_image: null } };
   }
+  private remoteImage(value: unknown) { return /^https?:\/\//i.test(String(value || "")); }
+  /** A web address is edited in the URL field; an image that is already stored is kept until replaced or removed. */
+  private recipeImageFields(item: Item) {
+    const remote = this.remoteImage(item.image), stored = !!item.image && !remote;
+    return html`${this.field(stored ? this.s("Replace image (URL)", "Afbeelding vervangen (URL)") : "Image URL", "image", remote ? item.image : "", "url", false, { placeholder: "https://…" })}
+      ${item.image ? html`<div class="chore-image-preview recipe-image-preview full"><img src=${item.image} alt="" loading="lazy" referrerpolicy="no-referrer">${String(item.image).startsWith("/api/family_organizer/recipe_image/") ? html`<span class="muted">${this.s("Stored locally in Home Assistant", "Lokaal opgeslagen in Home Assistant")}</span>` : nothing}<button type="button" class="subtle" @click=${() => { if (this.editor) this.editor = { ...this.editor, item: { ...this.editor.item, image: null } }; }}>${this.s("Remove image", "Afbeelding verwijderen")}</button></div>` : nothing}
+      <p class="muted full">${this.s("When you save, the image is downloaded once and stored locally in Home Assistant.", "Bij het opslaan wordt de afbeelding één keer gedownload en lokaal in Home Assistant opgeslagen.")}</p>`;
+  }
   private async pickRewardImage(event: Event) {
     if (!this.editor) return;
     const input = event.target as HTMLInputElement;
@@ -584,7 +628,7 @@ export class FamilyOrganizerPanel extends LitElement {
     } else if (kind === "recipe") {
       resource = "recipes";
       const ingredients = mergeIngredients(text("ingredients"), item.ingredients || []);
-      patch = { ...patch, title: text("title"), tags: text("tags").split(",").map(x => x.trim()).filter(Boolean), category_ids: values.getAll("category_ids"), image: text("image") || null, prep_time: number("prep_time"), cook_time: number("cook_time"), servings: number("servings"), ingredients, steps: text("steps").split(/\r?\n/).map(x => x.trim()).filter(Boolean), shared: checked("shared") };
+      patch = { ...patch, title: text("title"), tags: text("tags").split(",").map(x => x.trim()).filter(Boolean), category_ids: values.getAll("category_ids"), image: text("image") || (this.remoteImage(item.image) ? null : item.image || null), prep_time: number("prep_time"), cook_time: number("cook_time"), servings: number("servings"), ingredients, steps: text("steps").split(/\r?\n/).map(x => x.trim()).filter(Boolean), shared: checked("shared") };
     } else if (kind === "category") {
       resource = "recipes"; collection = "categories";
       patch = { ...patch, name: text("name"), parent_id: text("parent_id") || null };
@@ -1285,24 +1329,115 @@ export class FamilyOrganizerPanel extends LitElement {
   }
 
   private recipes() {
-    const recipes = this.data.recipes.items || [], categories = this.data.recipes.categories || [];
+    const recipes: Item[] = this.data.recipes.items || [], categories: Item[] = this.data.recipes.categories || [];
+    if (this.recipeBook) return this.recipeBookView(recipes, categories);
     if (this.recipeId) {
       const recipe = recipes.find((r: Item) => r.id === this.recipeId);
-      return recipe ? this.recipeDetail(recipe) : html`<button @click=${() => this.navigate("recipes")}>← ${this.t("all_recipes")}</button>${this.empty(this.t("recipe_not_found"), this.t("recipe_missing_access"))}`;
+      return recipe ? this.recipeDetail(recipe) : html`${this.recipeBackButton()}${this.empty(this.t("recipe_not_found"), this.t("recipe_missing_access"))}`;
     }
-    const visible = recipes.filter((r: Item) => (!this.recipeCategory || (r.category_ids || []).includes(this.recipeCategory)) && `${r.title} ${(r.tags || []).join(" ")}`.toLowerCase().includes(this.recipeSearch.toLowerCase()));
-    return html`<section>${this.mealPlanner()}<hr><div class="section-toolbar"><div><span class="eyebrow">${this.x("THE FAMILY COOKBOOK")}</span><h2>${this.x("Favorites, all in one place")}</h2></div><div class="toolbar-actions">${this.can("manage_recipes") ? html`<button @click=${() => this.openEditor("recipe-import")}>${this.x("Import from web")}</button>` : nothing}${this.addButton("New recipe", "recipe", this.can("manage_recipes"))}</div></div><div class="recipe-toolbar"><label class="search-label"><span class="sr-only">${this.x("Search recipes or tags")}</span><input type="search" placeholder=${this.x("Search recipes or tags…")} .value=${this.recipeSearch} @input=${(e: Event) => this.recipeSearch = (e.target as HTMLInputElement).value}></label><label>${this.x("Category")}<select .value=${this.recipeCategory} @change=${(e: Event) => this.recipeCategory = (e.target as HTMLSelectElement).value}><option value="">${this.x("All categories")}</option>${categories.map((c: Item) => html`<option value=${c.id}>${this.categoryPath(c)}</option>`)}</select></label>${this.can("manage_recipes") ? html`<button @click=${() => this.openEditor("categories")}>${this.x("Manage categories")}</button>` : nothing}</div>
-      <div class="recipe-grid">${visible.length ? visible.map((recipe: Item) => html`<button class="recipe-card" @click=${() => this.navigate("recipes", recipe.id)}>${recipe.image ? html`<img src=${recipe.image} alt="" loading="lazy" referrerpolicy="no-referrer">` : html`<div class="recipe-placeholder" aria-hidden="true">♧<span>${this.x("FROM OUR KITCHEN")}</span></div>`}<div class="recipe-card-copy"><span class="eyebrow">${(recipe.category_ids || []).map((id: string) => categories.find((c: Item) => c.id === id)?.name).filter(Boolean).join(" · ") || this.x("Family favorite")}</span><h3>${recipe.title}</h3><p class="muted">${Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0)} min · ${fraction(Number(recipe.servings || 4))} ${this.x("servings")}</p><div class="tags">${(recipe.tags || []).slice(0, 3).map((tag: string) => html`<span>${tag}</span>`)}</div></div></button>`) : this.empty(this.recipeSearch || this.recipeCategory ? "No recipes match" : "Start your family cookbook", "Save a favorite recipe, scale its servings and send ingredients to your lists.", this.addButton("Add a recipe", "recipe", this.can("manage_recipes")))}</div></section>`;
+    const filtering = !!(this.recipeSearch || this.recipeCategory);
+    const visible = filtering
+      ? recipes.filter((r: Item) => (!this.recipeCategory || (r.category_ids || []).includes(this.recipeCategory)) && `${r.title} ${(r.tags || []).join(" ")}`.toLowerCase().includes(this.recipeSearch.toLowerCase()))
+      : latestRecipes(recipes);
+    const older = filtering ? 0 : recipes.length - visible.length;
+    const bookButton = (label: string, primary = false) => html`<button class=${primary ? "primary" : "book-button"} @click=${() => this.openRecipeBook()}><span aria-hidden="true">📖</span> ${label}</button>`;
+    return html`<section>${this.mealPlanner()}<hr><div class="section-toolbar"><div><span class="eyebrow">${this.x("THE FAMILY COOKBOOK")}</span><h2>${this.x("Favorites, all in one place")}</h2></div><div class="toolbar-actions">${bookButton(this.s("Recipe book", "Receptenboek"))}${this.can("manage_recipes") ? html`<button @click=${() => this.openEditor("recipe-import")}>${this.x("Import from web")}</button>` : nothing}${this.addButton("New recipe", "recipe", this.can("manage_recipes"))}</div></div><div class="recipe-toolbar"><label class="search-label"><span class="sr-only">${this.x("Search recipes or tags")}</span><input type="search" placeholder=${this.x("Search recipes or tags…")} .value=${this.recipeSearch} @input=${(e: Event) => this.recipeSearch = (e.target as HTMLInputElement).value}></label><label>${this.x("Category")}<select .value=${this.recipeCategory} @change=${(e: Event) => this.recipeCategory = (e.target as HTMLSelectElement).value}><option value="">${this.x("All categories")}</option>${categories.map((c: Item) => html`<option value=${c.id}>${this.categoryPath(c)}</option>`)}</select></label>${this.can("manage_recipes") ? html`<button @click=${() => this.openEditor("categories")}>${this.x("Manage categories")}</button>` : nothing}</div>
+      ${recipes.length ? html`<div class="recipe-list-heading"><h3>${filtering ? this.s("Search results", "Zoekresultaten") : this.s("Recently added", "Laatst toegevoegd")}</h3><span class="muted">${filtering ? `${visible.length} ${this.s("found", "gevonden")}` : older > 0 ? `${this.s("The newest", "De nieuwste")} ${visible.length} ${this.s("of", "van")} ${recipes.length} ${this.s("recipes", "recepten")}` : nothing}</span></div>` : nothing}
+      <div class="recipe-grid">${visible.length ? visible.map((recipe: Item) => this.recipeCard(recipe, categories)) : this.empty(this.recipeSearch || this.recipeCategory ? "No recipes match" : "Start your family cookbook", "Save a favorite recipe, scale its servings and send ingredients to your lists.", this.addButton("Add a recipe", "recipe", this.can("manage_recipes")))}</div>
+      ${older > 0 ? html`<div class="surface recipe-book-teaser"><div><h3>${this.s(`${older} more ${older === 1 ? "recipe" : "recipes"} in the recipe book`, `Nog ${older} ${older === 1 ? "recept" : "recepten"} in het receptenboek`)}</h3><p class="muted">${this.s("Leaf through the whole collection, chapter by chapter.", "Blader per categorie door de hele verzameling.")}</p></div>${bookButton(this.s("Open the recipe book", "Receptenboek openen"), true)}</div>` : nothing}</section>`;
+  }
+  private recipeCard(recipe: Item, categories: Item[]) {
+    return html`<button class="recipe-card" @click=${() => this.navigate("recipes", recipe.id)}>${recipe.image ? html`<img src=${recipe.image} alt="" loading="lazy" referrerpolicy="no-referrer">` : html`<div class="recipe-placeholder" aria-hidden="true">♧<span>${this.x("FROM OUR KITCHEN")}</span></div>`}<div class="recipe-card-copy"><span class="eyebrow">${(recipe.category_ids || []).map((id: string) => categories.find((c: Item) => c.id === id)?.name).filter(Boolean).join(" · ") || this.x("Family favorite")}</span><h3>${recipe.title}</h3><p class="muted">${Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0)} min · ${fraction(Number(recipe.servings || 4))} ${this.x("servings")}</p><div class="tags">${(recipe.tags || []).slice(0, 3).map((tag: string) => html`<span>${tag}</span>`)}</div></div></button>`;
+  }
+  private recipeBackButton() {
+    return this.recipeFromBook
+      ? html`<button @click=${() => this.navigate("recipes", RECIPE_BOOK_ROUTE)}>← ${this.s("Recipe book", "Receptenboek")}</button>`
+      : html`<button @click=${() => this.navigate("recipes")}>← ${this.t("all_recipes")}</button>`;
   }
   private categoryPath(category: Item) {
     const path = [category.name], seen = new Set([category.id]); let parent = category.parent_id;
     while (parent && !seen.has(parent)) { seen.add(parent); const item = (this.data.recipes.categories || []).find((c: Item) => c.id === parent); if (!item) break; path.unshift(item.name); parent = item.parent_id; }
     return path.join(" / ");
   }
+  private openRecipeBook() {
+    this.bookPage = 0;
+    this.navigate("recipes", RECIPE_BOOK_ROUTE);
+    void this.updateComplete.then(() => (this.renderRoot.querySelector(".book") as HTMLElement | null)?.focus({ preventScroll: true }));
+  }
+  private turnBook(delta: number) {
+    const page = Math.min(this.bookPage, this.bookPageCount - 1);
+    this.openBookPage(this.bookSingle ? page + delta : (Math.floor(page / 2) + delta) * 2);
+  }
+  private openBookPage(target: number) {
+    const current = Math.min(this.bookPage, this.bookPageCount - 1), page = Math.max(0, Math.min(this.bookPageCount - 1, target));
+    if (this.bookSingle ? page === current : Math.floor(page / 2) === Math.floor(current / 2)) return;
+    this.bookTurn = page > current ? "next" : "prev";
+    this.bookPage = page;
+    void this.updateComplete.then(() => {
+      const book = this.renderRoot.querySelector(".book") as HTMLElement | null;
+      if (!book) return;
+      // The turned page replaced whatever had focus; keep arrow-key browsing working.
+      if (!(this.renderRoot as ShadowRoot).activeElement) book.focus({ preventScroll: true });
+      const top = (book.closest(".recipe-book") as HTMLElement).getBoundingClientRect().top;
+      if (top < 0) book.closest(".recipe-book")!.scrollIntoView({ block: "start" });
+    });
+  }
+  private bookKey(event: KeyboardEvent) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const delta = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+    if (!delta) return;
+    event.preventDefault();
+    this.turnBook(delta);
+  }
+  private recipeBookView(recipes: Item[], categories: Item[]) {
+    const back = html`<button @click=${() => this.navigate("recipes")}>← ${this.s("Back to recipes", "Terug naar recepten")}</button>`;
+    if (!recipes.length) return html`<section class="recipe-book"><div class="section-toolbar">${back}</div>${this.empty("Start your family cookbook", "Save a favorite recipe, scale its servings and send ingredients to your lists.", this.addButton("Add a recipe", "recipe", this.can("manage_recipes")))}</section>`;
+    const chapters = recipeChapters(recipes, categories).map(chapter => ({ ...chapter, title: chapter.id ? chapter.title : categories.length ? this.s("Other recipes", "Overige recepten") : this.s("All recipes", "Alle recepten") }));
+    type Chapter = typeof chapters[number];
+    type Spread = { kind: "cover" } | { kind: "chapter"; chapter: Chapter; number: number; start: number } | { kind: "recipe"; chapter: Chapter; recipe: Item };
+    // Every spread is two facing pages: cover + contents, then per chapter an opener + its index and one spread per recipe.
+    const spreads: Spread[] = [{ kind: "cover" }], chapterStart: number[] = [];
+    chapters.forEach((chapter, index) => {
+      chapterStart.push(spreads.length);
+      spreads.push({ kind: "chapter", chapter, number: index + 1, start: spreads.length + 1 });
+      chapter.recipes.forEach((recipe: Item) => spreads.push({ kind: "recipe", chapter, recipe }));
+    });
+    const total = spreads.length * 2, single = this.bookSingle;
+    this.bookPageCount = total;
+    const page = Math.min(this.bookPage, total - 1), index = Math.floor(page / 2), spread = spreads[index];
+    const count = (amount: number) => `${amount} ${amount === 1 ? this.s("recipe", "recept") : this.s("recipes", "recepten")}`;
+    const entry = (title: string, target: number, detail = "") => html`<li><button class="book-index-entry" @click=${() => this.openBookPage(target * 2)}><span class="book-index-title">${title}${detail ? html`<small class="muted">${detail}</small>` : nothing}</span><span class="book-index-dots" aria-hidden="true"></span><span class="muted"><span class="sr-only">${this.s("page", "pagina")} </span>${target * 2 + 1}</span></button></li>`;
+    let left: TemplateResult, right: TemplateResult, art = "";
+    if (spread.kind === "cover") {
+      art = "book-cover";
+      left = html`<span class="book-cover-symbol" aria-hidden="true">♧</span><span class="eyebrow">${this.x("THE FAMILY COOKBOOK")}</span><h2>${this.s("Recipe book", "Receptenboek")}</h2><p>${count(recipes.length)} · ${chapters.length} ${chapters.length === 1 ? this.s("chapter", "hoofdstuk") : this.s("chapters", "hoofdstukken")}</p>`;
+      right = html`<span class="eyebrow">${this.s("Contents", "Inhoud")}</span><h3>${this.s("Chapters", "Hoofdstukken")}</h3><ol class="book-index">${chapters.map((chapter, i) => entry(chapter.title, chapterStart[i], count(chapter.recipes.length)))}</ol>`;
+    } else if (spread.kind === "chapter") {
+      art = "book-chapter";
+      left = html`<span class="eyebrow">${this.s("Chapter", "Hoofdstuk")} ${spread.number}</span><h2>${spread.chapter.title}</h2><p class="muted">${count(spread.chapter.recipes.length)}</p>`;
+      right = html`<span class="eyebrow">${this.s("In this chapter", "In dit hoofdstuk")}</span><h3>${spread.chapter.title}</h3><ol class="book-index">${spread.chapter.recipes.map((recipe: Item, i: number) => entry(recipe.title, spread.start + i, `${Number(recipe.prep_time || 0) + Number(recipe.cook_time || 0)} min`))}</ol>`;
+    } else {
+      const recipe = spread.recipe, steps: string[] = recipe.steps || recipe.instructions || [];
+      left = html`${recipe.image ? html`<img class="book-photo" src=${recipe.image} alt="" loading="lazy" referrerpolicy="no-referrer">` : nothing}<span class="eyebrow">${spread.chapter.title}</span><h2>${recipe.title}</h2><p class="muted">${this.x("Prep")} ${recipe.prep_time || 0} min · ${this.x("Cook")} ${recipe.cook_time || 0} min · ${fraction(Number(recipe.servings || 4))} ${this.x("servings")}</p>${(recipe.tags || []).length ? html`<div class="tags">${recipe.tags.map((tag: string) => html`<span>${tag}</span>`)}</div>` : nothing}<h3>${this.x("Ingredients")}</h3><ul class="book-ingredients">${(recipe.ingredients || []).map((ingredient: Item) => html`<li><strong>${fraction(Number(ingredient.amount || 0))} ${ingredient.unit || ""}</strong> ${ingredient.name}</li>`)}</ul>`;
+      right = html`<span class="eyebrow">${this.x("LET’S MAKE SOMETHING GOOD")}</span><h3>${this.x("Method")}</h3>${steps.length ? html`<ol class="book-steps">${steps.map(step => html`<li>${step}</li>`)}</ol>` : html`<p class="muted">${this.s("No method written down yet.", "Nog geen bereidingswijze genoteerd.")}</p>`}<div class="book-open"><button @click=${() => { this.navigate("recipes", recipe.id); this.recipeFromBook = true; }}>${this.s("Open recipe", "Recept openen")} →</button><span class="muted">${this.s("Scale servings, shop the ingredients or edit.", "Porties aanpassen, boodschappen doen of bewerken.")}</span></div>`;
+    }
+    const sheet = (side: "left" | "right", content: TemplateResult, number: number) => html`<article class=${`book-page ${side} ${side === "left" ? art : ""}`}><div class="book-page-body">${content}</div>${side === "left" && art === "book-cover" ? nothing : html`<footer class="book-page-number"><span class="sr-only">${this.s("Page", "Pagina")} </span>${number}</footer>`}</article>`;
+    const first = single ? page === 0 : index === 0, last = single ? page === total - 1 : index === spreads.length - 1;
+    const position = `${this.s("Page", "Pagina")} ${single ? page + 1 : `${index * 2 + 1}–${index * 2 + 2}`} ${this.s("of", "van")} ${total}`;
+    const contents = single ? 1 : 0;
+    const pager = (live: boolean) => html`<nav class=${`book-nav ${live ? "" : "bottom"}`} aria-label=${live ? this.s("Recipe book pages", "Pagina’s van het receptenboek") : this.s("Recipe book pages, bottom", "Pagina’s van het receptenboek, onderaan")}><button ?disabled=${first} @click=${() => this.turnBook(-1)}>← ${this.s("Previous", "Vorige")}</button><span class="book-position" aria-live=${live ? "polite" : nothing}>${position}</span><button ?disabled=${last} @click=${() => this.turnBook(1)}>${this.s("Next", "Volgende")} →</button></nav>`;
+    return html`<section class="recipe-book" @keydown=${(e: KeyboardEvent) => this.bookKey(e)}>
+      <div class="section-toolbar"><div class="toolbar-actions">${back}<button ?disabled=${single ? page === contents : index === 0} @click=${() => this.openBookPage(contents)}>${this.s("Contents", "Inhoud")}</button></div>${pager(true)}</div>
+      <div class=${`book ${single ? "single" : ""}`} tabindex="0" role="group" aria-label=${this.s("Recipe book. Use the left and right arrow keys or swipe to turn the page.", "Receptenboek. Gebruik de pijltjestoetsen links en rechts of veeg om te bladeren.")} @touchstart=${this.bookTouchStart} @touchend=${this.bookTouchEnd}>
+        ${keyed(single ? `page-${page}` : `spread-${index}`, html`<div class=${`book-spread ${this.bookTurn ? `turn-${this.bookTurn}` : ""}`}>${single ? (page % 2 ? sheet("right", right, page + 1) : sheet("left", left, page + 1)) : html`${sheet("left", left, index * 2 + 1)}${sheet("right", right, index * 2 + 2)}`}</div>`)}
+      </div>
+      ${pager(false)}
+    </section>`;
+  }
   private recipeDetail(recipe: Item) {
     const amount = this.servings[recipe.id] ?? (Number(recipe.servings) || 4), base = Number(recipe.servings) || 1, ingredients = recipe.ingredients || [];
     const selected = this.selectedIngredients[recipe.id] || new Set<number>(ingredients.map((_: Item, i: number) => i)), lists = this.data.groceries.lists || [];
-    return html`<section><div class="section-toolbar"><button @click=${() => this.navigate("recipes")}>← ${this.t("all_recipes")}</button><div class="toolbar-actions">${this.can("manage_recipes") ? html`<button @click=${() => this.openEditor("recipe", recipe)}>${this.x("Edit recipe")}</button><button class="danger" @click=${() => this.confirmDelete("recipes", recipe)}>${this.t("delete")}</button>` : nothing}</div></div>
+    return html`<section><div class="section-toolbar">${this.recipeBackButton()}<div class="toolbar-actions">${this.can("manage_recipes") ? html`<button @click=${() => this.openEditor("recipe", recipe)}>${this.x("Edit recipe")}</button><button class="danger" @click=${() => this.confirmDelete("recipes", recipe)}>${this.t("delete")}</button>` : nothing}</div></div>
       <div class="recipe-hero">${recipe.image ? html`<img src=${recipe.image} alt=${recipe.title} referrerpolicy="no-referrer">` : html`<div class="recipe-hero-art" aria-hidden="true">♧</div>`}<div><span class="eyebrow">${this.x("FROM THE FAMILY COOKBOOK")}</span><h2>${recipe.title}</h2><div class="tags">${(recipe.tags || []).map((tag: string) => html`<span>${tag}</span>`)}</div><p class="muted">${this.x("Prep")} ${recipe.prep_time || 0} min · ${this.x("Cook")} ${recipe.cook_time || 0} min</p>${this.addButton("Plan this meal", "meal", this.can("manage_meal_plan"), { day: this.selectedDay, slot: (this.settingsData.meal_slots || ["dinner"])[0], recipe_id: recipe.id, title: recipe.title, servings: amount })}</div></div>
       <div class="recipe-detail-grid"><div class="surface ingredient-panel"><div class="surface-heading"><h3>${this.x("Ingredients")}</h3><div class="serving-control"><button aria-label=${this.x("Decrease servings")} ?disabled=${amount <= 1} @click=${() => this.servings = { ...this.servings, [recipe.id]: Math.max(1, amount - 1) }}>−</button><label><span class="sr-only">${this.x("Servings")}</span><input type="number" min="1" step="1" .value=${String(amount)} @change=${(e: Event) => { const n = Number((e.target as HTMLInputElement).value); if (n > 0) this.servings = { ...this.servings, [recipe.id]: n }; }}></label><button aria-label=${this.x("Increase servings")} @click=${() => this.servings = { ...this.servings, [recipe.id]: amount + 1 }}>+</button></div></div><p class="muted">${fraction(amount)} ${this.x("servings")} · ${this.x("automatically scaled from")} ${base}</p><p class="muted">${this.x("Check ingredients to send to your grocery lists.")}</p>
         ${ingredients.map((ingredient: Item, i: number) => html`<div class="ingredient-row"><label class="check"><input type="checkbox" .checked=${selected.has(i)} @change=${() => { const next = new Set(selected); next.has(i) ? next.delete(i) : next.add(i); this.selectedIngredients = { ...this.selectedIngredients, [recipe.id]: next }; }}><span><strong>${fraction(Number(ingredient.amount || 0) * amount / base)} ${ingredient.unit || ""}</strong> ${ingredient.name}</span></label><label><span class="sr-only">${this.x("List for")} ${ingredient.name}</span><select .value=${this.routes[recipe.id]?.[String(i)] || this.listId} @change=${(e: Event) => this.routes = { ...this.routes, [recipe.id]: { ...this.routes[recipe.id], [String(i)]: (e.target as HTMLSelectElement).value } }}>${lists.map((list: Item) => html`<option value=${list.id}>${list.name}</option>`)}</select></label></div>`)}
@@ -1481,7 +1616,7 @@ export class FamilyOrganizerPanel extends LitElement {
       ${this.field(this.s("Retry window (minutes)", "Herkansingsvenster (minuten)"), "retry_minutes", item.retry_minutes || 60, "number", true, { min: 1, step: 1 })}
       ${this.textarea("Description", "description", item.description)}${this.shared(item)}`;
     if (kind === "points") return html`<label>${this.x("Family member")}<select name="person_id">${this.peopleOptions()}</select></label>${this.field("Points (negative to subtract)", "points", "", "number", true, { step: 1 })}${this.field("Reason", "note", "", "text", true)}`;
-    if (kind === "recipe") return html`${this.field("Recipe title", "title", item.title, "text", true, { autofocus: true })}${this.field("Tags (comma separated)", "tags", (item.tags || []).join(", "))}${this.field("Image URL", "image", item.image, "url")}${this.field("Base servings", "servings", item.servings || 4, "number", true, { min: 1, step: 1 })}${this.field("Prep time (minutes)", "prep_time", item.prep_time || 0, "number", true, { min: 0, step: 1 })}${this.field("Cook time (minutes)", "cook_time", item.cook_time || 0, "number", true, { min: 0, step: 1 })}<fieldset class="full"><legend>${this.x("Categories")}</legend><div class="checkbox-group">${(this.data.recipes.categories || []).map((category: Item) => html`<label class="check"><input name="category_ids" type="checkbox" value=${category.id} ?checked=${(item.category_ids || []).includes(category.id)}>${this.categoryPath(category)}</label>`)}</div></fieldset>${this.textarea("Ingredients (one per line: quantity, optional unit, name)", "ingredients", serializeIngredients(item.ingredients || []), "1 cup flour\n2  eggs\n1/2 tsp salt")}${this.textarea("Method (one step per line)", "steps", (item.steps || item.instructions || []).join("\n"))}${this.shared(item)}`;
+    if (kind === "recipe") return html`${this.field("Recipe title", "title", item.title, "text", true, { autofocus: true })}${this.field("Tags (comma separated)", "tags", (item.tags || []).join(", "))}${this.field("Base servings", "servings", item.servings || 4, "number", true, { min: 1, step: 1 })}${this.field("Prep time (minutes)", "prep_time", item.prep_time || 0, "number", true, { min: 0, step: 1 })}${this.field("Cook time (minutes)", "cook_time", item.cook_time || 0, "number", true, { min: 0, step: 1 })}${this.recipeImageFields(item)}<fieldset class="full"><legend>${this.x("Categories")}</legend><div class="checkbox-group">${(this.data.recipes.categories || []).map((category: Item) => html`<label class="check"><input name="category_ids" type="checkbox" value=${category.id} ?checked=${(item.category_ids || []).includes(category.id)}>${this.categoryPath(category)}</label>`)}</div></fieldset>${this.textarea("Ingredients (one per line: quantity, optional unit, name)", "ingredients", serializeIngredients(item.ingredients || []), "1 cup flour\n2  eggs\n1/2 tsp salt")}${this.textarea("Method (one step per line)", "steps", (item.steps || item.instructions || []).join("\n"))}${this.shared(item)}`;
     if (kind === "category") {
       const isDescendant = (candidate: Item) => { const seen = new Set<string>(); let parent = candidate; while (parent) { if (parent.id === item.id || seen.has(parent.id)) return true; seen.add(parent.id); parent = (this.data.recipes.categories || []).find((c: Item) => c.id === parent.parent_id); } return false; };
       return html`${this.field("Category name", "name", item.name, "text", true, { autofocus: true })}${this.select("Parent category", "parent_id", item.parent_id || "", [["", "Root category"], ...(this.data.recipes.categories || []).filter((c: Item) => !isDescendant(c)).map((c: Item): [string, string] => [c.id, this.categoryPath(c)])])}`;

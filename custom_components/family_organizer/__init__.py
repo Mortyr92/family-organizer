@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import json
+import logging
 from pathlib import Path
 from uuid import uuid4
 
@@ -18,10 +19,13 @@ from .permissions import capabilities_for, check_capability, person_for
 from .logic import merge_grocery_item
 from .storage import StoreManager
 from .caldav_sync import CalendarSyncCoordinator
-from .http import CalendarExportView
+from .http import CalendarExportView, RecipeImageView
+from .recipe_images import RecipeImageError, delete_image, image_directory, is_remote
 from .reminders import ReminderScheduler
 from .websocket_api import async_register as async_register_websocket
+from .websocket_api import async_store_recipe_image
 
+_LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.CALENDAR, Platform.SENSOR, Platform.TODO]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -40,7 +44,11 @@ async def async_setup_entry(hass, entry):
         async_register_websocket(hass)
         _register_services(hass, stores)
         hass.http.register_view(CalendarExportView(stores))
+        hass.http.register_view(RecipeImageView(hass))
         domain_data["reminders"] = ReminderScheduler(hass, stores)
+        hass.async_create_background_task(
+            _async_localize_recipe_images(hass, stores), f"{DOMAIN}_recipe_images"
+        )
     await _async_register_panel(hass)
     domain_data["reminders"].async_start()
     coordinator = CalendarSyncCoordinator(hass, entry, domain_data["stores"])
@@ -55,6 +63,39 @@ async def async_setup_entry(hass, entry):
 
 async def _async_update_listener(hass, entry):
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def _async_localize_recipe_images(hass, stores):
+    """Store a local copy of recipe images that still point at a web address."""
+    recipes = stores["recipes"]
+    changed = failed = 0
+    for recipe in list(recipes.data.get("items", [])):
+        url = recipe.get("image")
+        if not is_remote(url):
+            continue
+        try:
+            local = await async_store_recipe_image(hass, url)
+        except RecipeImageError as err:
+            failed += 1
+            _LOGGER.debug("Recipe image %s was not stored locally: %s", url, err)
+            continue
+        current = recipes.data.get("items", [])
+        if recipe.get("image") == url and any(value is recipe for value in current):
+            recipe["image"] = local
+            changed += 1
+        else:
+            # Edited or deleted while downloading; the copy is no longer wanted.
+            await hass.async_add_executor_job(delete_image, image_directory(hass), local)
+    if changed:
+        await recipes.async_save()
+        hass.bus.async_fire(EVENT_UPDATED, {
+            "resource": "recipes", "collection": "items", "operation": "update"
+        })
+    if failed:
+        _LOGGER.warning(
+            "%s recipe image(s) could not be stored locally and still load from the web; "
+            "this is retried on the next start", failed,
+        )
 
 
 async def async_unload_entry(hass, entry):

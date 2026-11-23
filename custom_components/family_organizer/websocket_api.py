@@ -18,6 +18,15 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import DOMAIN, EVENT_UPDATED, SETTING_KEYS, STORES
 from .logic import merge_grocery_item, recipe_items
 from .recipe_import import recipe_from_html
+from .recipe_images import (
+    RecipeImageError,
+    async_download,
+    delete_image,
+    image_directory,
+    is_remote,
+    save_image,
+    unused_images,
+)
 from .permissions import (
     ROLE_CAPABILITIES,
     can_view,
@@ -74,6 +83,28 @@ def _user(connection):
 def _collection(resource: str, requested: str | None) -> str | None:
     value = requested or "items"
     return value if value in _COLLECTIONS[resource] else None
+
+
+async def async_store_recipe_image(hass, url: str) -> str:
+    """Download a remote recipe image and return the URL of its local copy."""
+    try:
+        async with asyncio.timeout(30):
+            data = await async_download(async_get_clientsession(hass), url)
+    except asyncio.TimeoutError as err:
+        raise RecipeImageError("Could not download the image: the request timed out") from err
+    except (aiohttp.ClientError, ValueError) as err:
+        raise RecipeImageError(f"Could not download the image: {err}") from err
+    try:
+        return await hass.async_add_executor_job(save_image, image_directory(hass), data)
+    except OSError as err:
+        raise RecipeImageError(f"Could not save the image: {err}") from err
+
+
+async def _async_remove_unused_images(hass, manager, candidates: list) -> None:
+    """Delete local image files that were replaced or whose recipe was removed."""
+    directory = image_directory(hass)
+    for value in unused_images(candidates, manager["recipes"].data.get("items", [])):
+        await hass.async_add_executor_job(delete_image, directory, value)
 
 
 def _ha_user_pictures(hass) -> dict[str, str]:
@@ -307,6 +338,8 @@ async def _mutate(hass, connection, msg, operation):
         "recipes": "manage_recipes",
         "contacts": "manage_contacts",
     }[resource]
+    is_recipe = resource == "recipes" and collection == "items"
+    stale_images: list = []
     if operation == "create":
         if resource == "calendar" and collection == "items":
             caps = capabilities_for(user, settings, people)
@@ -320,6 +353,12 @@ async def _mutate(hass, connection, msg, operation):
         item = dict(msg["item"])
         item["id"] = item.get("id") or uuid4().hex
         item["creator_id"] = person["id"] if person else user.id
+        if is_recipe and is_remote(item.get("image")):
+            try:
+                item["image"] = await async_store_recipe_image(hass, item["image"])
+            except RecipeImageError as err:
+                connection.send_error(msg["id"], "image_failed", str(err))
+                return
         if resource == "people":
             item["role"] = item.get("role") if item.get("role") in ("parent_admin", "parent", "child") else "child"
             item["user_id"] = item.get("user_id") or item.pop("ha_user_id", None)
@@ -416,9 +455,25 @@ async def _mutate(hass, connection, msg, operation):
                     if parent is None:
                         raise vol.Invalid("Parent category not found")
                     parent_id = parent.get("parent_id")
+            if is_recipe and "image" in patch:
+                if is_remote(patch["image"]):
+                    try:
+                        patch["image"] = await async_store_recipe_image(hass, patch["image"])
+                    except RecipeImageError as err:
+                        connection.send_error(msg["id"], "image_failed", str(err))
+                        return
+                    if not any(value is item for value in items):
+                        # The recipe was deleted while its image was downloading.
+                        await _async_remove_unused_images(hass, manager, [patch["image"]])
+                        connection.send_error(msg["id"], "not_found", "Item not found")
+                        return
+                if patch["image"] != item.get("image"):
+                    stale_images.append(item.get("image"))
             item.update(patch)
         else:
             item = items.pop(index)
+            if is_recipe:
+                stale_images.append(item.get("image"))
             if resource == "recipes" and collection == "categories":
                 for child in items:
                     if child.get("parent_id") == item["id"]:
@@ -440,6 +495,8 @@ async def _mutate(hass, connection, msg, operation):
                     if value.get("list_id") != item["id"]
                 ]
     await manager[resource].async_save()
+    if stale_images:
+        await _async_remove_unused_images(hass, manager, stale_images)
     hass.bus.async_fire(EVENT_UPDATED, {
         "resource": resource, "collection": collection, "operation": operation, "item": item
     })

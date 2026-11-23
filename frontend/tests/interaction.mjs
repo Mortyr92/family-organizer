@@ -221,6 +221,46 @@ window.runInteractionTests = async () => {
       await open("recipe", { title: "Test pancakes", ingredients: "1 cup flour\n2 x eggs", steps: "Mix.\nCook." }); await submit();
       const recipe = data.recipes.items.find(r => r.title === "Test pancakes");
       assert(recipe.ingredients.length === 2 && recipe.steps.length === 2, "Recipe lines must parse as real lines");
+
+      for (let i = 1; i <= 11; i++) data.recipes.items.push({ id: `extra-${i}`, title: `Extra recipe ${String(i).padStart(2, "0")}`, servings: 2, prep_time: 5, cook_time: 5, category_ids: i % 2 ? ["favorites"] : [], ingredients: [{ amount: 1, unit: "", name: "egg" }], steps: ["Cook it."] });
+      await panel.load(); await settled(); await go("recipes");
+      const cards = [...root().querySelectorAll(".recipe-card h3")].map(heading => heading.textContent);
+      assert(cards.length === 10 && cards[0] === "Extra recipe 11" && cards[9] === "Extra recipe 02", "Recipes page must show only the ten most recently added recipes, newest first");
+      assert(query(".recipe-book-teaser").textContent.includes("3 more recipes"), "Older recipes must be pointed to the recipe book");
+      const search = query('.recipe-toolbar input[type="search"]');
+      search.value = "tomato"; search.dispatchEvent(new Event("input")); await settled();
+      assert(root().querySelectorAll(".recipe-card").length === 1 && !query(".recipe-book-teaser"), "Search must still reach recipes outside the latest ten");
+      search.value = ""; search.dispatchEvent(new Event("input")); await settled();
+
+      const single = innerWidth <= 900, position = () => query(".book-position").textContent;
+      const next = () => click(button("Next →", query(".book-nav")));
+      const entry = text => [...root().querySelectorAll(".book-index-entry")].find(element => element.textContent.includes(text));
+      await click(query(".book-button"));
+      assert(location.hash === "#fo/recipes/book" && query(".book"), "Recipe book must open on its own route");
+      assert(root().querySelectorAll(".book-page").length === (single ? 1 : 2), "Wide screens show a two-page spread, narrow screens one page");
+      assert(button("← Previous", query(".book-nav")).disabled, "The cover has no previous page");
+      if (single) await next();
+      assert(entry("Family favorites") && entry("Other recipes"), "Book contents must list every category chapter and the uncategorized recipes");
+      await click(entry("Family favorites"));
+      assert(query(".book-chapter h2").textContent === "Family favorites", "A contents entry must open its chapter");
+      if (single) await next();
+      assert(!entry("Extra recipe 02") && entry("Extra recipe 01"), "A chapter lists only the recipes of its category");
+      await click(entry("Weeknight tomato pasta"));
+      assert(query(".book-page h2").textContent === "Weeknight tomato pasta" && query(".book-ingredients").textContent.includes("pasta"), "A recipe page shows its ingredients");
+      if (single) await next();
+      assert(query(".book-steps").textContent.includes("Bring a pot"), "The facing page shows the method");
+      const bookmark = position();
+      await click(button("Open recipe →"));
+      assert(query(".method-panel") && location.hash === "#fo/recipes/pasta", "The book must link to the full recipe");
+      await click(button("← Recipe book"));
+      assert(position() === bookmark && query(".book-steps"), "Returning from a recipe must reopen the book on the same page");
+      query(".book").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })); await settled();
+      assert(position() !== bookmark, "Arrow keys must turn the page");
+      query(".book").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })); await settled();
+      assert(position() === bookmark, "Arrow keys must turn the page back");
+      assert(document.documentElement.scrollWidth <= innerWidth, "The recipe book must not overflow the viewport");
+      await click(button("← Back to recipes"));
+      assert(query(".recipe-grid") && location.hash === "#fo/recipes", "Leaving the book returns to the recipes page");
     });
     await check("Chore completion, leaderboard and point adjustments", async () => {
       data.chores.items[0].icon = "mdi:watering-can";

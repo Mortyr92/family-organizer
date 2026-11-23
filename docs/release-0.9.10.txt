@@ -1,0 +1,4 @@
+- New: recipe images are stored locally. When you save a recipe with an image URL, the image is downloaded once and kept in Home Assistant (`<config>/family_organizer/recipe_images/`), so it keeps working offline and when the original site changes or disappears. Replaced and deleted images are cleaned up.
+- New: existing recipes that still point at a web image are converted in the background after the update; an image that cannot be downloaded keeps its web address and is retried on the next start.
+- New: recipe book. The "Recipe book" button on the Meals page opens a book you can leaf through with the buttons, the arrow keys or a swipe. It has a table of contents and one chapter per recipe category, and shows each recipe's ingredients and method on facing pages.
+- Change: the Meals page now shows the 10 most recently added recipes. Search and the category filter still find every recipe, and all recipes are in the recipe book.

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarDates, calendarPayload, choreDue, choreStatus, DEFAULT_DAYPARTS, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
+import { calendarDates, calendarPayload, choreDue, choreStatus, DEFAULT_DAYPARTS, duplicateEvent, eventLayout, eventsOnDay, fraction, iso, latestRecipes, localeName, mergeIngredients, moveDate, nextBirthday, occurrences, organizerRoute, parseIngredients, presetCapability, recipeChapters, RECIPE_BOOK_ROUTE, resolveGroceryList, serializeIngredients, shift, unsupportedRecurrence, weekStartIndex } from "../src/helpers.ts";
 
 test("month navigation clamps at month end and handles leap years", () => {
   assert.equal(moveDate("2024-01-31", "month", 1), "2024-02-29");
@@ -191,6 +191,49 @@ test("recipe routes safely decode valid IDs and handle malformed escapes", () =>
   assert.equal(journal.page, "journal");
   assert.equal(birthdays.page, "birthdays");
   assert.equal(todos.page, "todos");
+  assert.equal(organizerRoute(`#fo/recipes/${RECIPE_BOOK_ROUTE}`).recipeId, RECIPE_BOOK_ROUTE);
+});
+test("the recipes page lists the ten most recently added recipes, newest first", () => {
+  const recipes = Array.from({ length: 13 }, (_, index) => ({ id: `r${index + 1}` }));
+  assert.deepEqual(latestRecipes(recipes).map(recipe => recipe.id), ["r13", "r12", "r11", "r10", "r9", "r8", "r7", "r6", "r5", "r4"]);
+  assert.deepEqual(latestRecipes(recipes.slice(0, 2)).map(recipe => recipe.id), ["r2", "r1"]);
+  assert.deepEqual(latestRecipes(recipes, 0), []);
+  assert.deepEqual(latestRecipes([]), []);
+  assert.equal(recipes[0].id, "r1", "The stored order is left untouched");
+});
+test("recipe book chapters follow the category tree and never lose a recipe", () => {
+  const categories = [
+    { id: "main", name: "Mains", parent_id: null },
+    { id: "dessert", name: "Desserts", parent_id: null },
+    { id: "pasta", name: "Pasta", parent_id: "main" },
+    { id: "empty", name: "Soups", parent_id: null },
+    { id: "orphan", name: "Snacks", parent_id: "deleted" },
+    { id: "loop-a", name: "Loop A", parent_id: "loop-b" },
+    { id: "loop-b", name: "Loop B", parent_id: "loop-a" },
+  ];
+  const recipes = [
+    { id: "1", title: "Zucchini lasagne", category_ids: ["pasta"] },
+    { id: "2", title: "apple pie", category_ids: ["dessert"] },
+    { id: "3", title: "Roast chicken", category_ids: ["main"] },
+    { id: "4", title: "Carbonara", category_ids: ["pasta", "main"] },
+    { id: "5", title: "Mystery stew" },
+    { id: "6", title: "Brownies", category_ids: ["dessert"] },
+    { id: "7", title: "Old favorite", category_ids: ["removed-category"] },
+    { id: "8", title: "Crackers", category_ids: ["orphan"] },
+    { id: "9", title: "Looped", category_ids: ["loop-b"] },
+  ];
+  const chapters = recipeChapters(recipes, categories);
+  assert.deepEqual(chapters.map(chapter => [chapter.id, chapter.title, chapter.recipes.map(recipe => recipe.id)]), [
+    ["main", "Mains", ["4", "3"]],
+    ["pasta", "Mains / Pasta", ["4", "1"]],
+    ["dessert", "Desserts", ["2", "6"]],
+    ["orphan", "Snacks", ["8"]],
+    ["loop-b", "Loop A / Loop B", ["9"]],
+    ["", "", ["5", "7"]],
+  ]);
+  assert.deepEqual(new Set(chapters.flatMap(chapter => chapter.recipes.map(recipe => recipe.id))), new Set(recipes.map(recipe => recipe.id)));
+  assert.deepEqual(recipes.map(recipe => recipe.id), ["1", "2", "3", "4", "5", "6", "7", "8", "9"], "Sorting must not reorder the stored recipes");
+  assert.deepEqual(recipeChapters([], categories), []);
 });
 test("nextBirthday counts down and computes the age being turned", () => {
   assert.deepEqual(nextBirthday("2015-03-10", "2026-03-01"), { date: "2026-03-10", days: 9, age: 11 });

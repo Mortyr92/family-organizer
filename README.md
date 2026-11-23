@@ -16,6 +16,10 @@ Shopping, To Do, Meals, Chores, Journal, Birthdays, and Settings.
   `/api/family_organizer/calendar.ics` subscription endpoint
 - Shared family contacts with groups, tap-to-call numbers, mail links and notes
 - Recipe import from any web page that publishes schema.org recipe data
+- Recipe images downloaded once and stored locally in Home Assistant
+  (`<config>/family_organizer/recipe_images/`, included in backups)
+- The ten most recently added recipes on the Meals page, plus a recipe book you
+  can leaf through page by page, with a chapter per category
 - Multiple shopping lists with store and assignee routing, merging, and todo entities
 - Separate To Do lists (packing, projects, errands) with due dates and assignees,
   also exposed as Home Assistant todo entities

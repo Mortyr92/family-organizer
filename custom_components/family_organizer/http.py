@@ -1,4 +1,4 @@
-"""HTTP views: authenticated iCalendar export of the family calendar."""
+"""HTTP views: authenticated iCalendar export and locally stored recipe images."""
 from __future__ import annotations
 
 from aiohttp import web
@@ -7,6 +7,7 @@ from homeassistant.components.http import HomeAssistantView
 from .const import DOMAIN
 from .ics import build_ics
 from .permissions import can_view
+from .recipe_images import CONTENT_TYPES, IMAGE_URL_PREFIX, image_directory, image_path
 
 EXPORT_URL = f"/api/{DOMAIN}/calendar.ics"
 
@@ -40,3 +41,29 @@ class CalendarExportView(HomeAssistantView):
             charset="utf-8",
             headers={"Content-Disposition": 'attachment; filename="family-organizer.ics"'},
         )
+
+
+class RecipeImageView(HomeAssistantView):
+    """Serve the local copies of recipe images.
+
+    An <img> element cannot send Home Assistant's access token, so like Home
+    Assistant's own uploaded images these are reachable without a login, but
+    only through their unguessable random file name.
+    """
+
+    url = f"{IMAGE_URL_PREFIX}{{filename}}"
+    name = f"api:{DOMAIN}:recipe_image"
+    requires_auth = False
+
+    def __init__(self, hass) -> None:
+        self.hass = hass
+
+    async def get(self, request: web.Request, filename: str) -> web.StreamResponse:
+        path = image_path(image_directory(self.hass), filename)
+        if path is None or not await self.hass.async_add_executor_job(path.is_file):
+            raise web.HTTPNotFound()
+        return web.FileResponse(path, headers={
+            "Content-Type": CONTENT_TYPES[path.suffix[1:]],
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+        })
