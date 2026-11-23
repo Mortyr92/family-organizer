@@ -3,10 +3,10 @@ import ast
 import asyncio
 from pathlib import Path
 from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 
-from custom_components.family_organizer import recipe_images
 from custom_components.family_organizer.permissions import (
     can_view,
     capabilities_for,
@@ -185,7 +185,7 @@ def _mutations(hass, recipes, fail=()):
         _user=lambda connection: connection.user, _settings=lambda _manager: {},
         _people=lambda _manager: {"items": []}, _person=lambda _manager, user: None,
         can_view=can_view, capabilities_for=capabilities_for, check_capability=check_capability,
-        uuid4=recipe_images.uuid4, EVENT_UPDATED="family_organizer_updated",
+        uuid4=uuid4, EVENT_UPDATED="family_organizer_updated",
         RecipeImageError=RecipeImageError, is_remote=is_remote, unused_images=unused_images,
         delete_image=delete_image, image_directory=image_directory,
         async_store_recipe_image=_store_remote(hass, fail),
